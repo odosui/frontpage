@@ -3,30 +3,14 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { ok, error } from "./helpers";
-import { sendMessage } from "../components/ai/Anthropic";
+import { fetchLatestArticles } from "../components/websites/fetcher";
+import { error, ok } from "./helpers";
+import { Article, LayoutItem } from "./types";
 
 dayjs.extend(relativeTime);
 
 const CONFIG_PATH = path.join(os.homedir(), ".frontpage.json");
 const MAX_ITEMS = 20;
-
-type Article = {
-  title: string;
-  url: string;
-  image: string;
-  new?: boolean;
-};
-
-type LayoutItem = {
-  i: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  url?: string;
-  items?: Article[];
-};
 
 function readConfig(): { layout: LayoutItem[] } {
   try {
@@ -73,29 +57,26 @@ export const createApi = () => {
         return error(400, "widget has no url configured");
       }
 
-      const res = await fetch(widget.url);
-      const html = await res.text();
-
       const existingUrls = new Set((widget.items || []).map((a) => a.url));
 
-      const aiResponse = await sendMessage(
-        "claude-haiku-4-5",
-        `Extract articles from this webpage HTML. Return ONLY a JSON array of objects with fields: title (string), url (absolute URL), image (absolute URL to article thumbnail/image, empty string if none). Only include actual articles/posts, not navigation or ads. Return newest first.\n\nWebsite base URL: ${widget.url}\n\nHTML:\n${html.slice(0, 80000)}`,
-      );
+      let freshArticles: Article[] = [];
 
-      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        return error(500, "failed to parse AI response");
+      try {
+        freshArticles = await fetchLatestArticles(widget.url);
+      } catch (err) {
+        return error(
+          500,
+          "failed to fetch articles: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
       }
 
-      const freshArticles: Article[] = JSON.parse(jsonMatch[0]);
       const newArticles = freshArticles
         .filter((a) => !existingUrls.has(a.url))
         .map((a) => ({ ...a, new: true }));
 
       const oldItems = (widget.items || []).map((a) => ({ ...a, new: false }));
       widget.items = [...newArticles, ...oldItems].slice(0, MAX_ITEMS);
-
       writeConfig(config);
       return ok({ items: widget.items });
     },
