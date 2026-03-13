@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install --prefix client
+          npm install --prefix server
+
+      - name: Check types - Client
+        run: npm run check-types --prefix client
+
+      - name: Lint - Client
+        run: npm run lint --prefix client
+
+      - name: Check types - Server
+        run: npm run check-types --prefix server
+
+      - name: Run tests - Client
+        run: npm run test --prefix client
+
+      - name: Run tests - Server
+        run: npm run test --prefix server
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: check-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install --prefix client
+          npm install --prefix server
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Run Playwright tests
+        run: npm run e2e
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    needs: [check-and-test, e2e-tests]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Extract version from package.json
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.ref }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: hiquest/mt
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.package-version.outputs.version }}
+            type=sha,prefix=main-
+
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache

@@ -1,0 +1,29 @@
+{
+  "name": "mt - Knowledge Management",
+  "short_name": "mt",
+  "description": "Knowledge management with spaced repetition",
+  "start_url": "/app/notes",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#53424C",
+  "theme_color": "#3367D6",
+  "scope": "/",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities", "education"],
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

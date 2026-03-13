@@ -1,0 +1,32 @@
+{
+  "name": "aicoder",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "check-types": "tsc --project tsconfig.json --noEmit",
+    "test:watch": "vitest",
+    "test": "vitest run",
+    "lint": "oxlint src"
+  },
+  "dependencies": {
+    "@primer/octicons-react": "^19.15.1",
+    "date-fns": "^4.1.0",
+    "mermaid": "^11.12.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "slim-react-router": "^0.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.56",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^5.1.1",
+    "oxlint": "^1.32.0",
+    "prettier": "^3.4.2",
+    "sass": "^1.94.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}
