@@ -1,6 +1,15 @@
 export default {
   getLayout: () => api('get', '/layout'),
   saveLayout: (layout: LayoutItem[]) => apiJson('put', '/layout', { layout }),
+  deleteWidget: (id: string) => api('delete', `/widget/${id}`),
+  refreshWidget: (id: string) => api('post', `/widget/${id}/refresh`),
+}
+
+export type Article = {
+  title: string
+  url: string
+  image: string
+  new?: boolean
 }
 
 export type LayoutItem = {
@@ -9,8 +18,8 @@ export type LayoutItem = {
   y: number
   w: number
   h: number
-  minW?: number
-  minH?: number
+  url?: string
+  items?: Article[]
 }
 
 type FetchParams = Parameters<typeof fetch>[1]

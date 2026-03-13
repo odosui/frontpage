@@ -20,4 +20,14 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     path: "/api/layout",
     handler: async ({ body }) => api.saveLayout(body),
   },
+  {
+    method: "post",
+    path: "/api/widget/:id/refresh",
+    handler: async ({ pathParams }) => api.refreshWidget(pathParams.id ?? ''),
+  },
+  {
+    method: "delete",
+    path: "/api/widget/:id",
+    handler: async ({ pathParams }) => api.deleteWidget(pathParams.id ?? ''),
+  },
 ];

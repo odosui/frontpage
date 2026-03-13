@@ -9,47 +9,185 @@
 
 .widget {
   background-color: var(--color-note-area-bg);
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border-radius: $unit2;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
 }
 
 .widget-header {
-  padding: $unit1 $unit2;
-  font-size: $text1;
-  font-weight: 500;
+  padding: $unit2 $unit3;
+  font-size: $text0;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--lighter);
   cursor: grab;
   user-select: none;
-  border-bottom: 1px solid var(--borderColor);
-  background-color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
   &:active {
     cursor: grabbing;
   }
 }
 
+.widget-menu-wrap {
+  position: relative;
+}
+
+.widget-menu-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $unit0;
+  border-radius: $unit1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lighter);
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+
+  .widget:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+}
+
+.widget-menu {
+  position: absolute;
+  top: calc(100% + $unit0);
+  right: 0;
+  z-index: 10;
+  min-width: 140px;
+  background-color: var(--color-note-area-bg);
+  border-radius: $unit1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  padding: $unit0;
+}
+
+.widget-menu-item {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  width: 100%;
+  padding: $unit1 $unit2;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  cursor: pointer;
+  font-size: $text1;
+  text-align: left;
+  color: var(--color-text);
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  &--danger {
+    color: $red;
+
+    &:hover {
+      background-color: rgba($red, 0.06);
+    }
+  }
+}
+
 .widget-body {
   flex: 1;
-  padding: $unit2;
+  padding: 0;
   overflow-y: auto;
+}
+
+.widget-loading {
+  padding: $unit2 $unit3;
+  font-size: $text0;
+  color: var(--lighter);
 }
 
 .widget-placeholder {
   color: var(--lighter);
   font-size: $text1;
-  text-align: center;
-  margin-top: $unit4;
+  padding: $unit2 $unit3;
+}
+
+.article-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.article-item {
+  border-bottom: 1px solid var(--borderColor);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.article-link {
+  display: flex;
+  align-items: center;
+  gap: $unit2;
+  padding: $unit1 $unit3;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+}
+
+.article-image {
+  width: $unit5;
+  height: $unit5;
+  border-radius: $unit0;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.article-title {
+  font-size: $text1;
+  line-height: 1.35;
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+}
+
+.article-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  flex-shrink: 0;
 }
 
 // react-grid-layout overrides
 .react-grid-item.react-grid-placeholder {
   background-color: var(--color-accent);
-  opacity: 0.15;
-  border-radius: $unit1;
+  opacity: 0.1;
+  border-radius: $unit2;
 }
 
 .react-grid-item > .react-resizable-handle::after {
   border-color: var(--lighter) !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.react-grid-item:hover > .react-resizable-handle::after {
+  opacity: 1;
 }
