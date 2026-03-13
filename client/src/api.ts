@@ -1,15 +1,25 @@
 export default {
-  getStuff: (data?: { [k: string]: string | number }) =>
-    api('get', '/stuff', data),
+  getLayout: () => api('get', '/layout'),
+  saveLayout: (layout: LayoutItem[]) => apiJson('put', '/layout', { layout }),
+}
+
+export type LayoutItem = {
+  i: string
+  x: number
+  y: number
+  w: number
+  h: number
+  minW?: number
+  minH?: number
 }
 
 type FetchParams = Parameters<typeof fetch>[1]
 
-async function api(
-  method: string,
-  url: string,
-  data?: { [k: string]: string | number },
-) {
+async function apiJson(method: string, url: string, data: any) {
+  return api(method, url, data)
+}
+
+async function api(method: string, url: string, data?: Record<string, any>) {
   const attrs: FetchParams = {
     method,
     headers: {

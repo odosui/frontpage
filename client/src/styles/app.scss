@@ -5,17 +5,16 @@
 @import './app/elements';
 
 @import './typography';
-@import './mobile';
-@import './app/sidebar';
-@import './app/notes';
-@import './app/note-area';
-@import './app/flashcards-panel';
-@import './app/hovering-preview';
-@import './app/flashcards-page';
-@import './app/quiz-page';
 @import './components/tag-autocomplete';
 @import './components/theme-toggle';
-@import './app/git';
+@import './app/sidebar';
+@import './app/dashboard';
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
 
 .desktop-app {
   display: flex;

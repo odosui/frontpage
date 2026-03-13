@@ -1,0 +1,55 @@
+.dashboard {
+  padding: $unit3;
+  flex: 1;
+  min-width: 0;
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.widget {
+  background-color: var(--color-note-area-bg);
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.widget-header {
+  padding: $unit1 $unit2;
+  font-size: $text1;
+  font-weight: 500;
+  cursor: grab;
+  user-select: none;
+  border-bottom: 1px solid var(--borderColor);
+  background-color: var(--color-bg);
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.widget-body {
+  flex: 1;
+  padding: $unit2;
+  overflow-y: auto;
+}
+
+.widget-placeholder {
+  color: var(--lighter);
+  font-size: $text1;
+  text-align: center;
+  margin-top: $unit4;
+}
+
+// react-grid-layout overrides
+.react-grid-item.react-grid-placeholder {
+  background-color: var(--color-accent);
+  opacity: 0.15;
+  border-radius: $unit1;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  border-color: var(--lighter) !important;
+}

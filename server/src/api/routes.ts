@@ -1,7 +1,7 @@
 import { Api } from "./api";
 
 export type RouteConfig = {
-  method: "get" | "post" | "patch" | "delete";
+  method: "get" | "post" | "patch" | "put" | "delete";
   path: string;
   multipart?: boolean;
   handler: (params: {
@@ -14,4 +14,10 @@ export type RouteConfig = {
 
 export const createRoutes = (api: Api): RouteConfig[] => [
   { method: "get", path: "/api/health", handler: async () => api.health() },
+  { method: "get", path: "/api/layout", handler: async () => api.getLayout() },
+  {
+    method: "put",
+    path: "/api/layout",
+    handler: async ({ body }) => api.saveLayout(body),
+  },
 ];

@@ -1,13 +1,21 @@
 import * as React from 'react'
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { BrowserRouter } from 'slim-react-router'
 import { ThemeProvider } from './contexts/ThemeContext'
+import Sidebar from './Sidebar'
+
+const Dashboard = lazy(() => import('./Dashboard'))
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <Suspense fallback={<Fallback />}>Hello</Suspense>
+        <div className="app-shell">
+          <Sidebar />
+          <Suspense fallback={<Fallback />}>
+            <Dashboard />
+          </Suspense>
+        </div>
       </ThemeProvider>
     </BrowserRouter>
   )
@@ -21,7 +29,7 @@ const Fallback = () => {
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        width: '100vw',
+        flex: 1,
         fontSize: '1rem',
       }}
     >
