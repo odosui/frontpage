@@ -43,6 +43,7 @@ const AddWidgetModal: React.FC<{
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="My feed"
+            autoFocus
           />
         </label>
         <label className="form-field">

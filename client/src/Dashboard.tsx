@@ -6,6 +6,7 @@ import {
   type Layout,
   type LayoutItem,
 } from 'react-grid-layout'
+import { useParams, useNavigate } from 'slim-react-router'
 import api, { type LayoutItem as ApiLayoutItem, type Article } from './api'
 import debounce from './utils/debounce'
 import Widget from './Widget'
@@ -15,13 +16,18 @@ import RefreshIcon from './icons/RefreshIcon'
 import PlusIcon from './icons/PlusIcon'
 import 'react-grid-layout/css/styles.css'
 
-const GRID_COLS = 24
+const BASE_COLS = 24
 const GRID_ROW_HEIGHT = 40
 const WIDGET_MIN_W = 2
 const WIDGET_MIN_H = 4
 
 const Dashboard: React.FC = () => {
-  const [dashboardId, setDashboardId] = useState('default')
+  const { id: routeId } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const dashboardId = routeId || 'default'
+  const setDashboardId = useCallback((id: string) => {
+    navigate(`/db/${id}`)
+  }, [navigate])
   const [dashboards, setDashboards] = useState<string[]>([])
   const [layout, setLayout] = useState<ApiLayoutItem[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -123,7 +129,7 @@ const Dashboard: React.FC = () => {
         setDashboardId(res.id)
       }
     })
-  }, [loadDashboards])
+  }, [loadDashboards, setDashboardId])
 
   const handleDeleteDashboard = useCallback((id: string) => {
     if (!window.confirm(`Delete dashboard "${id}"?`)) return
@@ -131,7 +137,7 @@ const Dashboard: React.FC = () => {
       loadDashboards()
       if (dashboardId === id) setDashboardId('default')
     })
-  }, [dashboardId, loadDashboards])
+  }, [dashboardId, loadDashboards, setDashboardId])
 
   const handleRenameDashboard = useCallback((id: string, name: string) => {
     api.renameDashboard(id, name).then((res: { id?: string }) => {
@@ -140,7 +146,7 @@ const Dashboard: React.FC = () => {
         if (dashboardId === id) setDashboardId(res.id)
       }
     })
-  }, [dashboardId, loadDashboards])
+  }, [dashboardId, loadDashboards, setDashboardId])
 
   useEffect(() => {
     if (!openMenu) return
@@ -148,6 +154,14 @@ const Dashboard: React.FC = () => {
     document.addEventListener('click', close)
     return () => document.removeEventListener('click', close)
   }, [openMenu])
+
+  // Calculate how many "pages" of BASE_COLS are needed based on widget positions
+  const maxRight = layout.reduce((max, item) => Math.max(max, item.x + item.w), 0)
+  const pages = Math.max(1, Math.ceil(maxRight / BASE_COLS))
+  // Add 1 extra page so users always have room to drag widgets further right
+  const totalPages = pages + 1
+  const gridCols = BASE_COLS * totalPages
+  const gridWidth = width * totalPages
 
   if (!loaded) return null
 
@@ -183,8 +197,8 @@ const Dashboard: React.FC = () => {
             minW: WIDGET_MIN_W,
             minH: WIDGET_MIN_H,
           }))}
-          width={width}
-          gridConfig={{ cols: GRID_COLS, rowHeight: GRID_ROW_HEIGHT }}
+          width={gridWidth}
+          gridConfig={{ cols: gridCols, rowHeight: GRID_ROW_HEIGHT }}
           dragConfig={{ enabled: true, handle: '.widget-header' }}
           resizeConfig={{ enabled: true }}
           onLayoutChange={onLayoutChange}

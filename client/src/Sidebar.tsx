@@ -2,7 +2,7 @@ import { HomeIcon, GearIcon } from '@primer/octicons-react'
 import { Link, useLocation } from 'slim-react-router'
 
 const NAV_ITEMS = [
-  { path: '/', icon: HomeIcon },
+  { path: '/db/default', icon: HomeIcon },
   { path: '/settings', icon: GearIcon },
 ]
 
@@ -16,7 +16,7 @@ const Sidebar = () => {
           <Link
             key={path}
             to={path}
-            className={`sidebar-item${location.pathname === path ? ' active' : ''}`}
+            className={`sidebar-item${location.pathname.startsWith(path) ? ' active' : ''}`}
           >
             <Icon size={20} />
           </Link>
