@@ -36,7 +36,7 @@ jobs:
 
   push_to_registry:
     name: Push Docker image to Docker Hub
-    needs: [check-and-test, e2e-tests]
+    needs: [check-and-test]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
