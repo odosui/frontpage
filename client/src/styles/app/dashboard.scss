@@ -12,37 +12,62 @@
   top: 0;
   z-index: 100;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  height: $unit5;
-  background-color: var(--color-bg);
+  gap: $unit1;
+  margin: $unit1;
+  padding: 6px $unit1;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: $unit2;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+
+  [data-theme='dark'] & {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
 }
 
 .tool-panel-btn {
-  padding: $unit1 $unit3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px $unit2;
   border: none;
-  border-radius: $unit2;
-  background-color: var(--color-accent);
-  color: white;
+  border-radius: 8px;
   font-size: $text1;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.16),
-    0 2px 4px rgba(0, 0, 0, 0.08);
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      0 6px 20px rgba(0, 0, 0, 0.2),
-      0 2px 6px rgba(0, 0, 0, 0.1);
-  }
+    background-color 0.15s ease,
+    transform 0.1s ease;
 
   &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transform: scale(0.97);
+  }
+
+  &--primary {
+    background: var(--color-accent);
+    color: white;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    color: var(--lighter);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--color-text);
+    }
+
+    [data-theme='dark'] &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
   }
 }
 

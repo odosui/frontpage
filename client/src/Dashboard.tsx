@@ -85,6 +85,10 @@ const Dashboard: React.FC = () => {
     })
   }, [])
 
+  const refreshAll = useCallback(() => {
+    layout.forEach((item) => refreshWidget(item.i))
+  }, [layout, refreshWidget])
+
   const addWidget = useCallback((widget: ApiLayoutItem) => {
     api.addWidget(widget).then(() => {
       setLayout((prev) => [...prev, widget])
@@ -107,8 +111,20 @@ const Dashboard: React.FC = () => {
       ref={containerRef as React.LegacyRef<HTMLDivElement>}
     >
       <div className="tool-panel">
-        <button className="tool-panel-btn" onClick={() => setShowAddModal(true)}>
-          + Add new
+        <button className="tool-panel-btn tool-panel-btn--secondary" onClick={refreshAll}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          Refresh all
+        </button>
+        <button className="tool-panel-btn tool-panel-btn--primary" onClick={() => setShowAddModal(true)}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add new
         </button>
       </div>
       {mounted && (
