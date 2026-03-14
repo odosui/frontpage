@@ -1,7 +1,7 @@
-# Multi-stage build for mt application
+# Multi-stage build for frontpage application
 
 # Stage 1: Build client
-FROM node:20-alpine AS client-builder
+FROM node:24-alpine AS client-builder
 WORKDIR /app
 # Copy config.json for vite.config.ts
 COPY config.json ./
@@ -12,7 +12,7 @@ COPY client/ ./
 RUN npm run build
 
 # Stage 2: Build server
-FROM node:20-alpine AS server-builder
+FROM node:24-alpine AS server-builder
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm install
@@ -20,7 +20,7 @@ COPY server/ ./
 RUN npm run build
 
 # Stage 3: Production image
-FROM node:20-alpine
+FROM node:24-alpine
 RUN apk add --no-cache git
 WORKDIR /app
 
@@ -34,14 +34,14 @@ COPY --from=client-builder /app/client/dist ./client/dist
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV MT_PORT=3042
-ENV MT_HOME=/data/mt
+ENV MT_PORT=3043
+ENV MT_HOME=/data/frontpage
 
 # Expose the port
-EXPOSE 3042
+EXPOSE 3043
 
-# Create mt directory
-RUN mkdir -p /data/mt/notes
+# Create data directory
+RUN mkdir -p /data/frontpage
 
 # Start the server
 WORKDIR /app/server

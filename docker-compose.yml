@@ -1,17 +1,13 @@
-version: "3.8"
-
 services:
-  mt:
-    image: hiquest/mt:1.1.1
+  frontpage:
+    image: hiquest/frontpage:latest
     ports:
-      - "3042:3042"
+      - "3043:3043"
     volumes:
-      # Mount your local mt directory to the container
-      # Change the path on the left side to your desired location
-      - ./mt-data:/data/mt
+      - ~/.frontpage:/data/frontpage
     environment:
       - NODE_ENV=production
-      - MT_PORT=3042
-      - MT_HOME=/data/mt
+      - MT_HOME=/data/frontpage
       - ANTHROPIC_API_KEY=yourkey
+      - OPENROUTER_API_KEY=yourkey
     restart: unless-stopped

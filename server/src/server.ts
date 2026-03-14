@@ -1,6 +1,5 @@
 import bodyParser from "body-parser";
 import express, { Express, Request, Response } from "express";
-import os from "os";
 import path from "path";
 import { createApi } from "./api/api";
 import { createRoutes } from "./api/routes";
@@ -8,12 +7,7 @@ import { createRoutes } from "./api/routes";
 const NODE_ENV = process.env.NODE_ENV || "development";
 const PORT = process.env.MT_PORT || 3000;
 
-function getDefaultMTHome() {
-  return path.join(os.homedir(), "mt");
-}
-
-export async function startServer(mtHomeArg: string) {
-  const mtHome = mtHomeArg || getDefaultMTHome();
+export async function startServer() {
   const app = express();
 
   app.use(bodyParser.json());
@@ -22,10 +16,6 @@ export async function startServer(mtHomeArg: string) {
   if (NODE_ENV === "development") {
     applyDevCors(app);
   }
-
-  // serve media files from {mtHome}/media
-  const mediaPath = path.join(mtHome, "media");
-  app.use("/media", express.static(mediaPath));
 
   // init out app
   const routes = createRoutes(createApi());
