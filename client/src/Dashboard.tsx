@@ -8,6 +8,7 @@ import {
 } from 'react-grid-layout'
 import api, { type LayoutItem as ApiLayoutItem, type Article } from './api'
 import debounce from './utils/debounce'
+import Widget from './Widget'
 import 'react-grid-layout/css/styles.css'
 
 const GRID_COLS = 24
@@ -65,21 +66,20 @@ const Dashboard: React.FC = () => {
     [saveLayout],
   )
 
-  const deleteWidget = useCallback(
-    (id: string) => {
-      if (!window.confirm('Delete this widget?')) return
-      api.deleteWidget(id).then(() => {
-        setLayout((prev) => prev.filter((item) => item.i !== id))
-      })
-    },
-    [],
-  )
+  const deleteWidget = useCallback((id: string) => {
+    if (!window.confirm('Delete this widget?')) return
+    api.deleteWidget(id).then(() => {
+      setLayout((prev) => prev.filter((item) => item.i !== id))
+    })
+  }, [])
 
   const refreshWidget = useCallback((id: string) => {
     setRefreshing((prev) => new Set(prev).add(id))
     api.refreshWidget(id).then((data: { items: Article[] }) => {
       setLayout((prev) =>
-        prev.map((item) => (item.i === id ? { ...item, items: data.items } : item)),
+        prev.map((item) =>
+          item.i === id ? { ...item, items: data.items } : item,
+        ),
       )
       setRefreshing((prev) => {
         const next = new Set(prev)
@@ -105,7 +105,11 @@ const Dashboard: React.FC = () => {
     >
       {mounted && (
         <GridLayout
-          layout={layout.map((item) => ({ ...item, minW: WIDGET_MIN_W, minH: WIDGET_MIN_H }))}
+          layout={layout.map((item) => ({
+            ...item,
+            minW: WIDGET_MIN_W,
+            minH: WIDGET_MIN_H,
+          }))}
           width={width}
           gridConfig={{ cols: GRID_COLS, rowHeight: GRID_ROW_HEIGHT }}
           dragConfig={{ enabled: true, handle: '.widget-header' }}
@@ -113,76 +117,20 @@ const Dashboard: React.FC = () => {
           onLayoutChange={onLayoutChange}
         >
           {layout.map((item) => (
-            <div key={item.i} className="widget">
-              <div className="widget-header">
-                {item.i}
-                <div className="widget-menu-wrap">
-                  <button
-                    className="widget-menu-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setOpenMenu(openMenu === item.i ? null : item.i)
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                      <circle cx="8" cy="3" r="1.5" />
-                      <circle cx="8" cy="8" r="1.5" />
-                      <circle cx="8" cy="13" r="1.5" />
-                    </svg>
-                  </button>
-                  {openMenu === item.i && (
-                    <div className="widget-menu" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="widget-menu-item"
-                        disabled={refreshing.has(item.i)}
-                        onClick={() => {
-                          setOpenMenu(null)
-                          refreshWidget(item.i)
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1.33 2.67v4h4M14.67 13.33v-4h-4" />
-                          <path d="M13.01 6a5.33 5.33 0 0 0-8.8-1.97L1.33 6.67M2.99 10a5.33 5.33 0 0 0 8.8 1.97l2.88-2.64" />
-                        </svg>
-                        Refresh
-                      </button>
-                      <button
-                        className="widget-menu-item widget-menu-item--danger"
-                        onClick={() => deleteWidget(item.i)}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 0 1 1.34-1.34h2.66a1.33 1.33 0 0 1 1.34 1.34V4M6.67 7.33v4M9.33 7.33v4M12.67 4v9.33a1.33 1.33 0 0 1-1.34 1.34H4.67a1.33 1.33 0 0 1-1.34-1.34V4" />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="widget-body">
-                {refreshing.has(item.i) && (
-                  <div className="widget-loading">Refreshing...</div>
-                )}
-                {item.items && item.items.length > 0 ? (
-                  <ul className="article-list">
-                    {item.items.map((article) => (
-                      <li key={article.url} className={`article-item${article.new ? ' article-item--new' : ''}`}>
-                        <a href={article.url} target="_blank" rel="noopener noreferrer" className="article-link">
-                          {article.image && (
-                            <img src={article.image} alt="" className="article-image" />
-                          )}
-                          <span className="article-title">
-                            {article.new && <span className="article-badge">NEW</span>}
-                            {article.title}
-                          </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="widget-placeholder">No articles yet</p>
-                )}
-              </div>
+            <div key={item.i}>
+              <Widget
+                item={item}
+                isMenuOpen={openMenu === item.i}
+                isRefreshing={refreshing.has(item.i)}
+                onMenuToggle={() =>
+                  setOpenMenu(openMenu === item.i ? null : item.i)
+                }
+                onRefresh={() => {
+                  setOpenMenu(null)
+                  refreshWidget(item.i)
+                }}
+                onDelete={() => deleteWidget(item.i)}
+              />
             </div>
           ))}
         </GridLayout>

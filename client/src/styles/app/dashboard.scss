@@ -13,6 +13,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease;
 
@@ -37,6 +38,50 @@
   &:active {
     cursor: grabbing;
   }
+}
+
+.widget-title {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+}
+
+.widget-refresh-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $unit0;
+  border-radius: $unit1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lighter);
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+
+  .widget:hover & {
+    opacity: 0.4;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+
+  &.is-refreshing {
+    opacity: 0.4;
+    pointer-events: none;
+
+    svg {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .widget-menu-wrap {
@@ -111,12 +156,6 @@
   overflow-y: auto;
 }
 
-.widget-loading {
-  padding: $unit2 $unit3;
-  font-size: $text0;
-  color: var(--lighter);
-}
-
 .widget-placeholder {
   color: var(--lighter);
   font-size: $text1;
@@ -130,10 +169,15 @@
 }
 
 .article-item {
+  position: relative;
   border-bottom: 1px solid var(--borderColor);
 
   &:last-child {
     border-bottom: none;
+  }
+
+  &--new {
+    background-color: rgba(255, 215, 0, 0.08);
   }
 }
 
@@ -142,6 +186,7 @@
   align-items: center;
   gap: $unit2;
   padding: $unit1 $unit3;
+  height: $unit6;
   text-decoration: none;
   color: var(--color-text);
   transition: background-color 0.12s ease;
@@ -149,6 +194,13 @@
   &:hover {
     background-color: var(--color-bg-hover);
   }
+}
+
+.article-title {
+  font-size: $text1;
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
 }
 
 .article-image {
@@ -159,21 +211,6 @@
   flex-shrink: 0;
 }
 
-.article-title {
-  font-size: $text1;
-  line-height: 1.35;
-  display: flex;
-  align-items: baseline;
-  gap: $unit1;
-}
-
-.article-badge {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--color-accent);
-  flex-shrink: 0;
-}
 
 // react-grid-layout overrides
 .react-grid-item.react-grid-placeholder {

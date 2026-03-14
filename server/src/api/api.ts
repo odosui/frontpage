@@ -10,7 +10,7 @@ import { Article, LayoutItem } from "./types";
 dayjs.extend(relativeTime);
 
 const CONFIG_PATH = path.join(os.homedir(), ".frontpage.json");
-const MAX_ITEMS = 20;
+const MAX_ITEMS = 100;
 
 function readConfig(): { layout: LayoutItem[] } {
   try {
@@ -31,7 +31,11 @@ export const createApi = () => {
 
     getLayout: () => {
       const config = readConfig();
-      return ok(config);
+      const layout = config.layout.map((item) => ({
+        ...item,
+        items: (item.items || []).slice(0, MAX_ITEMS),
+      }));
+      return ok({ layout });
     },
 
     saveLayout: (body: { layout: LayoutItem[] }) => {
@@ -76,9 +80,9 @@ export const createApi = () => {
         .map((a) => ({ ...a, new: true }));
 
       const oldItems = (widget.items || []).map((a) => ({ ...a, new: false }));
-      widget.items = [...newArticles, ...oldItems].slice(0, MAX_ITEMS);
+      widget.items = [...newArticles, ...oldItems];
       writeConfig(config);
-      return ok({ items: widget.items });
+      return ok({ items: widget.items.slice(0, MAX_ITEMS) });
     },
 
     deleteWidget: (id: string) => {

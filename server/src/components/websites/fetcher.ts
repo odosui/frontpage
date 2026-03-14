@@ -1,10 +1,10 @@
 import { Article } from "../../api/types";
-import { sendMessage } from "../ai/Anthropic";
+import { sendMessage } from "../ai/OpenRouter";
 
 import fs from "fs/promises";
 
-// const MODEL = "claude-haiku-4-5";
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "x-ai/grok-4.1-fast";
+// const MODEL = "claude-sonnet-4-6";
 
 const HTML_LIMIT = 200_000;
 
@@ -15,7 +15,7 @@ export async function fetchLatestArticles(url: string) {
   console.log(cleanedHtml.length, "characters of cleaned HTML");
 
   // save to a tmp file
-  const path = `tmp/${Date.now()}.html`;
+  const path = `tmp/aaa.html`;
   await fs.mkdir("tmp", { recursive: true });
   await fs.writeFile(path, cleanedHtml);
   console.log("Cleaned HTML saved to", path);
@@ -84,7 +84,10 @@ function cleanHtml(html: string) {
         "",
       )
       // Strip all attributes except href and src
-      .replace(/\s+(?:class|id|style|role|tabindex|loading|decoding|fetchpriority|sizes|width|height|data-[a-z0-9-]*|aria-[a-z0-9-]*)="[^"]*"/gi, "")
+      .replace(
+        /\s+(?:class|id|style|role|tabindex|loading|decoding|fetchpriority|sizes|srcset|width|height|data-[a-z0-9-]*|aria-[a-z0-9-]*)="[^"]*"/gi,
+        "",
+      )
       // Remove empty tags and whitespace
       .replace(/<([a-z][a-z0-9]*)>\s*<\/\1>/gi, "")
       .replace(/\s{2,}/g, " ")
