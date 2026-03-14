@@ -3,7 +3,8 @@ import os from "os";
 import path from "path";
 import { Article, LayoutItem } from "./types";
 
-const CONFIG_DIR = path.join(os.homedir(), ".frontpage");
+const CONFIG_DIR =
+  process.env.FRONTPAGE_HOME || path.join(os.homedir(), ".frontpage");
 const DEFAULT_DASHBOARD = "default";
 
 export function ensureConfigDir() {

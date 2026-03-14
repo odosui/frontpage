@@ -34,8 +34,8 @@ COPY --from=client-builder /app/client/dist ./client/dist
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV MT_PORT=3043
-ENV MT_HOME=/data/frontpage
+ENV FRONTPAGE_PORT=3043
+ENV FRONTPAGE_HOME=/data/frontpage
 
 # Expose the port
 EXPOSE 3043

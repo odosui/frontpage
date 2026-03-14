@@ -3,8 +3,8 @@ import { sendMessage } from "../ai/OpenRouter";
 
 // import fs from "fs/promises";
 
-const MODEL = "google/gemini-3-flash-preview";
-// const MODEL = "claude-sonnet-4-6";
+const MODEL =
+  process.env.FRONTPAGE_MODEL || "google/gemini-3-flash-preview";
 
 const HTML_LIMIT = 200_000;
 

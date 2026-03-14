@@ -5,7 +5,7 @@ import { createApi } from "./api/api";
 import { createRoutes } from "./api/routes";
 
 const NODE_ENV = process.env.NODE_ENV || "development";
-const PORT = process.env.MT_PORT || 3000;
+const PORT = process.env.FRONTPAGE_PORT || 3000;
 
 export async function startServer() {
   const app = express();
@@ -19,9 +19,6 @@ export async function startServer() {
 
   // init out app
   const routes = createRoutes(createApi());
-
-  //   // mapping apis
-  //   const upload = multer({ storage: multer.memoryStorage() });
 
   for (const m of routes) {
     const method = m.method.toLowerCase() as keyof Express;

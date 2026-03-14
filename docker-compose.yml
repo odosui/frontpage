@@ -7,7 +7,8 @@ services:
       - ~/.frontpage:/data/frontpage
     environment:
       - NODE_ENV=production
-      - MT_HOME=/data/frontpage
+      - FRONTPAGE_HOME=/data/frontpage
       - ANTHROPIC_API_KEY=yourkey
       - OPENROUTER_API_KEY=yourkey
+      - FRONTPAGE_MODEL=google/gemini-3-flash-preview
     restart: unless-stopped
