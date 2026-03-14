@@ -1,6 +1,7 @@
 export default {
   getLayout: () => api('get', '/layout'),
   saveLayout: (layout: LayoutItem[]) => apiJson('put', '/layout', { layout }),
+  addWidget: (widget: LayoutItem) => apiJson('post', '/widget', { widget }),
   deleteWidget: (id: string) => api('delete', `/widget/${id}`),
   refreshWidget: (id: string) => api('post', `/widget/${id}/refresh`),
 }
@@ -18,7 +19,7 @@ export type LayoutItem = {
   y: number
   w: number
   h: number
-  url?: string
+  url: string
   items?: Article[]
 }
 

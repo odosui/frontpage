@@ -85,6 +85,16 @@ export const createApi = () => {
       return ok({ items: widget.items.slice(0, MAX_ITEMS) });
     },
 
+    addWidget: (body: { widget: LayoutItem }) => {
+      if (!body.widget) {
+        return error(400, "widget is required");
+      }
+      const config = readConfig();
+      config.layout.push(body.widget);
+      writeConfig(config);
+      return ok({ widget: body.widget });
+    },
+
     deleteWidget: (id: string) => {
       if (!id) {
         return error(400, "widget id is required");

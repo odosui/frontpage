@@ -9,6 +9,7 @@ import {
 import api, { type LayoutItem as ApiLayoutItem, type Article } from './api'
 import debounce from './utils/debounce'
 import Widget from './Widget'
+import AddWidgetModal from './AddWidgetModal'
 import 'react-grid-layout/css/styles.css'
 
 const GRID_COLS = 24
@@ -16,16 +17,11 @@ const GRID_ROW_HEIGHT = 40
 const WIDGET_MIN_W = 2
 const WIDGET_MIN_H = 4
 
-const DEFAULT_LAYOUT: ApiLayoutItem[] = [
-  { i: 'widget-1', x: 0, y: 0, w: 4, h: 6 },
-  { i: 'widget-2', x: 4, y: 0, w: 4, h: 6 },
-  { i: 'widget-3', x: 8, y: 0, w: 4, h: 6 },
-]
-
 const Dashboard: React.FC = () => {
-  const [layout, setLayout] = useState<ApiLayoutItem[]>(DEFAULT_LAYOUT)
+  const [layout, setLayout] = useState<ApiLayoutItem[]>([])
   const [loaded, setLoaded] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set())
   const { width, containerRef, mounted } = useContainerWidth()
 
@@ -89,6 +85,13 @@ const Dashboard: React.FC = () => {
     })
   }, [])
 
+  const addWidget = useCallback((widget: ApiLayoutItem) => {
+    api.addWidget(widget).then(() => {
+      setLayout((prev) => [...prev, widget])
+      refreshWidget(widget.i)
+    })
+  }, [refreshWidget])
+
   useEffect(() => {
     if (!openMenu) return
     const close = () => setOpenMenu(null)
@@ -103,6 +106,11 @@ const Dashboard: React.FC = () => {
       className="dashboard"
       ref={containerRef as React.LegacyRef<HTMLDivElement>}
     >
+      <div className="tool-panel">
+        <button className="tool-panel-btn" onClick={() => setShowAddModal(true)}>
+          + Add new
+        </button>
+      </div>
       {mounted && (
         <GridLayout
           layout={layout.map((item) => ({
@@ -135,6 +143,11 @@ const Dashboard: React.FC = () => {
           ))}
         </GridLayout>
       )}
+      <AddWidgetModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={addWidget}
+      />
     </div>
   )
 }

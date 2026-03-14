@@ -11,6 +11,6 @@ export type LayoutItem = {
   y: number;
   w: number;
   h: number;
-  url?: string;
+  url: string;
   items?: Article[];
 };

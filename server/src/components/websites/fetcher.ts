@@ -3,7 +3,7 @@ import { sendMessage } from "../ai/OpenRouter";
 
 import fs from "fs/promises";
 
-const MODEL = "x-ai/grok-4.1-fast";
+const MODEL = "google/gemini-3-flash-preview";
 // const MODEL = "claude-sonnet-4-6";
 
 const HTML_LIMIT = 200_000;

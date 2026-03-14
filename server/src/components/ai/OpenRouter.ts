@@ -17,7 +17,6 @@ export async function sendMessage(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 16384,
       messages: [{ role: "user", content: message }],
     }),
   });

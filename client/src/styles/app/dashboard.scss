@@ -1,10 +1,49 @@
 .dashboard {
-  padding: $unit3;
+  padding: $unit1;
   flex: 1;
   min-width: 0;
   background-color: var(--color-bg);
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+.tool-panel {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  height: $unit5;
+  background-color: var(--color-bg);
+}
+
+.tool-panel-btn {
+  padding: $unit1 $unit3;
+  border: none;
+  border-radius: $unit2;
+  background-color: var(--color-accent);
+  color: white;
+  font-size: $text1;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.16),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.2),
+      0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
 }
 
 .widget {
@@ -14,11 +53,15 @@
   flex-direction: column;
   overflow: hidden;
   height: 100%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(0, 0, 0, 0.04);
   }
 }
 
@@ -57,7 +100,10 @@
   align-items: center;
   justify-content: center;
   color: var(--lighter);
-  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   .widget:hover & {
     opacity: 0.4;
@@ -80,8 +126,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .widget-menu-wrap {
@@ -99,7 +149,10 @@
   align-items: center;
   justify-content: center;
   color: var(--lighter);
-  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   .widget:hover & {
     opacity: 1;
@@ -119,7 +172,9 @@
   min-width: 140px;
   background-color: var(--color-note-area-bg);
   border-radius: $unit1;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
   padding: $unit0;
 }
 
@@ -211,6 +266,80 @@
   flex-shrink: 0;
 }
 
+.modal-title {
+  font-size: $text4;
+  margin-bottom: $unit4;
+}
+
+.add-widget-form {
+  width: $unit13;
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $unit3;
+  }
+
+  .form-label {
+    font-size: $text0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--lighter);
+    margin-bottom: $unit1;
+  }
+
+  .form-input {
+    background-color: transparent;
+    padding: $unit2;
+    width: 100%;
+    border: 1px solid var(--borderColor);
+    border-radius: $unit1;
+    font-size: $text2;
+    color: var(--color-text);
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $unit2;
+    margin-top: $unit4;
+  }
+}
+
+.btn {
+  padding: $unit2 $unit4;
+  border: none;
+  border-radius: $unit1;
+  font-size: $text1;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &--primary {
+    background-color: var(--color-accent);
+    color: white;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &--secondary {
+    background-color: transparent;
+    color: var(--lighter);
+
+    &:hover {
+      background-color: var(--color-bg-hover);
+    }
+  }
+}
 
 // react-grid-layout overrides
 .react-grid-item.react-grid-placeholder {

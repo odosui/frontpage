@@ -22,6 +22,11 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   },
   {
     method: "post",
+    path: "/api/widget",
+    handler: async ({ body }) => api.addWidget(body),
+  },
+  {
+    method: "post",
     path: "/api/widget/:id/refresh",
     handler: async ({ pathParams }) => api.refreshWidget(pathParams.id ?? ''),
   },
