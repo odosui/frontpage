@@ -1,8 +1,8 @@
 {
-  "name": "mt - Knowledge Management",
-  "short_name": "mt",
-  "description": "Knowledge management with spaced repetition",
-  "start_url": "/app/notes",
+  "name": "Frontpage",
+  "short_name": "Frontpage",
+  "description": "AI-powered news aggregator",
+  "start_url": "/",
   "display_override": ["fullscreen", "standalone"],
   "background_color": "#53424C",
   "theme_color": "#3367D6",
