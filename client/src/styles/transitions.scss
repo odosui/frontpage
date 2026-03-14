@@ -1,7 +1,9 @@
 // TRANSITIONS
 
 .atop-enter {
-  transition: transform 0.1s ease-in, opacity 0.1s ease-in;
+  transition:
+    transform 0.1s ease-in,
+    opacity 0.1s ease-in;
   opacity: 0;
   transform: translateY(-30px);
   &.atop-enter-active {
@@ -17,7 +19,9 @@
 .atop-exit-active {
   opacity: 0;
   transform: translateY(-30px);
-  transition: transform 0.1s ease-in, opacity 0.1s ease-in;
+  transition:
+    transform 0.1s ease-in,
+    opacity 0.1s ease-in;
 }
 
 .atop-appear {
@@ -27,13 +31,17 @@
 .atop-appear-active {
   opacity: 1;
   transform: translateY(0px);
-  transition: transform 0.1s ease-in, opacity 0.1s ease-in;
+  transition:
+    transform 0.1s ease-in,
+    opacity 0.1s ease-in;
 }
 
 // aleft
 
 .aleft-enter {
-  transition: transform 0.2s ease-in, opacity 0.2s ease-in;
+  transition:
+    transform 0.2s ease-in,
+    opacity 0.2s ease-in;
   opacity: 0;
   transform: translateX(100px);
   &.aleft-enter-active {
@@ -49,7 +57,9 @@
 .aleft-exit-active {
   opacity: 0;
   transform: translateX(-100px);
-  transition: transform 0.2s ease-in, opacity 0.2s ease-in;
+  transition:
+    transform 0.2s ease-in,
+    opacity 0.2s ease-in;
 }
 
 .aleft-appear {
@@ -59,7 +69,9 @@
 .aleft-appear-active {
   opacity: 1;
   transform: translateX(0px);
-  transition: transform 0.2s ease-in, opacity 0.2s ease-in;
+  transition:
+    transform 0.2s ease-in,
+    opacity 0.2s ease-in;
 }
 
 // Slide

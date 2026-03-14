@@ -25,9 +25,12 @@ const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dashboardId = routeId || 'default'
-  const setDashboardId = useCallback((id: string) => {
-    navigate(`/db/${id}`)
-  }, [navigate])
+  const setDashboardId = useCallback(
+    (id: string) => {
+      navigate(`/db/${id}`)
+    },
+    [navigate],
+  )
   const [dashboards, setDashboards] = useState<string[]>([])
   const [layout, setLayout] = useState<ApiLayoutItem[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -80,7 +83,10 @@ const Dashboard: React.FC = () => {
           return !p || p.x !== m.x || p.y !== m.y || p.w !== m.w || p.h !== m.h
         })
         if (posChanged) {
-          saveLayout(dashboardId, mapped.map(({ items, ...rest }) => rest))
+          saveLayout(
+            dashboardId,
+            mapped.map(({ items, ...rest }) => rest),
+          )
         }
         return mapped
       })
@@ -88,65 +94,83 @@ const Dashboard: React.FC = () => {
     [saveLayout, dashboardId],
   )
 
-  const deleteWidget = useCallback((id: string) => {
-    if (!window.confirm('Delete this widget?')) return
-    api.deleteWidget(dashboardId, id).then(() => {
-      setLayout((prev) => prev.filter((item) => item.i !== id))
-    })
-  }, [dashboardId])
-
-  const refreshWidget = useCallback((id: string) => {
-    setRefreshing((prev) => new Set(prev).add(id))
-    api.refreshWidget(dashboardId, id).then((data: { items: Article[] }) => {
-      setLayout((prev) =>
-        prev.map((item) =>
-          item.i === id ? { ...item, items: data.items } : item,
-        ),
-      )
-      setRefreshing((prev) => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
+  const deleteWidget = useCallback(
+    (id: string) => {
+      if (!window.confirm('Delete this widget?')) return
+      api.deleteWidget(dashboardId, id).then(() => {
+        setLayout((prev) => prev.filter((item) => item.i !== id))
       })
-    })
-  }, [dashboardId])
+    },
+    [dashboardId],
+  )
+
+  const refreshWidget = useCallback(
+    (id: string) => {
+      setRefreshing((prev) => new Set(prev).add(id))
+      api.refreshWidget(dashboardId, id).then((data: { items: Article[] }) => {
+        setLayout((prev) =>
+          prev.map((item) =>
+            item.i === id ? { ...item, items: data.items } : item,
+          ),
+        )
+        setRefreshing((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+      })
+    },
+    [dashboardId],
+  )
 
   const refreshAll = useCallback(() => {
     layout.forEach((item) => refreshWidget(item.i))
   }, [layout, refreshWidget])
 
-  const addWidget = useCallback((widget: ApiLayoutItem) => {
-    api.addWidget(dashboardId, widget).then(() => {
-      setLayout((prev) => [...prev, widget])
-      refreshWidget(widget.i)
-    })
-  }, [dashboardId, refreshWidget])
+  const addWidget = useCallback(
+    (widget: ApiLayoutItem) => {
+      api.addWidget(dashboardId, widget).then(() => {
+        setLayout((prev) => [...prev, widget])
+        refreshWidget(widget.i)
+      })
+    },
+    [dashboardId, refreshWidget],
+  )
 
-  const handleCreateDashboard = useCallback((name: string) => {
-    api.createDashboard(name).then((res: { id?: string; error?: string }) => {
-      if (res.id) {
+  const handleCreateDashboard = useCallback(
+    (name: string) => {
+      api.createDashboard(name).then((res: { id?: string; error?: string }) => {
+        if (res.id) {
+          loadDashboards()
+          setDashboardId(res.id)
+        }
+      })
+    },
+    [loadDashboards, setDashboardId],
+  )
+
+  const handleDeleteDashboard = useCallback(
+    (id: string) => {
+      if (!window.confirm(`Delete dashboard "${id}"?`)) return
+      api.deleteDashboard(id).then(() => {
         loadDashboards()
-        setDashboardId(res.id)
-      }
-    })
-  }, [loadDashboards, setDashboardId])
+        if (dashboardId === id) setDashboardId('default')
+      })
+    },
+    [dashboardId, loadDashboards, setDashboardId],
+  )
 
-  const handleDeleteDashboard = useCallback((id: string) => {
-    if (!window.confirm(`Delete dashboard "${id}"?`)) return
-    api.deleteDashboard(id).then(() => {
-      loadDashboards()
-      if (dashboardId === id) setDashboardId('default')
-    })
-  }, [dashboardId, loadDashboards, setDashboardId])
-
-  const handleRenameDashboard = useCallback((id: string, name: string) => {
-    api.renameDashboard(id, name).then((res: { id?: string }) => {
-      if (res.id) {
-        loadDashboards()
-        if (dashboardId === id) setDashboardId(res.id)
-      }
-    })
-  }, [dashboardId, loadDashboards, setDashboardId])
+  const handleRenameDashboard = useCallback(
+    (id: string, name: string) => {
+      api.renameDashboard(id, name).then((res: { id?: string }) => {
+        if (res.id) {
+          loadDashboards()
+          if (dashboardId === id) setDashboardId(res.id)
+        }
+      })
+    },
+    [dashboardId, loadDashboards, setDashboardId],
+  )
 
   useEffect(() => {
     if (!openMenu) return
@@ -156,7 +180,10 @@ const Dashboard: React.FC = () => {
   }, [openMenu])
 
   // Calculate how many "pages" of BASE_COLS are needed based on widget positions
-  const maxRight = layout.reduce((max, item) => Math.max(max, item.x + item.w), 0)
+  const maxRight = layout.reduce(
+    (max, item) => Math.max(max, item.x + item.w),
+    0,
+  )
   const pages = Math.max(1, Math.ceil(maxRight / BASE_COLS))
   // Add 1 extra page so users always have room to drag widgets further right
   const totalPages = pages + 1
@@ -180,11 +207,18 @@ const Dashboard: React.FC = () => {
           onRename={handleRenameDashboard}
         />
         <div className="tool-panel-actions">
-          <button className={`tool-panel-btn tool-panel-btn--secondary${refreshing.size > 0 ? ' is-refreshing' : ''}`} onClick={refreshAll} disabled={refreshing.size > 0}>
+          <button
+            className={`tool-panel-btn tool-panel-btn--secondary${refreshing.size > 0 ? ' is-refreshing' : ''}`}
+            onClick={refreshAll}
+            disabled={refreshing.size > 0}
+          >
             <RefreshIcon />
             Refresh all
           </button>
-          <button className="tool-panel-btn tool-panel-btn--primary" onClick={() => setShowAddModal(true)}>
+          <button
+            className="tool-panel-btn tool-panel-btn--primary"
+            onClick={() => setShowAddModal(true)}
+          >
             <PlusIcon />
             Add new
           </button>

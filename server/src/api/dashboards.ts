@@ -32,11 +32,7 @@ export function readDashboard(id: string): { layout: LayoutItem[] } {
 
 export function writeDashboard(id: string, config: { layout: LayoutItem[] }) {
   ensureConfigDir();
-  fs.writeFileSync(
-    dashboardPath(id),
-    JSON.stringify(config, null, 2),
-    "utf-8",
-  );
+  fs.writeFileSync(dashboardPath(id), JSON.stringify(config, null, 2), "utf-8");
 }
 
 /** Update only positions/sizes, preserve items from disk */
@@ -50,11 +46,7 @@ export function updateLayout(id: string, layout: Omit<LayoutItem, "items">[]) {
 }
 
 /** Update only items for a single widget, preserve layout from disk */
-export function updateContent(
-  id: string,
-  widgetId: string,
-  items: Article[],
-) {
+export function updateContent(id: string, widgetId: string, items: Article[]) {
   const config = readDashboard(id);
   const widget = config.layout.find((item) => item.i === widgetId);
   if (widget) {
@@ -64,9 +56,7 @@ export function updateContent(
 }
 
 export function listAll(): string[] {
-  const files = fs
-    .readdirSync(CONFIG_DIR)
-    .filter((f) => f.endsWith(".json"));
+  const files = fs.readdirSync(CONFIG_DIR).filter((f) => f.endsWith(".json"));
   const dashboards = files.map((f) => f.replace(/\.json$/, ""));
   if (!dashboards.includes(DEFAULT_DASHBOARD)) {
     writeDashboard(DEFAULT_DASHBOARD, { layout: [] });

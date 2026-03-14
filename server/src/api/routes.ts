@@ -61,18 +61,12 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     method: "post",
     path: "/api/dashboards/:dashboardId/widget/:id/refresh",
     handler: async ({ pathParams }) =>
-      api.refreshWidget(
-        pathParams.dashboardId ?? "",
-        pathParams.id ?? "",
-      ),
+      api.refreshWidget(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
   {
     method: "delete",
     path: "/api/dashboards/:dashboardId/widget/:id",
     handler: async ({ pathParams }) =>
-      api.deleteWidget(
-        pathParams.dashboardId ?? "",
-        pathParams.id ?? "",
-      ),
+      api.deleteWidget(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
 ];

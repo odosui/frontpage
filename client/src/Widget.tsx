@@ -64,8 +64,16 @@ const Widget: React.FC<WidgetProps> = ({
         {item.items && item.items.length > 0 ? (
           <ul className="article-list">
             {item.items.map((article) => (
-              <li key={article.url} className={`article-item${article.new ? ' article-item--new' : ''}`}>
-                <a href={article.url} target="_blank" rel="noopener noreferrer" className="article-link">
+              <li
+                key={article.url}
+                className={`article-item${article.new ? ' article-item--new' : ''}`}
+              >
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="article-link"
+                >
                   <span className="article-title">{article.title}</span>
                   {article.image && (
                     <img src={article.image} alt="" className="article-image" />

@@ -66,10 +66,7 @@ const DashboardSwitcher = ({
 
   return (
     <div className="dash-switcher" ref={ref}>
-      <button
-        className="dash-switcher-trigger"
-        onClick={() => setOpen(!open)}
-      >
+      <button className="dash-switcher-trigger" onClick={() => setOpen(!open)}>
         <span className="dash-switcher-label">{current}</span>
         <ChevronDownIcon />
       </button>
