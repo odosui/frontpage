@@ -1,7 +1,7 @@
 import { Article } from "../../api/types";
 import { sendMessage } from "../ai/OpenRouter";
 
-import fs from "fs/promises";
+// import fs from "fs/promises";
 
 const MODEL = "google/gemini-3-flash-preview";
 // const MODEL = "claude-sonnet-4-6";
@@ -12,13 +12,12 @@ export async function fetchLatestArticles(url: string) {
   const rawHtml = await fetchUrlHtml(url);
 
   const cleanedHtml = cleanHtml(rawHtml);
-  console.log(cleanedHtml.length, "characters of cleaned HTML");
 
   // save to a tmp file
-  const path = `tmp/aaa.html`;
-  await fs.mkdir("tmp", { recursive: true });
-  await fs.writeFile(path, cleanedHtml);
-  console.log("Cleaned HTML saved to", path);
+  // const path = `tmp/aaa.html`;
+  // await fs.mkdir("tmp", { recursive: true });
+  // await fs.writeFile(path, cleanedHtml);
+  // console.log("Cleaned HTML saved to", path);
 
   const croppedHtml = cleanedHtml.slice(0, HTML_LIMIT);
 
@@ -36,8 +35,6 @@ Rules:
 
 HTML:\n${croppedHtml}`,
   );
-
-  console.log("AI response:", aiResponse);
 
   const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {

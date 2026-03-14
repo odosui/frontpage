@@ -1,9 +1,22 @@
 export default {
-  getLayout: () => api('get', '/layout'),
-  saveLayout: (layout: LayoutItem[]) => apiJson('put', '/layout', { layout }),
-  addWidget: (widget: LayoutItem) => apiJson('post', '/widget', { widget }),
-  deleteWidget: (id: string) => api('delete', `/widget/${id}`),
-  refreshWidget: (id: string) => api('post', `/widget/${id}/refresh`),
+  // Dashboard management
+  listDashboards: () => api('get', '/dashboards'),
+  createDashboard: (name: string) => apiJson('post', '/dashboards', { name }),
+  deleteDashboard: (id: string) => api('delete', `/dashboards/${id}`),
+  renameDashboard: (id: string, name: string) =>
+    apiJson('patch', `/dashboards/${id}`, { name }),
+
+  // Layout operations scoped to a dashboard
+  getLayout: (dashboardId: string) =>
+    api('get', `/dashboards/${dashboardId}/layout`),
+  saveLayout: (dashboardId: string, layout: LayoutItem[]) =>
+    apiJson('put', `/dashboards/${dashboardId}/layout`, { layout }),
+  addWidget: (dashboardId: string, widget: LayoutItem) =>
+    apiJson('post', `/dashboards/${dashboardId}/widget`, { widget }),
+  deleteWidget: (dashboardId: string, id: string) =>
+    api('delete', `/dashboards/${dashboardId}/widget/${id}`),
+  refreshWidget: (dashboardId: string, id: string) =>
+    api('post', `/dashboards/${dashboardId}/widget/${id}/refresh`),
 }
 
 export type Article = {
@@ -69,45 +82,3 @@ function toQuery(data: { [k: string]: string | number }) {
       .join('&')
   )
 }
-
-// function toFormData(data: { [k: string]: string | Blob }) {
-//   const formData = new FormData()
-//   for (const name in data) {
-//     const val = data[name]
-//     if (val) {
-//       formData.append(name, val)
-//     }
-//   }
-//   return formData
-// }
-
-// async function multipart<T>(
-//   url: string,
-//   data?: { [key: string]: string | Blob },
-//   method: 'POST' | 'PATCH' = 'POST',
-// ): Promise<T | { error: string }> {
-//   const params: FetchParams = {
-//     method,
-//     credentials: 'include',
-//   }
-
-//   if (method === 'POST' || method === 'PATCH' || method === 'PUT') {
-//     params.body = toFormData(data || {})
-//   }
-
-//   // @ts-ignore
-//   const base = window.API_SERVER_URL || ''
-//   const response = await fetch(`${base}/api${url}`, params)
-
-//   if (response.status === 400) {
-//     const e = await response.json()
-//     return { error: e.error }
-//   }
-
-//   if (response.status > 299) {
-//     throw new Error(response.statusText)
-//   }
-
-//   const res: T = (await response.json()) as T
-//   return res
-// }
