@@ -14,17 +14,16 @@
   "dependencies": {
     "@primer/octicons-react": "^19.15.1",
     "date-fns": "^4.1.0",
-    "mermaid": "^11.12.0",
     "motion": "^12.36.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^2.2.2",
-    "slim-react-router": "^0.5.5"
+    "slim-react-router": "^0.6.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^6.0.1",
     "oxlint": "^1.32.0",
     "prettier": "^3.4.2",
     "sass": "^1.94.2",
