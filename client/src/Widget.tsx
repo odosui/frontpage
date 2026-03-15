@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { type LayoutItem as ApiLayoutItem, type Article } from './api'
+import { type LayoutItem as ApiLayoutItem } from './api'
 import KebabIcon from './icons/KebabIcon'
 import RefreshIcon from './icons/RefreshIcon'
 import TrashIcon from './icons/TrashIcon'
