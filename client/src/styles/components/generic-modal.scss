@@ -1,0 +1,42 @@
+.generic-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.5);
+
+  .generic-modal {
+    position: relative;
+    background-color: var(--color-note-area-bg);
+    padding: $unit4;
+    border-radius: $unit1;
+    z-index: 11;
+    box-shadow:
+      0px 5px 5px -3px rgb(0 0 0 / 20%),
+      0px 8px 10px 1px rgb(0 0 0 / 14%),
+      0px 3px 14px 2px rgb(0 0 0 / 12%);
+
+    .generic-modal-content {
+      max-width: $unit14;
+      width: 100%;
+    }
+  }
+}
+
+.modalClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.ReactModal__Overlay {
+  background-color: transparent !important;
+}
