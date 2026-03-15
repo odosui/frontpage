@@ -8,9 +8,20 @@
 
 AI-powered website aggregator.
 
+Frontpage uses LLMs to scrape front pages, extract articles, and display them in a customizable dashboard. Add any website you want to follow, organize sources into columns, and get a single view of what's new across the web.
+
 <p align="center">
   <img src="media/screen.png" alt="screenshot" width="800" />
 </p>
+
+## Features
+
+- Customizable widgets
+- Multiple dashboards
+- Data stored on your machine as json files
+- OpenRouter support (more providers coming soon)
+- Quick start with docker-compose
+- Open source and self-hosted
 
 ## Motivation
 
@@ -27,7 +38,7 @@ docker run -d \
   hiquest/frontpage:latest
 ```
 
-Or with docker compose — edit `docker-compose.yml` to set your API keys, then:
+Or with docker compose — edit `docker-compose.yml`, to set `OPENROUTER_API_KEY` then:
 
 ```bash
 docker compose up -d
