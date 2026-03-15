@@ -68,15 +68,18 @@ const Dashboard: React.FC = () => {
       setLayout((prev) => {
         const mapped: ApiLayoutItem[] = newLayout.map((item: LayoutItem) => {
           const existing = prev.find((p) => p.i === item.i)
-          return {
+
+          const t: ApiLayoutItem = {
             i: item.i,
             x: item.x,
             y: item.y,
             w: item.w,
             h: item.h,
-            url: existing?.url,
+            url: existing?.url ?? '',
             items: existing?.items,
           }
+
+          return t
         })
         const posChanged = mapped.some((m) => {
           const p = prev.find((o) => o.i === m.i)
