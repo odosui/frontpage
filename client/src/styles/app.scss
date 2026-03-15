@@ -1,10 +1,10 @@
-@import './reset';
-@import './vars';
-@import './breakpoints';
-@import './components/theme-toggle';
-@import './components/generic-modal';
-@import './app/sidebar';
-@import './app/dashboard';
+@use './reset';
+@use './vars' as *;
+@use './breakpoints';
+@use './components/theme-toggle';
+@use './components/generic-modal';
+@use './app/sidebar';
+@use './app/dashboard';
 
 .app-shell {
   display: flex;
