@@ -8,6 +8,7 @@ interface WidgetProps {
   item: ApiLayoutItem
   isMenuOpen: boolean
   isRefreshing: boolean
+  error?: string
   onMenuToggle: () => void
   onRefresh: () => void
   onDelete: () => void
@@ -17,6 +18,7 @@ const Widget: React.FC<WidgetProps> = ({
   item,
   isMenuOpen,
   isRefreshing,
+  error,
   onMenuToggle,
   onRefresh,
   onDelete,
@@ -61,6 +63,11 @@ const Widget: React.FC<WidgetProps> = ({
         </div>
       </div>
       <div className="widget-body">
+        {error && (
+          <div className="widget-error">
+            <span className="widget-error-text">{error}</span>
+          </div>
+        )}
         {item.items && item.items.length > 0 ? (
           <ul className="article-list">
             {item.items.map((article) => (

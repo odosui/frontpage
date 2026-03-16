@@ -70,7 +70,14 @@ async function api(method: string, url: string, data?: Record<string, any>) {
 
   // @ts-ignore
   const base = window.API_SERVER_URL || ''
-  return fetch(`${base}/api${url}`, attrs).then((x) => x.json())
+  return fetch(`${base}/api${url}`, attrs).then((x) => {
+    if (!x.ok) {
+      return x.json().then((body: { error?: string }) => {
+        throw new Error(body.error || `Request failed (${x.status})`)
+      })
+    }
+    return x.json()
+  })
 }
 
 function toQuery(data: { [k: string]: string | number }) {

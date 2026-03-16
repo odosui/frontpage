@@ -37,6 +37,7 @@ const Dashboard: React.FC = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set())
+  const [errors, setErrors] = useState<Map<string, string>>(new Map())
   const { width, containerRef, mounted } = useContainerWidth()
 
   const saveLayout = useRef(
@@ -110,18 +111,30 @@ const Dashboard: React.FC = () => {
   const refreshWidget = useCallback(
     (id: string) => {
       setRefreshing((prev) => new Set(prev).add(id))
-      api.refreshWidget(dashboardId, id).then((data: { items: Article[] }) => {
-        setLayout((prev) =>
-          prev.map((item) =>
-            item.i === id ? { ...item, items: data.items } : item,
-          ),
-        )
-        setRefreshing((prev) => {
-          const next = new Set(prev)
-          next.delete(id)
-          return next
-        })
+      setErrors((prev) => {
+        const next = new Map(prev)
+        next.delete(id)
+        return next
       })
+      api
+        .refreshWidget(dashboardId, id)
+        .then((data: { items: Article[] }) => {
+          setLayout((prev) =>
+            prev.map((item) =>
+              item.i === id ? { ...item, items: data.items } : item,
+            ),
+          )
+        })
+        .catch((err: Error) => {
+          setErrors((prev) => new Map(prev).set(id, err.message))
+        })
+        .finally(() => {
+          setRefreshing((prev) => {
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+          })
+        })
     },
     [dashboardId],
   )
@@ -246,6 +259,7 @@ const Dashboard: React.FC = () => {
                 item={item}
                 isMenuOpen={openMenu === item.i}
                 isRefreshing={refreshing.has(item.i)}
+                error={errors.get(item.i)}
                 onMenuToggle={() =>
                   setOpenMenu(openMenu === item.i ? null : item.i)
                 }

@@ -459,6 +459,20 @@
   overflow-y: auto;
 }
 
+.widget-error {
+  margin: $unit2 $unit3;
+  padding: $unit2;
+  background-color: rgba($red, 0.08);
+  border: 1px solid rgba($red, 0.2);
+  border-radius: $unit1;
+}
+
+.widget-error-text {
+  font-size: $text0;
+  color: $red;
+  line-height: 1.4;
+}
+
 .widget-placeholder {
   color: var(--lighter);
   font-size: $text1;
