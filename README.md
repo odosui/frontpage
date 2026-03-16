@@ -46,10 +46,16 @@ docker compose up -d
 
 The app will be available at `http://localhost:3043`. Dashboard configs are stored in `~/.frontpage`.
 
-## What model to use?
+## FAQ
 
-We are using the [OpenRouter](https://openrouter.ai/), so `OPENROUTER_API_KEY` is required.
+### Why not just use RSS?
 
-I find the default model, `google/gemini-3-flash-preview` ($0.50 input, $3 output) to work pretty stable. But there are cheaper options, I'd recommend looking at what people are using in the [ranking page](https://openrouter.ai/rankings).
+Many websites have stopped providing RSS feeds, because, khmm, ads. Other times, RSS feeds are available but not frequently updated.
 
-Local models are not yet supported, but we'll get there.
+### What model should I use?
+
+I didn't experiment much, but I found that the default model, `google/gemini-3-flash-preview`, works pretty well. It's stable and cheap enough. But there are other options, I'd recommend looking at what people are using in the [ranking page](https://openrouter.ai/rankings).
+
+### So is this another service wrapped around a prompt?
+
+Yes. You can read the prompt [here](server/src/components/websites/prompt.ts).
