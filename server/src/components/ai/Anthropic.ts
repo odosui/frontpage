@@ -25,10 +25,19 @@ export async function sendMessage(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Anthropic API error: ${response.status} - ${error}`);
+    const body = await response.json().catch(() => null);
+    const detail = body?.error?.message || JSON.stringify(body) || "";
+    throw new Error(
+      `Anthropic API error (${response.status}): ${detail}`.trim(),
+    );
   }
 
   const json = await response.json();
-  return json.content[0].text;
+  const content = json.content?.[0]?.text;
+  if (!content) {
+    throw new Error(
+      `Anthropic returned empty response${json.stop_reason ? ` (stop_reason: ${json.stop_reason})` : ""}`,
+    );
+  }
+  return content;
 }

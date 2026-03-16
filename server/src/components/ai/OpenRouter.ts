@@ -22,10 +22,24 @@ export async function sendMessage(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
+    const body = await response.json().catch(() => null);
+    const detail =
+      body?.error?.message || body?.error || JSON.stringify(body) || "";
+    throw new Error(
+      `OpenRouter API error (${response.status}): ${detail}`.trim(),
+    );
   }
 
   const json = await response.json();
-  return json.choices[0].message.content;
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) {
+    const reason = json.choices?.[0]?.finish_reason;
+    const model = json.model;
+    const prompt = json.usage?.prompt_tokens;
+    const completion = json.usage?.completion_tokens;
+    throw new Error(
+      `OpenRouter empty response from ${model} (finish_reason: ${reason}, tokens: ${prompt}→${completion})`,
+    );
+  }
+  return content;
 }

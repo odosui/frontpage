@@ -337,6 +337,30 @@
   gap: $unit1;
 }
 
+.widget-external-link {
+  opacity: 0;
+  padding: $unit0;
+  border-radius: $unit1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lighter);
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  .widget:hover & {
+    opacity: 0.4;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+}
+
 .widget-refresh-btn {
   opacity: 0;
   background: none;

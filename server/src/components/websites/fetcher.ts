@@ -1,10 +1,10 @@
 import { Article } from "../../api/types";
 import { sendMessage } from "../ai/OpenRouter";
+import { extractArticlesPrompt } from "./prompt";
 
 // import fs from "fs/promises";
 
-const MODEL =
-  process.env.FRONTPAGE_MODEL || "google/gemini-3-flash-preview";
+const MODEL = process.env.FRONTPAGE_MODEL || "google/gemini-3-flash-preview";
 
 const HTML_LIMIT = 200_000;
 
@@ -23,34 +23,27 @@ export async function fetchLatestArticles(url: string) {
 
   const baseUrl = new URL(url);
 
-  const aiResponse = await sendMessage(
+  // extract the real hrefs, to match against the AI response and filter out hallucinated links
+  const realHrefs = toAbsoluteUrl(extractHrefs(cleanedHtml), baseUrl.origin);
+  // console.log("Extracted links:", hrefs);
+
+  const aiResp = await sendMessage(
     MODEL,
-    `Extract up to 20 articles from this webpage HTML. Return ONLY a JSON array of objects with fields: title (string), url (string), image (string, empty if none).
-
-Rules:
-- Only include actual articles/posts with a real, specific article URL found in the HTML (in an <a> href). Do NOT use the homepage or base URL as a fallback — if you cannot find a specific article URL, skip that entry entirely.
-- Not navigation links or ads.
-- Return newest first.
-- Convert relative paths to absolute URLs using the base: "${baseUrl.origin}".
-
-HTML:\n${croppedHtml}`,
+    extractArticlesPrompt(baseUrl.origin, croppedHtml),
   );
 
-  const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+  const jsonMatch = aiResp.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {
     throw new Error("failed to parse AI response");
   }
 
   const articles: Article[] = JSON.parse(jsonMatch[0]);
 
-  return articles.filter((a) => {
-    try {
-      const parsed = new URL(a.url);
-      return parsed.pathname !== "/" || parsed.search !== "";
-    } catch {
-      return false;
-    }
-  });
+  // exclude hallucinated links
+  const filtered = filterByRealLinks(articles, realHrefs);
+
+  // make sure the order matches the order of links on the page
+  return fixOrder(filtered, realHrefs);
 }
 
 async function fetchUrlHtml(url: string) {
@@ -88,5 +81,69 @@ function cleanHtml(html: string) {
       // Remove empty tags and whitespace
       .replace(/<([a-z][a-z0-9]*)>\s*<\/\1>/gi, "")
       .replace(/\s{2,}/g, " ")
+  );
+}
+
+function filterByRealLinks(articles: Article[], hrefs: string[]): Article[] {
+  const realLinks = new Set(hrefs);
+  let hallucinated = 0;
+
+  const filtered = articles.filter((a) => {
+    try {
+      const parsed = new URL(a.url);
+      if (parsed.pathname === "/" && parsed.search === "") return false;
+    } catch {
+      return false;
+    }
+
+    if (!realLinks.has(a.url)) {
+      console.log(`[refresh] filtered out AI-hallucinated link: ${a.url}`);
+      hallucinated++;
+      return false;
+    }
+
+    return true;
+  });
+
+  if (hallucinated > 0) {
+    console.log(
+      `[refresh] ${hallucinated} hallucinated link(s) out of ${articles.length} total`,
+    );
+  }
+
+  return filtered;
+}
+
+function extractHrefs(html: string): string[] {
+  const links: string[] = [];
+  const re = /<a\s+[^>]*href="([^"]*)"[^>]*>/gi;
+  let match;
+  while ((match = re.exec(html)) !== null) {
+    const m = match?.[1]?.trim();
+    if (m) {
+      links.push(m);
+    }
+  }
+  // Return unique links
+  return Array.from(new Set(links));
+}
+
+function toAbsoluteUrl(hrefs: string[], baseUrl: string) {
+  return hrefs
+    .map((href) => {
+      try {
+        return new URL(href, baseUrl).href;
+      } catch {
+        return null;
+      }
+    })
+    .filter((url): url is string => !!url);
+}
+
+function fixOrder(articles: Article[], hrefs: string[]): Article[] {
+  const hrefIndex = new Map(hrefs.map((href, i) => [href, i]));
+  return [...articles].sort(
+    (a, b) =>
+      (hrefIndex.get(a.url) ?? Infinity) - (hrefIndex.get(b.url) ?? Infinity),
   );
 }

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { type LayoutItem as ApiLayoutItem } from './api'
+import ExternalLinkIcon from './icons/ExternalLinkIcon'
 import KebabIcon from './icons/KebabIcon'
 import RefreshIcon from './icons/RefreshIcon'
 import TrashIcon from './icons/TrashIcon'
@@ -28,6 +29,15 @@ const Widget: React.FC<WidgetProps> = ({
       <div className="widget-header">
         <div className="widget-title">
           {item.i}
+          <a
+            className="widget-external-link"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLinkIcon />
+          </a>
           <button
             className={`widget-refresh-btn${isRefreshing ? ' is-refreshing' : ''}`}
             disabled={isRefreshing}
