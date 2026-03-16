@@ -106,8 +106,13 @@ export const createApi = () => {
         );
       }
 
+      const seenUrls = new Set<string>();
       const newArticles = freshArticles
-        .filter((a) => !existingUrls.has(a.url))
+        .filter((a) => {
+          if (existingUrls.has(a.url) || seenUrls.has(a.url)) return false;
+          seenUrls.add(a.url);
+          return true;
+        })
         .map((a) => ({ ...a, new: true }));
 
       const oldItems = (widget.items || []).map((a) => ({ ...a, new: false }));
