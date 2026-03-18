@@ -1,10 +1,39 @@
 import { Article } from "../../api/types";
-import { sendMessage } from "../ai/OpenRouter";
+import { sendMessage as sendOpenRouter } from "../ai/OpenRouter";
+import { sendMessage as sendOpenAI } from "../ai/OpenAI";
+import { sendMessage as sendAnthropic } from "../ai/Anthropic";
 import { extractArticlesPrompt } from "./prompt";
 
 // import fs from "fs/promises";
 
-const MODEL = process.env.FRONTPAGE_MODEL || "google/gemini-3-flash-preview";
+const FRONTPAGE_MODEL =
+  process.env.FRONTPAGE_MODEL || "openai/gpt-5.4-nano";
+
+function parseModel(value: string): { provider: string; model: string } {
+  const slash = value.indexOf("/");
+  if (slash === -1) {
+    throw new Error(
+      `FRONTPAGE_MODEL must be prefixed with a provider, e.g. "openai/gpt-5.4-nano" or "openrouter/google/gemini-3-flash-preview"`,
+    );
+  }
+  const provider = value.slice(0, slash);
+  const model = value.slice(slash + 1);
+  return { provider, model };
+}
+
+function getSendMessage() {
+  const { provider, model } = parseModel(FRONTPAGE_MODEL);
+  switch (provider) {
+    case "openai":
+      return { send: sendOpenAI, model };
+    case "openrouter":
+      return { send: sendOpenRouter, model };
+    case "anthropic":
+      return { send: sendAnthropic, model };
+    default:
+      throw new Error(`Unknown provider "${provider}" in FRONTPAGE_MODEL`);
+  }
+}
 
 const HTML_LIMIT = 200_000;
 
@@ -27,8 +56,9 @@ export async function fetchLatestArticles(url: string) {
   const realHrefs = toAbsoluteUrl(extractHrefs(cleanedHtml), baseUrl.origin);
   // console.log("Extracted links:", hrefs);
 
-  const aiResp = await sendMessage(
-    MODEL,
+  const { send, model } = getSendMessage();
+  const aiResp = await send(
+    model,
     extractArticlesPrompt(baseUrl.origin, croppedHtml),
   );
 
