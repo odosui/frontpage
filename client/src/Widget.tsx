@@ -90,6 +90,7 @@ const Widget: React.FC<WidgetProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="article-link"
+                  title={article.title}
                 >
                   <span className="article-title">{article.title}</span>
                   {article.image && (
