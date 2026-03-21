@@ -8,6 +8,8 @@ import { Article, LayoutItem } from "./types";
 dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
+const FRONTPAGE_MODEL =
+  process.env.FRONTPAGE_MODEL || "openai/gpt-5.4-nano";
 
 export const createApi = () => {
   dbs.migrate();
@@ -87,7 +89,7 @@ export const createApi = () => {
 
       const existingUrls = new Set((widget.items || []).map((a) => a.url));
 
-      console.log(`[refresh] ${id}/${widgetId} fetching ${widget.url}`);
+      console.log(`[refresh] ${id}/${widgetId} fetching ${widget.url} (model: ${FRONTPAGE_MODEL})`);
       const start = Date.now();
 
       let freshArticles: Article[] = [];
