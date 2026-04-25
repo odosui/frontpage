@@ -8,11 +8,9 @@ services:
     environment:
       - NODE_ENV=production
       - FRONTPAGE_HOME=/data/frontpage
-      - FRONTPAGE_MODEL=openai/gpt-5.4-nano
-      # - FRONTPAGE_MODEL=openrouter/google/gemini-3-flash-preview
-      # - FRONTPAGE_MODEL=anthropic/claude-haiku-4.5
+      - FRONTPAGE_MODEL=openrouter/google/gemini-2.5-flash
       # Set the API key for your chosen provider:
-      - OPENAI_API_KEY=yourkey
-      # - OPENROUTER_API_KEY=yourkey
+      - OPENROUTER_API_KEY=yourkey
+      # - OPENAI_API_KEY=yourkey
       # - ANTHROPIC_API_KEY=yourkey
     restart: unless-stopped

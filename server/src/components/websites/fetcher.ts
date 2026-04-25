@@ -7,7 +7,7 @@ import { extractArticlesPrompt } from "./prompt";
 // import fs from "fs/promises";
 
 const FRONTPAGE_MODEL =
-  process.env.FRONTPAGE_MODEL || "openai/gpt-5.4-nano";
+  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-2.5-flash";
 
 function parseModel(value: string): { provider: string; model: string } {
   const slash = value.indexOf("/");

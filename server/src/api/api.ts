@@ -9,7 +9,7 @@ dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
 const FRONTPAGE_MODEL =
-  process.env.FRONTPAGE_MODEL || "openai/gpt-5.4-nano";
+  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-2.5-flash";
 
 export const createApi = () => {
   dbs.migrate();
