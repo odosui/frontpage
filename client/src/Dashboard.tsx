@@ -195,6 +195,35 @@ const Dashboard: React.FC = () => {
     return () => document.removeEventListener('click', close)
   }, [openMenu])
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.altKey) return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        if (dashboards.length < 2) return
+        const idx = dashboards.indexOf(dashboardId)
+        if (idx === -1) return
+        const delta = e.key === 'ArrowLeft' ? -1 : 1
+        const next = (idx + delta + dashboards.length) % dashboards.length
+        e.preventDefault()
+        setDashboardId(dashboards[next]!)
+      } else if (e.code === 'KeyR') {
+        e.preventDefault()
+        refreshAll()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [dashboards, dashboardId, setDashboardId, refreshAll])
+
   // Calculate how many "pages" of BASE_COLS are needed based on widget positions
   const maxRight = layout.reduce(
     (max, item) => Math.max(max, item.x + item.w),

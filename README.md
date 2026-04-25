@@ -23,6 +23,11 @@ Frontpage uses LLMs to scrape front pages, extract articles, and display them in
 - Quick start with docker-compose
 - Open source and self-hosted
 
+## Keyboard shortcuts
+
+- `Alt` + `←` / `→` — switch to previous / next dashboard (wraps around)
+- `Alt` + `R` — refresh all widgets on the current dashboard
+
 ## Motivation
 
 Modern LLMs have become powerful enough and, more importantly, cheap enough to digest a website's front page and extract a list of articles — like an RSS feed, which many websites no longer provide. This project aggregates those results into a nice dashboard.
