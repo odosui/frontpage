@@ -1,7 +1,7 @@
 @use '../vars' as *;
 
 .dashboard {
-  padding: $unit0;
+  padding: $unit2;
   flex: 1;
   min-width: 0;
   background-color: var(--color-bg);
@@ -11,22 +11,22 @@
 
 .tool-panel {
   position: sticky;
-  top: 0;
+  top: $unit1;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $unit0;
-  margin: $unit0 $unit0 $unit1;
+  gap: $unit1;
+  margin: 0 0 $unit2;
   padding: $unit0 $unit1;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.7);
   border-radius: $unit1;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
 
   [data-theme='dark'] & {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(20, 22, 30, 0.7);
     border-color: rgba(255, 255, 255, 0.06);
   }
 }
@@ -37,7 +37,7 @@
   gap: $unit0;
   padding: $unit0 $unit1;
   border: none;
-  border-radius: $unit1;
+  border-radius: $unit0;
   font-size: $text0;
   font-weight: 500;
   cursor: pointer;
@@ -100,7 +100,7 @@
 .tool-panel-actions {
   display: flex;
   align-items: center;
-  gap: $unit0;
+  gap: $unit1;
 }
 
 // Dashboard switcher dropdown
@@ -114,10 +114,10 @@
   gap: $unit0;
   padding: $unit0 $unit1;
   border: none;
-  border-radius: $unit1;
+  border-radius: $unit0;
   background: transparent;
   color: var(--color-text);
-  font-size: $text0;
+  font-size: $text1;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -132,7 +132,7 @@
 }
 
 .dash-switcher-label {
-  max-width: 160px;
+  max-width: $unit10;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -140,16 +140,16 @@
 
 .dash-switcher-dropdown {
   position: absolute;
-  top: calc(100% + $unit0);
+  top: calc(100% + $unit1);
   left: 0;
   z-index: 200;
-  min-width: 200px;
+  min-width: $unit11;
   background-color: var(--color-note-area-bg);
   border-radius: $unit2;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 $unit1 $unit4 rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(0, 0, 0, 0.06);
-  padding: $unit0;
+  padding: $unit1;
 }
 
 .dash-switcher-item {
@@ -188,8 +188,8 @@
 
 .dash-switcher-item-actions {
   display: flex;
-  gap: 2px;
-  padding-right: $unit0;
+  gap: $unit0;
+  padding-right: $unit1;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -198,8 +198,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: $unit4;
+  height: $unit4;
   border: none;
   border-radius: $unit0;
   background: none;
@@ -230,14 +230,14 @@
 
 .dash-switcher-divider {
   height: 1px;
-  margin: $unit0;
+  margin: $unit1 $unit0;
   background: var(--borderColor);
 }
 
 .dash-switcher-new-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: $unit1;
   width: 100%;
   padding: $unit1 $unit2;
   border: none;
@@ -255,13 +255,13 @@
 
 .dash-switcher-create-form {
   display: flex;
-  gap: $unit0;
-  padding: $unit0;
+  gap: $unit1;
+  padding: $unit1;
 }
 
 .dash-switcher-create-input {
   flex: 1;
-  padding: 6px $unit1;
+  padding: $unit1 $unit2;
   border: 1px solid var(--borderColor);
   border-radius: $unit1;
   background: transparent;
@@ -275,7 +275,7 @@
 }
 
 .dash-switcher-create-submit {
-  padding: 6px $unit2;
+  padding: $unit1 $unit2;
   border: none;
   border-radius: $unit1;
   background: var(--color-accent);
@@ -304,11 +304,13 @@
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06),
     0 0 0 1px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 $unit1 $unit3 rgba(0, 0, 0, 0.08),
       0 0 0 1px rgba(0, 0, 0, 0.04);
   }
 }
@@ -317,7 +319,7 @@
   padding: $unit2 $unit3;
   font-size: $text0;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--lighter);
   cursor: grab;
@@ -325,6 +327,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid var(--borderColor);
 
   &:active {
     cursor: grabbing;
@@ -438,16 +441,16 @@
 
 .widget-menu {
   position: absolute;
-  top: calc(100% + $unit0);
+  top: calc(100% + $unit1);
   right: 0;
   z-index: 10;
-  min-width: 140px;
+  min-width: $unit10;
   background-color: var(--color-note-area-bg);
-  border-radius: $unit1;
+  border-radius: $unit2;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 $unit1 $unit4 rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(0, 0, 0, 0.06);
-  padding: $unit0;
+  padding: $unit1;
 }
 
 .widget-menu-item {
@@ -526,8 +529,8 @@
   display: flex;
   align-items: center;
   gap: $unit2;
-  padding: $unit1 $unit3;
-  height: $unit6;
+  padding: $unit2 $unit3;
+  min-height: $unit6;
   text-decoration: none;
   color: var(--color-text);
   transition: background-color 0.12s ease;
@@ -539,7 +542,7 @@
 
 .article-title {
   font-size: $text1;
-  line-height: 1.35;
+  line-height: 1.4;
   flex: 1;
   min-width: 0;
   display: -webkit-box;
@@ -551,14 +554,16 @@
 .article-image {
   width: $unit5;
   height: $unit5;
-  border-radius: $unit0;
+  border-radius: $unit1;
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .modal-title {
   font-size: $text4;
-  margin-bottom: $unit4;
+  font-weight: 600;
+  margin: 0 0 $unit4;
+  letter-spacing: -0.01em;
 }
 
 .add-widget-form {

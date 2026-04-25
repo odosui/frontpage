@@ -11,17 +11,19 @@
   justify-content: center;
   z-index: 10;
   background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 
   .generic-modal {
     position: relative;
     background-color: var(--color-note-area-bg);
-    padding: $unit4;
-    border-radius: $unit1;
+    padding: $unit5;
+    border-radius: $unit3;
     z-index: 11;
     box-shadow:
-      0px 5px 5px -3px rgb(0 0 0 / 20%),
-      0px 8px 10px 1px rgb(0 0 0 / 14%),
-      0px 3px 14px 2px rgb(0 0 0 / 12%);
+      0 $unit1 $unit1 -$unit0 rgb(0 0 0 / 20%),
+      0 $unit2 $unit3 0 rgb(0 0 0 / 14%),
+      0 $unit0 $unit4 $unit0 rgb(0 0 0 / 12%);
 
     .generic-modal-content {
       max-width: $unit14;
@@ -32,8 +34,8 @@
 
 .modalClose {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: $unit2;
+  right: $unit2;
   &:hover {
     color: var(--accent);
   }

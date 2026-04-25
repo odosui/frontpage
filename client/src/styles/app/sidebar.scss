@@ -4,19 +4,20 @@
   width: $unit6;
   min-width: $unit6;
   height: 100vh;
-  background-color: #111118;
+  background-color: var(--color-menu-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-right: 1px solid #1e1e2a;
+  padding: $unit2 0;
+  gap: $unit2;
+  border-right: 1px solid var(--color-menu-border);
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $unit0;
-  padding-top: $unit2;
+  gap: $unit1;
 }
 
 .sidebar-item {
@@ -26,32 +27,37 @@
   width: $unit5;
   height: $unit5;
   border-radius: $unit1;
-  color: #6b6b80;
+  color: var(--color-menu-text-secondary);
   text-decoration: none;
   transition:
     color 0.15s ease,
-    background-color 0.15s ease;
+    background-color 0.15s ease,
+    transform 0.1s ease;
 
   svg {
-    fill: #6b6b80;
+    fill: var(--color-menu-text-secondary);
     transition: fill 0.15s ease;
   }
 
   &:hover {
-    background-color: #1a1a28;
-    color: #a0a0b8;
+    background-color: var(--color-menu-bg-hover);
+    color: var(--color-menu-text);
 
     svg {
-      fill: #a0a0b8;
+      fill: var(--color-menu-text);
     }
   }
 
+  &:active {
+    transform: scale(0.94);
+  }
+
   &.active {
-    background-color: #1f1f30;
-    color: #e0e0f0;
+    background-color: var(--color-menu-highlight);
+    color: var(--color-menu-accent);
 
     svg {
-      fill: #e0e0f0;
+      fill: var(--color-menu-accent);
     }
   }
 }
