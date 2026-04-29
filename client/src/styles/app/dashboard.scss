@@ -529,8 +529,8 @@
   display: flex;
   align-items: center;
   gap: $unit2;
-  padding: $unit2 $unit3;
-  min-height: $unit6;
+  padding: $unit1 $unit2;
+  min-height: $unit5;
   text-decoration: none;
   color: var(--color-text);
   transition: background-color 0.12s ease;
@@ -542,7 +542,7 @@
 
 .article-title {
   font-size: $text1;
-  line-height: 1.4;
+  line-height: 1.35;
   flex: 1;
   min-width: 0;
   display: -webkit-box;
@@ -552,9 +552,9 @@
 }
 
 .article-image {
-  width: $unit5;
-  height: $unit5;
-  border-radius: $unit1;
+  width: $unit4;
+  height: $unit4;
+  border-radius: $unit0;
   object-fit: cover;
   flex-shrink: 0;
 }
