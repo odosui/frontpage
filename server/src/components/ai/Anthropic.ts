@@ -22,6 +22,7 @@ export async function sendMessage(
       max_tokens: 16384,
       messages: [{ role: "user", content: message }],
     }),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {

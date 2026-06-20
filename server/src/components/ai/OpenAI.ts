@@ -19,6 +19,7 @@ export async function sendMessage(
       model,
       messages: [{ role: "user", content: message }],
     }),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {

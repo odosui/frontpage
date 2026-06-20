@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { fetchLatestArticles } from "../components/websites/fetcher";
+import {
+  FRONTPAGE_MODEL,
+  fetchLatestArticles,
+} from "../components/websites/fetcher";
 import * as dbs from "./dashboards";
 import { error, ok } from "./helpers";
 import { Article, LayoutItem } from "./types";
@@ -8,55 +11,53 @@ import { Article, LayoutItem } from "./types";
 dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
-const FRONTPAGE_MODEL =
-  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-2.5-flash";
 
-export const createApi = () => {
-  dbs.migrate();
-  dbs.ensureConfigDir();
+export const createApi = async () => {
+  await dbs.migrate();
+  await dbs.ensureConfigDir();
 
   return {
     health: () => ok({ status: "ok" }),
 
-    listDashboards: () => {
-      return ok({ dashboards: dbs.listAll() });
+    listDashboards: async () => {
+      return ok({ dashboards: await dbs.listAll() });
     },
 
-    createDashboard: (body: { name: string }) => {
+    createDashboard: async (body: { name: string }) => {
       if (!body.name || typeof body.name !== "string") {
         return error(400, "name is required");
       }
       const id = dbs.create(body.name);
       if (!id) return error(400, "invalid name");
-      if (dbs.exists(id)) return error(409, "dashboard already exists");
-      dbs.writeDashboard(id, { layout: [] });
+      if (await dbs.exists(id)) return error(409, "dashboard already exists");
+      await dbs.writeDashboard(id, { layout: [] });
       return ok({ id });
     },
 
-    deleteDashboard: (id: string) => {
+    deleteDashboard: async (id: string) => {
       if (!id || dbs.isDefault(id)) {
         return error(400, "cannot delete default dashboard");
       }
-      if (!dbs.exists(id)) return error(404, "dashboard not found");
-      dbs.remove(id);
+      if (!(await dbs.exists(id))) return error(404, "dashboard not found");
+      await dbs.remove(id);
       return ok({ success: true });
     },
 
-    renameDashboard: (id: string, body: { name: string }) => {
+    renameDashboard: async (id: string, body: { name: string }) => {
       if (!id) return error(400, "dashboard id is required");
       if (!body.name || typeof body.name !== "string")
         return error(400, "name is required");
       const newId = dbs.create(body.name);
       if (!newId) return error(400, "invalid name");
-      if (!dbs.exists(id)) return error(404, "dashboard not found");
-      if (dbs.exists(newId)) return error(409, "name already taken");
-      dbs.rename(id, newId);
+      if (!(await dbs.exists(id))) return error(404, "dashboard not found");
+      if (await dbs.exists(newId)) return error(409, "name already taken");
+      await dbs.rename(id, newId);
       return ok({ id: newId });
     },
 
-    getLayout: (dashboardId: string) => {
+    getLayout: async (dashboardId: string) => {
       const id = dbs.resolveId(dashboardId);
-      const config = dbs.readDashboard(id);
+      const config = await dbs.readDashboard(id);
       const layout = config.layout.map((item) => ({
         ...item,
         items: (item.items || []).slice(0, MAX_ITEMS),
@@ -64,12 +65,12 @@ export const createApi = () => {
       return ok({ layout });
     },
 
-    saveLayout: (dashboardId: string, body: { layout: LayoutItem[] }) => {
+    saveLayout: async (dashboardId: string, body: { layout: LayoutItem[] }) => {
       const id = dbs.resolveId(dashboardId);
       if (!Array.isArray(body.layout)) {
         return error(400, "layout must be an array");
       }
-      dbs.updateLayout(id, body.layout);
+      await dbs.updateLayout(id, body.layout);
       return ok({ success: true });
     },
 
@@ -78,7 +79,7 @@ export const createApi = () => {
       if (!widgetId) {
         return error(400, "widget id is required");
       }
-      const config = dbs.readDashboard(id);
+      const config = await dbs.readDashboard(id);
       const widget = config.layout.find((item) => item.i === widgetId);
       if (!widget) {
         return error(404, "widget not found");
@@ -119,7 +120,7 @@ export const createApi = () => {
 
       const oldItems = (widget.items || []).map((a) => ({ ...a, new: false }));
       const allItems = [...newArticles, ...oldItems];
-      dbs.updateContent(id, widgetId, allItems);
+      await dbs.updateContent(id, widgetId, allItems);
 
       const elapsed = Date.now() - start;
       console.log(
@@ -129,32 +130,33 @@ export const createApi = () => {
       return ok({ items: allItems.slice(0, MAX_ITEMS) });
     },
 
-    addWidget: (dashboardId: string, body: { widget: LayoutItem }) => {
+    addWidget: async (dashboardId: string, body: { widget: LayoutItem }) => {
       const id = dbs.resolveId(dashboardId);
       if (!body.widget) {
         return error(400, "widget is required");
       }
-      const config = dbs.readDashboard(id);
-      config.layout.push(body.widget);
-      dbs.writeDashboard(id, config);
+      await dbs.mutate(id, (config) => {
+        config.layout.push(body.widget);
+      });
       return ok({ widget: body.widget });
     },
 
-    deleteWidget: (dashboardId: string, widgetId: string) => {
+    deleteWidget: async (dashboardId: string, widgetId: string) => {
       const id = dbs.resolveId(dashboardId);
       if (!widgetId) {
         return error(400, "widget id is required");
       }
-      const config = dbs.readDashboard(id);
-      const before = config.layout.length;
-      config.layout = config.layout.filter((item) => item.i !== widgetId);
-      if (config.layout.length === before) {
+      const removed = await dbs.mutate(id, (config) => {
+        const before = config.layout.length;
+        config.layout = config.layout.filter((item) => item.i !== widgetId);
+        return config.layout.length !== before;
+      });
+      if (!removed) {
         return error(404, "widget not found");
       }
-      dbs.writeDashboard(id, config);
       return ok({ success: true });
     },
   };
 };
 
-export type Api = ReturnType<typeof createApi>;
+export type Api = Awaited<ReturnType<typeof createApi>>;

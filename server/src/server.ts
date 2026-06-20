@@ -18,7 +18,7 @@ export async function startServer() {
   }
 
   // init out app
-  const routes = createRoutes(createApi());
+  const routes = createRoutes(await createApi());
 
   for (const m of routes) {
     const method = m.method.toLowerCase() as keyof Express;

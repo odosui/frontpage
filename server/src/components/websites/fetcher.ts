@@ -6,7 +6,7 @@ import { extractArticlesPrompt } from "./prompt";
 
 // import fs from "fs/promises";
 
-const FRONTPAGE_MODEL =
+export const FRONTPAGE_MODEL =
   process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-2.5-flash";
 
 function parseModel(value: string): { provider: string; model: string } {
@@ -81,9 +81,12 @@ async function fetchUrlHtml(url: string) {
     headers: {
       "User-Agent": "Frontpage-Bot/1.0 (+https://github.com/odosui/frontpage)",
     },
+    signal: AbortSignal.timeout(15_000),
   });
-  const html = await res.text();
-  return html;
+  if (!res.ok) {
+    throw new Error(`fetch ${url} returned ${res.status} ${res.statusText}`);
+  }
+  return res.text();
 }
 
 function cleanHtml(html: string) {
