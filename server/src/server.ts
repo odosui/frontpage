@@ -22,7 +22,6 @@ export async function startServer() {
 
   for (const m of routes) {
     const method = m.method.toLowerCase() as keyof Express;
-    // const middlewares = m.multipart ? [upload.single("image")] : [];
 
     app[method](m.path, async (req: Request, res: Response) => {
       const { status, json } = await m.handler({
@@ -46,12 +45,7 @@ export async function startServer() {
   }
 
   // start the server
-  app.listen(PORT, (err) => {
-    if (err) {
-      console.error("Failed to start server:", err);
-      return;
-    }
-
+  app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT} (${NODE_ENV} mode)`);
   });
 }

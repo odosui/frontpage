@@ -4,8 +4,6 @@ import { sendMessage as sendOpenAI } from "../ai/OpenAI";
 import { sendMessage as sendAnthropic } from "../ai/Anthropic";
 import { extractArticlesPrompt } from "./prompt";
 
-// import fs from "fs/promises";
-
 export const FRONTPAGE_MODEL =
   process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-2.5-flash";
 
@@ -41,12 +39,6 @@ export async function fetchLatestArticles(url: string) {
   const rawHtml = await fetchUrlHtml(url);
 
   const cleanedHtml = cleanHtml(rawHtml);
-
-  // save to a tmp file
-  // const path = `tmp/aaa.html`;
-  // await fs.mkdir("tmp", { recursive: true });
-  // await fs.writeFile(path, cleanedHtml);
-  // console.log("Cleaned HTML saved to", path);
 
   const croppedHtml = cleanedHtml.slice(0, HTML_LIMIT);
 
