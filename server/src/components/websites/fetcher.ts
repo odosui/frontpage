@@ -5,7 +5,7 @@ import { sendMessage as sendAnthropic } from "../ai/Anthropic";
 import { extractArticlesPrompt } from "./prompt";
 
 export const FRONTPAGE_MODEL =
-  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-2.5-flash";
+  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-3-flash-preview";
 
 function parseModel(value: string): { provider: string; model: string } {
   const slash = value.indexOf("/");

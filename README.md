@@ -38,8 +38,8 @@ Modern LLMs have become powerful enough and, more importantly, cheap enough to d
 docker run -d \
   -p 3043:3043 \
   -v ~/.frontpage:/data/frontpage \
-  -e OPENAI_API_KEY=your-key \
-  -e FRONTPAGE_MODEL=openai/gpt-5.4-nano \
+  -e OPENROUTER_API_KEY=your-key \
+  -e FRONTPAGE_MODEL=openrouter/google/gemini-3-flash-preview \
   hiquest/frontpage:latest
 ```
 
@@ -61,11 +61,13 @@ Many websites have stopped providing RSS feeds, because, khmm, ads. Other times,
 
 The `FRONTPAGE_MODEL` value uses the format `provider/model`. Supported providers are `openai`, `openrouter`, and `anthropic`. For example:
 
-- `openai/gpt-5.4-nano`
 - `openrouter/google/gemini-3-flash-preview`
+- `openai/gpt-5.4-nano`
 - `anthropic/claude-sonnet-4-6`
 
-The default is `openai/gpt-5.4-nano`. It seems to be good enough, and [cheap enough](https://developers.openai.com/api/docs/models/gpt-5-nano). Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
+The default is `openrouter/google/gemini-3-flash-preview`. Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
+
+Note: pick a *non-reasoning* model. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they exceed the 60s request timeout. Very small models (Gemini 2.5 Flash Lite) tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 
 ### So is this another service wrapped around a prompt?
 

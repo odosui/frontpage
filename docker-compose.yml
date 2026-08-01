@@ -8,7 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - FRONTPAGE_HOME=/data/frontpage
-      - FRONTPAGE_MODEL=openrouter/google/gemini-2.5-flash
+      - FRONTPAGE_MODEL=openrouter/google/gemini-3-flash-preview
       # Set the API key for your chosen provider:
       - OPENROUTER_API_KEY=yourkey
       # - OPENAI_API_KEY=yourkey
