@@ -50,9 +50,16 @@ export async function startServer() {
   });
 }
 
+const LOCALHOST_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
 function applyDevCors(app: Express) {
-  app.use((_, res, next) => {
-    res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+  app.use((req, res, next) => {
+    // vite picks a free port, so accept any localhost origin
+    const origin = req.headers.origin;
+    if (origin && LOCALHOST_ORIGIN.test(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+    }
     res.header("Access-Control-Allow-Headers", "Content-Type");
     res.header(
       "Access-Control-Allow-Methods",

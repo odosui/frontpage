@@ -94,27 +94,38 @@
   // git
   --color-git-changes: #f0883e;
   --color-git-clean: #2ea043;
+
+  // widget elevation
+  --widget-bg: #fff;
+  --widget-header-bg: transparent;
+  --widget-header-text: #999;
+  --color-article-new-bg: rgba(255, 215, 0, 0.08);
+  --color-article-new-marker: rgba(212, 160, 23, 0.5);
+  --widget-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --widget-shadow-hover:
+    0 8px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme='dark'] {
   // commons
-  --color-text: #e8e8ed;
+  --color-text: #e6e9f2;
   --color-accent: #8b93ff;
   --color-scroll-thumb: rgba(255, 255, 255, 0.2);
-  --color-bg: #13141a;
-  --color-bg-hover: #1c1d26;
+  --color-bg: #0d0f15;
+  --color-bg-hover: #262b3a;
   --accent: #8b93ff;
   --accentHover: #a6acff;
   --accentText: #0d0e12;
-  --lighter: #8a8f98;
+  --lighter: #868ea6;
   --subtle: #3a3d4a;
   --danger: #ff6b6b;
   --dangerHover: #ff8787;
-  --borderColor: #2a2d3a;
+  --borderColor: #272c3a;
   --bgGray: #1a1b24;
 
   // left sidebar / menu
-  --color-menu-bg: #0d0e12;
+  --color-menu-bg: #090b10;
   --color-menu-bg-hover: #1f2333;
   --color-menu-bg-hover-intense: #2a2f45;
   --color-menu-border: #2a2d3a;
@@ -133,7 +144,7 @@
   --color-notes-input-bg: #1a1b24;
 
   // note area
-  --color-note-area-bg: #16171f;
+  --color-note-area-bg: #181c27;
   --color-note-area-accent: #8b93ff;
   --color-note-area-text-secondary: #6e7280;
   --color-note-area-text-secondary-darker: #8a8f98;
@@ -174,6 +185,17 @@
   // git
   --color-git-changes: #f0883e;
   --color-git-clean: #3fb950;
+
+  // widget elevation — dark needs a light ring, black shadows are invisible
+  --widget-bg: #181c27;
+  --widget-header-bg: rgba(255, 255, 255, 0.035);
+  --widget-header-text: #99a2c0;
+  --color-article-new-bg: rgba(240, 185, 80, 0.07);
+  --color-article-new-marker: rgba(240, 185, 80, 0.55);
+  --widget-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.055);
+  --widget-shadow-hover:
+    0 8px 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.11);
 }
 
 * {
