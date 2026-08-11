@@ -5,8 +5,8 @@
   flex: 1;
   min-width: 0;
   background-color: var(--color-bg);
-  min-height: 100vh;
-  overflow-x: auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .tool-panel {

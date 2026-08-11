@@ -8,6 +8,7 @@ import {
 } from 'react-grid-layout'
 import { useParams, useNavigate } from 'slim-react-router'
 import api, { type LayoutItem as ApiLayoutItem, type Article } from './api'
+import { useJobs } from './contexts/JobsContext'
 import debounce from './utils/debounce'
 import Widget from './Widget'
 import AddWidgetModal from './AddWidgetModal'
@@ -36,9 +37,21 @@ const Dashboard: React.FC = () => {
   const [loaded, setLoaded] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [refreshing, setRefreshing] = useState<Set<string>>(new Set())
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
   const { width, containerRef, mounted } = useContainerWidth()
+  const { jobs, refresh: refreshJobs, onJobFinished } = useJobs()
+
+  // a widget is "refreshing" while it has a job in flight
+  const refreshing = new Set(
+    jobs
+      .filter(
+        (job) =>
+          (job.status === 'queued' || job.status === 'running') &&
+          job.payload.dashboardId === dashboardId &&
+          job.payload.widgetId,
+      )
+      .map((job) => job.payload.widgetId as string),
+  )
 
   const saveLayout = useRef(
     debounce((id: string, newLayout: ApiLayoutItem[]) => {
@@ -108,9 +121,9 @@ const Dashboard: React.FC = () => {
     [dashboardId],
   )
 
+  /** Queues the work; the worker does it and the jobs poll reports back. */
   const refreshWidget = useCallback(
     (id: string) => {
-      setRefreshing((prev) => new Set(prev).add(id))
       setErrors((prev) => {
         const next = new Map(prev)
         next.delete(id)
@@ -118,26 +131,45 @@ const Dashboard: React.FC = () => {
       })
       api
         .refreshWidget(dashboardId, id)
-        .then((data: { items: Article[] }) => {
-          setLayout((prev) =>
-            prev.map((item) =>
-              item.i === id ? { ...item, items: data.items } : item,
-            ),
-          )
-        })
+        .then(() => refreshJobs())
         .catch((err: Error) => {
           setErrors((prev) => new Map(prev).set(id, err.message))
         })
-        .finally(() => {
-          setRefreshing((prev) => {
-            const next = new Set(prev)
-            next.delete(id)
+    },
+    [dashboardId, refreshJobs],
+  )
+
+  // pull in fresh articles as each widget's analysis lands
+  useEffect(() => {
+    return onJobFinished((job) => {
+      const { dashboardId: jobDashboard, widgetId } = job.payload
+      if (jobDashboard !== dashboardId || !widgetId) return
+
+      if (job.status === 'failed') {
+        setErrors((prev) =>
+          new Map(prev).set(widgetId, job.error || `${job.type} failed`),
+        )
+        return
+      }
+
+      if (job.type !== 'analyze_page') return
+      api
+        .getWidgetItems(dashboardId, widgetId)
+        .then((data: { items: Article[] }) => {
+          setLayout((prev) =>
+            prev.map((item) =>
+              item.i === widgetId ? { ...item, items: data.items } : item,
+            ),
+          )
+          setErrors((prev) => {
+            const next = new Map(prev)
+            next.delete(widgetId)
             return next
           })
         })
-    },
-    [dashboardId],
-  )
+        .catch(() => undefined)
+    })
+  }, [dashboardId, onJobFinished])
 
   const refreshAll = useCallback(() => {
     layout.forEach((item) => refreshWidget(item.i))

@@ -1,0 +1,226 @@
+@use '../vars' as *;
+
+// Panel dropping down from under the top bar, over everything else
+
+.jobs-backdrop {
+  position: fixed;
+  top: $unit6;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 250;
+}
+
+// a tall, narrow column hanging off the jobs button
+.jobs-panel {
+  position: fixed;
+  top: $unit6;
+  right: $unit2;
+  bottom: $unit2;
+  z-index: 260;
+  display: flex;
+  flex-direction: column;
+  width: $unit115;
+  max-width: calc(100vw - #{$unit4});
+  background-color: var(--color-jobs-bg);
+  border: 1px solid var(--borderColor);
+  border-top: none;
+  border-radius: 0 0 $unit1 $unit1;
+  box-shadow: 0 $unit1 $unit4 rgba(0, 0, 0, 0.18);
+  animation: jobs-drop 0.16s ease-out;
+}
+
+@keyframes jobs-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-$unit1);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.jobs-panel-header {
+  display: flex;
+  align-items: center;
+  gap: $unit2;
+  padding: $unit1 $unit2;
+}
+
+.jobs-panel-title {
+  font-size: $text2;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.jobs-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit4;
+  height: $unit4;
+  margin-left: auto;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  color: var(--lighter);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+}
+
+.jobs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $unit0;
+  padding: 0 $unit2 $unit1;
+  border-bottom: 1px solid var(--borderColor);
+}
+
+.jobs-filter {
+  display: flex;
+  align-items: center;
+  gap: $unit0;
+  padding: $unit0 * 0.5 $unit1;
+  border: 1px solid transparent;
+  border-radius: $unit0;
+  background: none;
+  color: var(--lighter);
+  font-size: $text0;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  &.is-active {
+    border-color: var(--borderColor);
+    background-color: var(--color-jobs-item-bg);
+    color: var(--color-text);
+  }
+}
+
+.jobs-filter-count {
+  color: var(--lighter);
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.jobs-empty {
+  padding: $unit4 $unit3;
+  color: var(--lighter);
+  font-size: $text1;
+  text-align: center;
+}
+
+.jobs-list {
+  list-style: none;
+  margin: 0;
+  padding: $unit1 0;
+}
+
+.job-row {
+  padding: $unit0 $unit2;
+  font-size: $text1;
+
+  &:hover {
+    background-color: var(--color-jobs-item-bg);
+  }
+}
+
+.job-row-main {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+}
+
+.job-dot {
+  flex-shrink: 0;
+  align-self: center;
+  width: $unit1;
+  height: $unit1;
+  border-radius: 50%;
+  background-color: var(--lighter);
+}
+
+.job-dot--queued {
+  background-color: var(--color-job-queued);
+}
+
+.job-dot--running {
+  background-color: var(--color-job-running);
+  animation: job-pulse 1.2s ease-in-out infinite;
+}
+
+.job-dot--succeeded {
+  background-color: var(--color-job-succeeded);
+}
+
+.job-dot--failed {
+  background-color: var(--color-job-failed);
+}
+
+@keyframes job-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.job-type {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text);
+  font-family: monospace;
+  font-size: $text0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-target,
+.job-error,
+.job-attempts {
+  padding-left: $unit2;
+  font-size: $text0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-target {
+  color: var(--lighter);
+}
+
+.job-error {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.job-error {
+  color: var(--color-job-failed);
+}
+
+.job-attempts {
+  color: var(--lighter);
+}
+
+.job-timing {
+  flex-shrink: 0;
+  color: var(--lighter);
+  font-size: $text0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

@@ -5,13 +5,13 @@ import { sendMessage as sendAnthropic } from "../ai/Anthropic";
 import { extractArticlesPrompt } from "./prompt";
 
 export const FRONTPAGE_MODEL =
-  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-3-flash-preview";
+  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-3.6-flash";
 
 function parseModel(value: string): { provider: string; model: string } {
   const slash = value.indexOf("/");
   if (slash === -1) {
     throw new Error(
-      `FRONTPAGE_MODEL must be prefixed with a provider, e.g. "openai/gpt-5.4-nano" or "openrouter/google/gemini-3-flash-preview"`,
+      `FRONTPAGE_MODEL must be prefixed with a provider, e.g. "openai/gpt-5.4-nano" or "openrouter/google/gemini-3.6-flash"`,
     );
   }
   const provider = value.slice(0, slash);
@@ -35,23 +35,36 @@ function getSendMessage() {
 
 const HTML_LIMIT = 200_000;
 
-export async function fetchLatestArticles(url: string) {
+export type PageSnapshot = {
+  /** Cleaned and cropped page html, ready for the model. */
+  html: string;
+  /** Every real link on the page, absolute — used to catch hallucinations. */
+  hrefs: string[];
+};
+
+/** Download a page and strip it down to what the model needs to see. */
+export async function fetchPage(url: string): Promise<PageSnapshot> {
   const rawHtml = await fetchUrlHtml(url);
-
   const cleanedHtml = cleanHtml(rawHtml);
-
-  const croppedHtml = cleanedHtml.slice(0, HTML_LIMIT);
-
   const baseUrl = new URL(url);
 
-  // extract the real hrefs, to match against the AI response and filter out hallucinated links
-  const realHrefs = toAbsoluteUrl(extractHrefs(cleanedHtml), baseUrl.origin);
-  // console.log("Extracted links:", hrefs);
+  return {
+    html: cleanedHtml.slice(0, HTML_LIMIT),
+    hrefs: toAbsoluteUrl(extractHrefs(cleanedHtml), baseUrl.origin),
+  };
+}
+
+/** Ask the model for the articles on an already-fetched page. */
+export async function analyzePage(
+  url: string,
+  snapshot: PageSnapshot,
+): Promise<Article[]> {
+  const baseUrl = new URL(url);
 
   const { send, model } = getSendMessage();
   const aiResp = await send(
     model,
-    extractArticlesPrompt(baseUrl.origin, croppedHtml),
+    extractArticlesPrompt(baseUrl.origin, snapshot.html),
   );
 
   const jsonMatch = aiResp.match(/\[[\s\S]*\]/);
@@ -62,10 +75,10 @@ export async function fetchLatestArticles(url: string) {
   const articles: Article[] = JSON.parse(jsonMatch[0]);
 
   // exclude hallucinated links
-  const filtered = filterByRealLinks(articles, realHrefs);
+  const filtered = filterByRealLinks(articles, snapshot.hrefs);
 
   // make sure the order matches the order of links on the page
-  return fixOrder(filtered, realHrefs);
+  return fixOrder(filtered, snapshot.hrefs);
 }
 
 async function fetchUrlHtml(url: string) {
@@ -122,7 +135,7 @@ function filterByRealLinks(articles: Article[], hrefs: string[]): Article[] {
     }
 
     if (!realLinks.has(a.url)) {
-      console.log(`[refresh] filtered out AI-hallucinated link: ${a.url}`);
+      console.log(`[analyze] filtered out AI-hallucinated link: ${a.url}`);
       hallucinated++;
       return false;
     }
@@ -132,7 +145,7 @@ function filterByRealLinks(articles: Article[], hrefs: string[]): Article[] {
 
   if (hallucinated > 0) {
     console.log(
-      `[refresh] ${hallucinated} hallucinated link(s) out of ${articles.length} total`,
+      `[analyze] ${hallucinated} hallucinated link(s) out of ${articles.length} total`,
     );
   }
 

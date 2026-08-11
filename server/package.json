@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon",
+    "dev:worker": "nodemon --exec \"ts-node ./src/worker.ts\"",
     "build": "tsc",
     "start": "node dist/index.js",
+    "worker": "node dist/worker.js",
     "migrate": "ts-node src/db/cli.ts up",
     "rollback": "ts-node src/db/cli.ts down",
     "migrate:status": "ts-node src/db/cli.ts status",

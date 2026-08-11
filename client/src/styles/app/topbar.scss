@@ -1,0 +1,127 @@
+@use '../vars' as *;
+
+.topbar {
+  position: relative;
+  z-index: 300;
+  flex-shrink: 0;
+  height: $unit6;
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  padding: 0 $unit2;
+  background-color: var(--color-menu-bg);
+  border-bottom: 1px solid var(--color-menu-border);
+}
+
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: $unit0;
+}
+
+.topbar-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit5;
+  height: $unit5;
+  padding: 0;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  color: var(--color-menu-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.1s ease;
+
+  svg {
+    fill: var(--color-menu-text-secondary);
+    transition: fill 0.15s ease;
+  }
+
+  &:hover {
+    background-color: var(--color-menu-bg-hover);
+    color: var(--color-menu-text);
+
+    svg {
+      fill: var(--color-menu-text);
+    }
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &.active {
+    background-color: var(--color-menu-highlight);
+    color: var(--color-menu-accent);
+
+    svg {
+      fill: var(--color-menu-accent);
+    }
+  }
+}
+
+// jobs widget sits at the far right of the bar
+.topbar-jobs {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  margin-left: auto;
+  height: $unit5;
+  padding: 0 $unit2;
+  border: 1px solid var(--color-menu-border-subtle);
+  border-radius: $unit1;
+  background: none;
+  color: var(--color-menu-accent);
+  font-size: $text1;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  // the global `*` rule sets a color on every element, so the label and the
+  // icon's paths have to opt back into the button's colour explicitly
+  .topbar-jobs-label,
+  svg,
+  svg * {
+    color: inherit;
+    fill: currentColor;
+  }
+
+  &:hover {
+    background-color: var(--color-menu-bg-hover);
+    color: var(--color-menu-accent);
+  }
+
+  &.active {
+    background-color: var(--color-menu-highlight);
+    color: var(--color-menu-accent);
+  }
+
+  // something is in flight
+  &.is-active {
+    color: var(--color-menu-accent);
+
+    svg {
+      animation: job-pulse 1.2s ease-in-out infinite;
+    }
+  }
+}
+
+.topbar-jobs-label {
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-jobs-failed {
+  padding: 0 $unit0;
+  border-radius: $unit0;
+  background-color: var(--color-job-failed);
+  color: #fff;
+  font-size: $text0 - 2px;
+  font-weight: 600;
+}

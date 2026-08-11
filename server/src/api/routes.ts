@@ -62,9 +62,21 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.refreshWidget(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
   {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/widget/:id/items",
+    handler: async ({ pathParams }) =>
+      api.getWidgetItems(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+  },
+  {
     method: "delete",
     path: "/api/dashboards/:dashboardId/widget/:id",
     handler: async ({ pathParams }) =>
       api.deleteWidget(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
+
+  // Jobs
+  { method: "get", path: "/api/jobs", handler: async ({ query }) =>
+      api.listJobs(query) },
+  { method: "get", path: "/api/jobs/stats", handler: async () =>
+      api.jobStats() },
 ];

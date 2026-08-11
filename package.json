@@ -3,9 +3,10 @@
   "scripts": {
     "install-client": "npm install --prefix client",
     "install-server": "npm install --prefix server",
-    "dev": "concurrently -n server,client -k \"npm run dev --prefix server\" \"wait-on tcp:${FRONTPAGE_PORT:-3000} && npm run dev --prefix client\"",
+    "dev": "concurrently -n server,worker,client -k \"npm run dev --prefix server\" \"npm run dev:worker --prefix server\" \"wait-on tcp:${FRONTPAGE_PORT:-3000} && npm run dev --prefix client\"",
     "build": "npm run build --prefix client && npm run build --prefix server",
     "start": "NODE_ENV=production npm run start --prefix server",
+    "worker": "NODE_ENV=production npm run worker --prefix server",
     "migrate": "npm run migrate --prefix server",
     "rollback": "npm run rollback --prefix server",
     "migrate:status": "npm run migrate:status --prefix server",

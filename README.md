@@ -19,7 +19,7 @@ Frontpage uses LLMs to scrape front pages, extract articles, and display them in
 - Customizable widgets
 - Multiple dashboards
 - Data stored in your own PostgreSQL database
-- Supported providers: OpenAI (default), OpenRouter, Anthropic
+- Supported providers: OpenRouter (default), OpenAI, Anthropic
 - Quick start with docker-compose
 - Open source and self-hosted
 
@@ -49,7 +49,7 @@ docker run -d \
   -p 3043:3043 \
   -e FRONTPAGE_DATABASE_URL=postgres://user:pass@host:5432/frontpage \
   -e OPENROUTER_API_KEY=your-key \
-  -e FRONTPAGE_MODEL=openrouter/google/gemini-3-flash-preview \
+  -e FRONTPAGE_MODEL=openrouter/google/gemini-3.6-flash \
   hiquest/frontpage:latest
 ```
 
@@ -96,11 +96,11 @@ Many websites have stopped providing RSS feeds, because, khmm, ads. Other times,
 
 The `FRONTPAGE_MODEL` value uses the format `provider/model`. Supported providers are `openai`, `openrouter`, and `anthropic`. For example:
 
-- `openrouter/google/gemini-3-flash-preview`
+- `openrouter/google/gemini-3.6-flash`
 - `openai/gpt-5.4-nano`
 - `anthropic/claude-sonnet-4-6`
 
-The default is `openrouter/google/gemini-3-flash-preview`. Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
+The default is `openrouter/google/gemini-3.6-flash`. Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
 
 Note: pick a *non-reasoning* model. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they exceed the 60s request timeout. Very small models (Gemini 2.5 Flash Lite) tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 

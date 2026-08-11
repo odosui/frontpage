@@ -101,15 +101,20 @@ export async function getWidget(
   return rows[0] ?? null;
 }
 
-export async function articleUrls(
+export async function getArticles(
   dashboardId: string,
   widgetId: string,
-): Promise<Set<string>> {
-  const { rows } = await query<{ url: string }>(
-    "select url from articles where dashboard_id = $1 and widget_id = $2",
-    [dashboardId, widgetId],
+  limit: number,
+): Promise<Article[]> {
+  const { rows } = await query<Article>(
+    `select title, url, image, is_new as new
+     from articles
+     where dashboard_id = $1 and widget_id = $2
+     order by position
+     limit $3`,
+    [dashboardId, widgetId, limit],
   );
-  return new Set(rows.map((r) => r.url));
+  return rows;
 }
 
 /**

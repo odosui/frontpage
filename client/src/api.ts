@@ -17,7 +17,39 @@ export default {
     api('delete', `/dashboards/${dashboardId}/widget/${id}`),
   refreshWidget: (dashboardId: string, id: string) =>
     api('post', `/dashboards/${dashboardId}/widget/${id}/refresh`),
+  getWidgetItems: (dashboardId: string, id: string) =>
+    api('get', `/dashboards/${dashboardId}/widget/${id}/items`),
+
+  // Jobs
+  listJobs: (limit = 50) => api('get', '/jobs', { limit }),
 }
+
+export const JOB_STATUSES = [
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+] as const
+
+export type JobStatus = (typeof JOB_STATUSES)[number]
+
+export type Job = {
+  id: string
+  type: string
+  status: JobStatus
+  payload: { dashboardId?: string; widgetId?: string; url?: string }
+  result: Record<string, unknown> | null
+  error: string | null
+  attempts: number
+  maxAttempts: number
+  runAt: string
+  startedAt: string | null
+  finishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type JobStats = Record<JobStatus, number>
 
 export type Article = {
   title: string

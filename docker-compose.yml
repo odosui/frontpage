@@ -24,8 +24,26 @@ services:
     environment:
       - NODE_ENV=production
       - FRONTPAGE_DATABASE_URL=postgres://frontpage:frontpage@db:5432/frontpage
-      - FRONTPAGE_MODEL=openrouter/google/gemini-3-flash-preview
+      - FRONTPAGE_MODEL=openrouter/google/gemini-3.6-flash
       # Set the API key for your chosen provider:
+      - OPENROUTER_API_KEY=yourkey
+      # - OPENAI_API_KEY=yourkey
+      # - ANTHROPIC_API_KEY=yourkey
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Runs queued jobs (page fetches, LLM analysis). Scale with `--scale worker=N`.
+  worker:
+    image: hiquest/frontpage:latest
+    command: ["node", "dist/worker.js"]
+    environment:
+      - NODE_ENV=production
+      - FRONTPAGE_DATABASE_URL=postgres://frontpage:frontpage@db:5432/frontpage
+      - FRONTPAGE_MODEL=openrouter/google/gemini-3.6-flash
+      - FRONTPAGE_WORKER_CONCURRENCY=2
+      # Must match the API key set on the frontpage service:
       - OPENROUTER_API_KEY=yourkey
       # - OPENAI_API_KEY=yourkey
       # - ANTHROPIC_API_KEY=yourkey
