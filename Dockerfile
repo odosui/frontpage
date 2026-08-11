@@ -28,6 +28,7 @@ WORKDIR /app
 COPY --from=server-builder /app/server/package*.json ./server/
 COPY --from=server-builder /app/server/dist ./server/dist
 COPY --from=server-builder /app/server/node_modules ./server/node_modules
+COPY --from=server-builder /app/server/migrations ./server/migrations
 
 # Copy built client files to server's expected location
 COPY --from=client-builder /app/client/dist ./client/dist
@@ -35,6 +36,7 @@ COPY --from=client-builder /app/client/dist ./client/dist
 # Set environment variables
 ENV NODE_ENV=production
 ENV FRONTPAGE_PORT=3043
+# only used by the one-shot `import-json` script; storage itself is postgres
 ENV FRONTPAGE_HOME=/data/frontpage
 
 # Expose the port

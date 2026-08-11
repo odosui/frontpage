@@ -13,8 +13,7 @@ dayjs.extend(relativeTime);
 const MAX_ITEMS = 100;
 
 export const createApi = async () => {
-  await dbs.migrate();
-  await dbs.ensureConfigDir();
+  await dbs.ensureDefaultDashboard();
 
   return {
     health: () => ok({ status: "ok" }),
@@ -27,10 +26,10 @@ export const createApi = async () => {
       if (!body.name || typeof body.name !== "string") {
         return error(400, "name is required");
       }
-      const id = dbs.create(body.name);
+      const id = dbs.slugify(body.name);
       if (!id) return error(400, "invalid name");
       if (await dbs.exists(id)) return error(409, "dashboard already exists");
-      await dbs.writeDashboard(id, { layout: [] });
+      await dbs.create(id, body.name);
       return ok({ id });
     },
 
@@ -47,7 +46,7 @@ export const createApi = async () => {
       if (!id) return error(400, "dashboard id is required");
       if (!body.name || typeof body.name !== "string")
         return error(400, "name is required");
-      const newId = dbs.create(body.name);
+      const newId = dbs.slugify(body.name);
       if (!newId) return error(400, "invalid name");
       if (!(await dbs.exists(id))) return error(404, "dashboard not found");
       if (await dbs.exists(newId)) return error(409, "name already taken");
@@ -57,12 +56,7 @@ export const createApi = async () => {
 
     getLayout: async (dashboardId: string) => {
       const id = dbs.resolveId(dashboardId);
-      const config = await dbs.readDashboard(id);
-      const layout = config.layout.map((item) => ({
-        ...item,
-        items: (item.items || []).slice(0, MAX_ITEMS),
-      }));
-      return ok({ layout });
+      return ok({ layout: await dbs.getLayout(id, MAX_ITEMS) });
     },
 
     saveLayout: async (dashboardId: string, body: { layout: LayoutItem[] }) => {
@@ -70,7 +64,7 @@ export const createApi = async () => {
       if (!Array.isArray(body.layout)) {
         return error(400, "layout must be an array");
       }
-      await dbs.updateLayout(id, body.layout);
+      await dbs.saveLayout(id, body.layout);
       return ok({ success: true });
     },
 
@@ -79,8 +73,7 @@ export const createApi = async () => {
       if (!widgetId) {
         return error(400, "widget id is required");
       }
-      const config = await dbs.readDashboard(id);
-      const widget = config.layout.find((item) => item.i === widgetId);
+      const widget = await dbs.getWidget(id, widgetId);
       if (!widget) {
         return error(404, "widget not found");
       }
@@ -88,7 +81,7 @@ export const createApi = async () => {
         return error(400, "widget has no url configured");
       }
 
-      const existingUrls = new Set((widget.items || []).map((a) => a.url));
+      const existingUrls = await dbs.articleUrls(id, widgetId);
 
       console.log(`[refresh] ${id}/${widgetId} fetching ${widget.url} (model: ${FRONTPAGE_MODEL})`);
       const start = Date.now();
@@ -110,24 +103,25 @@ export const createApi = async () => {
       }
 
       const seenUrls = new Set<string>();
-      const newArticles = freshArticles
-        .filter((a) => {
-          if (existingUrls.has(a.url) || seenUrls.has(a.url)) return false;
-          seenUrls.add(a.url);
-          return true;
-        })
-        .map((a) => ({ ...a, new: true }));
+      const newArticles = freshArticles.filter((a) => {
+        if (existingUrls.has(a.url) || seenUrls.has(a.url)) return false;
+        seenUrls.add(a.url);
+        return true;
+      });
 
-      const oldItems = (widget.items || []).map((a) => ({ ...a, new: false }));
-      const allItems = [...newArticles, ...oldItems];
-      await dbs.updateContent(id, widgetId, allItems);
+      const items = await dbs.prependArticles(
+        id,
+        widgetId,
+        newArticles,
+        MAX_ITEMS,
+      );
 
       const elapsed = Date.now() - start;
       console.log(
         `[refresh] ${id}/${widgetId} done in ${elapsed}ms — ${freshArticles.length} fetched, ${newArticles.length} new`,
       );
 
-      return ok({ items: allItems.slice(0, MAX_ITEMS) });
+      return ok({ items });
     },
 
     addWidget: async (dashboardId: string, body: { widget: LayoutItem }) => {
@@ -135,9 +129,7 @@ export const createApi = async () => {
       if (!body.widget) {
         return error(400, "widget is required");
       }
-      await dbs.mutate(id, (config) => {
-        config.layout.push(body.widget);
-      });
+      await dbs.addWidget(id, body.widget);
       return ok({ widget: body.widget });
     },
 
@@ -146,12 +138,7 @@ export const createApi = async () => {
       if (!widgetId) {
         return error(400, "widget id is required");
       }
-      const removed = await dbs.mutate(id, (config) => {
-        const before = config.layout.length;
-        config.layout = config.layout.filter((item) => item.i !== widgetId);
-        return config.layout.length !== before;
-      });
-      if (!removed) {
+      if (!(await dbs.deleteWidget(id, widgetId))) {
         return error(404, "widget not found");
       }
       return ok({ success: true });

@@ -3,6 +3,8 @@ import express, { Express, Request, Response } from "express";
 import path from "path";
 import { createApi } from "./api/api";
 import { createRoutes } from "./api/routes";
+import { describeDatabase } from "./db/config";
+import { migrateUp } from "./db/migrator";
 
 const NODE_ENV = process.env.NODE_ENV || "development";
 const PORT = process.env.FRONTPAGE_PORT || 3000;
@@ -11,6 +13,11 @@ export async function startServer() {
   const app = express();
 
   app.use(bodyParser.json());
+
+  console.log(`Using database ${describeDatabase()}`);
+  if (process.env.FRONTPAGE_AUTO_MIGRATE !== "false") {
+    await migrateUp();
+  }
 
   // allow CORS (only in development)
   if (NODE_ENV === "development") {

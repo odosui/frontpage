@@ -1,16 +1,38 @@
 services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=frontpage
+      - POSTGRES_PASSWORD=frontpage
+      - POSTGRES_DB=frontpage
+    volumes:
+      - frontpage-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frontpage -d frontpage"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   frontpage:
     image: hiquest/frontpage:latest
     ports:
       - "3043:3043"
     volumes:
-      - ~/.frontpage:/data/frontpage
+      # only needed to import dashboards from the old json storage
+      - ~/.frontpage:/data/frontpage:ro
     environment:
       - NODE_ENV=production
-      - FRONTPAGE_HOME=/data/frontpage
+      - FRONTPAGE_DATABASE_URL=postgres://frontpage:frontpage@db:5432/frontpage
       - FRONTPAGE_MODEL=openrouter/google/gemini-3-flash-preview
       # Set the API key for your chosen provider:
       - OPENROUTER_API_KEY=yourkey
       # - OPENAI_API_KEY=yourkey
       # - ANTHROPIC_API_KEY=yourkey
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  frontpage-db:

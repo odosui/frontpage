@@ -7,6 +7,12 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/index.js",
+    "migrate": "ts-node src/db/cli.ts up",
+    "rollback": "ts-node src/db/cli.ts down",
+    "migrate:status": "ts-node src/db/cli.ts status",
+    "migrate:new": "ts-node src/db/cli.ts new",
+    "import-json": "ts-node src/db/import-json.ts",
+    "db": "node dist/db/cli.js",
     "test:watch": "vitest",
     "test": "vitest run",
     "check-types": "tsc --noEmit"
@@ -17,6 +23,7 @@
   "devDependencies": {
     "@types/express": "^5.0.5",
     "@types/node": "^25.5.0",
+    "@types/pg": "^8.21.0",
     "nodemon": "^3.1.0",
     "ts-node": "^10.9.2",
     "tslib": "^2.6.2",
@@ -25,6 +32,7 @@
   "dependencies": {
     "body-parser": "^2.2.0",
     "dayjs": "^1.11.11",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "pg": "^8.23.0"
   }
 }

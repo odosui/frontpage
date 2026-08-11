@@ -6,6 +6,11 @@
     "dev": "concurrently -n server,client -k \"npm run dev --prefix server\" \"wait-on tcp:${FRONTPAGE_PORT:-3000} && npm run dev --prefix client\"",
     "build": "npm run build --prefix client && npm run build --prefix server",
     "start": "NODE_ENV=production npm run start --prefix server",
+    "migrate": "npm run migrate --prefix server",
+    "rollback": "npm run rollback --prefix server",
+    "migrate:status": "npm run migrate:status --prefix server",
+    "migrate:new": "npm run migrate:new --prefix server",
+    "import-json": "npm run import-json --prefix server",
     "e2e": "playwright test"
   },
   "devDependencies": {

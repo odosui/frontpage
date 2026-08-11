@@ -10,6 +10,21 @@ jobs:
   check-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: frontpage
+          POSTGRES_PASSWORD: frontpage
+          POSTGRES_DB: frontpage
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +48,15 @@ jobs:
 
       - name: Check types - Server
         run: npm run check-types --prefix server
+
+      - name: Migrations - apply and roll back
+        env:
+          FRONTPAGE_DATABASE_URL: postgres://frontpage:frontpage@localhost:5432/frontpage
+        run: |
+          npm run migrate --prefix server
+          npm run migrate:status --prefix server
+          npm run rollback --prefix server
+          npm run migrate --prefix server
 
   push_to_registry:
     name: Push Docker image to Docker Hub
