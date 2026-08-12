@@ -10,6 +10,8 @@ export type AnalyzePagePayload = {
   dashboardId: string;
   widgetId: string;
   snapshotId: string;
+  /** Hash of the analyzed html, recorded so the next fetch can skip a no-op. */
+  contentHash?: string;
 };
 
 /** How many articles a widget keeps. Mirrors the API's page size. */
@@ -17,7 +19,8 @@ const MAX_ITEMS = 100;
 
 /** Run the model over a fetched page and store whatever articles are new. */
 export const analyzePageHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, widgetId, snapshotId } = payload as AnalyzePagePayload;
+  const { dashboardId, widgetId, snapshotId, contentHash } =
+    payload as AnalyzePagePayload;
   if (!dashboardId || !widgetId || !snapshotId) {
     throw new Error(
       "analyze_page requires dashboardId, widgetId and snapshotId",
@@ -48,6 +51,11 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
     MAX_ITEMS,
   );
   const added = items.filter((a) => a.new).length;
+
+  // only now is it safe to remember this page as "already analyzed"
+  if (contentHash) {
+    await dbs.saveContentHash(dashboardId, widgetId, contentHash);
+  }
 
   await deleteSnapshot(snapshotId);
 

@@ -21,7 +21,7 @@
     border-radius: $unit3;
     z-index: 11;
     box-shadow:
-      0 $unit1 $unit1 -$unit0 rgb(0 0 0 / 20%),
+      0 $unit1 $unit1 (-$unit0) rgb(0 0 0 / 20%),
       0 $unit2 $unit3 0 rgb(0 0 0 / 14%),
       0 $unit0 $unit4 $unit0 rgb(0 0 0 / 12%);
 

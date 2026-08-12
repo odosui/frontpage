@@ -1,3 +1,5 @@
+import { AI_TIMEOUT_MS } from "./timeout";
+
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 export async function sendMessage(
@@ -19,7 +21,7 @@ export async function sendMessage(
       model,
       messages: [{ role: "user", content: message }],
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
   });
 
   if (!response.ok) {

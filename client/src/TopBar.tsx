@@ -1,6 +1,10 @@
 import { HomeIcon, GearIcon, ZapIcon } from '@primer/octicons-react'
 import { Link, useLocation } from 'slim-react-router'
 import { useJobs } from './contexts/JobsContext'
+import { useToolbar } from './contexts/ToolbarContext'
+import DashboardSwitcher from './DashboardSwitcher'
+import RefreshIcon from './icons/RefreshIcon'
+import PlusIcon from './icons/PlusIcon'
 
 const NAV_ITEMS = [
   { path: '/db/default', icon: HomeIcon },
@@ -15,6 +19,7 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
   const location = useLocation()
   const { activeCount, stats } = useJobs()
+  const { tools } = useToolbar()
 
   return (
     <header className="topbar">
@@ -30,20 +35,50 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
         ))}
       </nav>
 
-      <button
-        className={`topbar-jobs${jobsOpen ? ' active' : ''}${
-          activeCount > 0 ? ' is-active' : ''
-        }`}
-        onClick={onToggleJobs}
-        aria-label="Jobs"
-        aria-expanded={jobsOpen}
-      >
-        <ZapIcon size={16} />
-        <span className="topbar-jobs-label">{jobsLabel(activeCount)}</span>
-        {stats.failed > 0 && (
-          <span className="topbar-jobs-failed">{stats.failed} failed</span>
+      {tools && (
+        <DashboardSwitcher
+          dashboards={tools.dashboards}
+          current={tools.current}
+          onSelect={tools.onSelect}
+          onCreate={tools.onCreate}
+          onDelete={tools.onDelete}
+          onRename={tools.onRename}
+        />
+      )}
+
+      <div className="topbar-actions">
+        {tools && (
+          <>
+            <button className="topbar-btn" onClick={tools.onAddWidget}>
+              <PlusIcon />
+              Add new
+            </button>
+            <button
+              className={`topbar-btn${tools.isRefreshing ? ' is-refreshing' : ''}`}
+              onClick={tools.onRefreshAll}
+              disabled={tools.isRefreshing}
+            >
+              <RefreshIcon />
+              Refresh all
+            </button>
+          </>
         )}
-      </button>
+
+        <button
+          className={`topbar-jobs${jobsOpen ? ' active' : ''}${
+            activeCount > 0 ? ' is-active' : ''
+          }`}
+          onClick={onToggleJobs}
+          aria-label="Jobs"
+          aria-expanded={jobsOpen}
+        >
+          <ZapIcon size={16} />
+          <span className="topbar-jobs-label">{jobsLabel(activeCount)}</span>
+          {stats.failed > 0 && (
+            <span className="topbar-jobs-failed">{stats.failed} failed</span>
+          )}
+        </button>
+      </div>
     </header>
   )
 }

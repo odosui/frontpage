@@ -1,3 +1,5 @@
+import { AI_TIMEOUT_MS } from "./timeout";
+
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
@@ -22,7 +24,7 @@ export async function sendMessage(
       max_tokens: 16384,
       messages: [{ role: "user", content: message }],
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
   });
 
   if (!response.ok) {

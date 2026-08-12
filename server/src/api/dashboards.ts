@@ -101,6 +101,65 @@ export async function getWidget(
   return rows[0] ?? null;
 }
 
+export type FetchState = {
+  etag: string | null;
+  lastModified: string | null;
+  contentHash: string | null;
+};
+
+export async function getFetchState(
+  dashboardId: string,
+  widgetId: string,
+): Promise<FetchState | null> {
+  const { rows } = await query<{
+    etag: string | null;
+    last_modified: string | null;
+    content_hash: string | null;
+  }>(
+    `select etag, last_modified, content_hash
+     from widgets where dashboard_id = $1 and id = $2`,
+    [dashboardId, widgetId],
+  );
+  const row = rows[0];
+  return row
+    ? {
+        etag: row.etag,
+        lastModified: row.last_modified,
+        contentHash: row.content_hash,
+      }
+    : null;
+}
+
+export async function saveValidators(
+  dashboardId: string,
+  widgetId: string,
+  validators: { etag?: string | null; lastModified?: string | null },
+) {
+  await query(
+    `update widgets
+     set etag = $3, last_modified = $4, fetched_at = now()
+     where dashboard_id = $1 and id = $2`,
+    [
+      dashboardId,
+      widgetId,
+      validators.etag ?? null,
+      validators.lastModified ?? null,
+    ],
+  );
+}
+
+/** Recorded only after a successful analysis — see fetch_page's skip check. */
+export async function saveContentHash(
+  dashboardId: string,
+  widgetId: string,
+  hash: string,
+) {
+  await query(
+    "update widgets set content_hash = $3 where dashboard_id = $1 and id = $2",
+    [dashboardId, widgetId, hash],
+  );
+}
+
 export async function getArticles(
   dashboardId: string,
   widgetId: string,

@@ -49,7 +49,7 @@ docker run -d \
   -p 3043:3043 \
   -e FRONTPAGE_DATABASE_URL=postgres://user:pass@host:5432/frontpage \
   -e OPENROUTER_API_KEY=your-key \
-  -e FRONTPAGE_MODEL=openrouter/google/gemini-3.6-flash \
+  -e FRONTPAGE_MODEL=openrouter/google/gemini-3.1-flash-lite \
   hiquest/frontpage:latest
 ```
 
@@ -96,13 +96,15 @@ Many websites have stopped providing RSS feeds, because, khmm, ads. Other times,
 
 The `FRONTPAGE_MODEL` value uses the format `provider/model`. Supported providers are `openai`, `openrouter`, and `anthropic`. For example:
 
-- `openrouter/google/gemini-3.6-flash`
+- `openrouter/google/gemini-3.1-flash-lite`
 - `openai/gpt-5.4-nano`
 - `anthropic/claude-sonnet-4-6`
 
-The default is `openrouter/google/gemini-3.6-flash`. Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
+The default is `openrouter/google/gemini-3.1-flash-lite`. Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
 
-Note: pick a *non-reasoning* model. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they exceed the 60s request timeout. Very small models (Gemini 2.5 Flash Lite) tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
+Note: pick a *non-reasoning* model. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout (120s, override with `FRONTPAGE_AI_TIMEOUT_MS`). Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
+
+Model choice also affects *image* extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your widgets look text-only, try a different model before assuming the sites lack images.
 
 ### So is this another service wrapped around a prompt?
 

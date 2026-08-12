@@ -66,12 +66,62 @@
   }
 }
 
-// jobs widget sits at the far right of the bar
-.topbar-jobs {
+// dashboard actions + jobs widget sit at the far right of the bar
+.topbar-actions {
   display: flex;
   align-items: center;
   gap: $unit1;
   margin-left: auto;
+}
+
+.topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0;
+  height: $unit5;
+  padding: 0 $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  color: var(--color-menu-text-secondary);
+  font-size: $text1;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.1s ease;
+
+  // these icons stroke with currentColor, so they only need the colour back —
+  // never a fill, that would override their `fill="none"`
+  svg,
+  svg * {
+    color: inherit;
+  }
+
+  &:hover {
+    background-color: var(--color-menu-bg-hover);
+    color: var(--color-menu-accent);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  &.is-refreshing svg {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.topbar-jobs {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
   height: $unit5;
   padding: 0 $unit2;
   border: 1px solid var(--color-menu-border-subtle);
@@ -124,4 +174,199 @@
   color: #fff;
   font-size: $text0 - 2px;
   font-weight: 600;
+}
+
+// Dashboard switcher dropdown
+.dash-switcher {
+  position: relative;
+}
+
+.dash-switcher-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0;
+  height: $unit5;
+  padding: 0 $unit1;
+  border: none;
+  border-radius: $unit1;
+  background: transparent;
+  color: var(--color-menu-text);
+  font-size: $text1;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  .dash-switcher-label,
+  svg,
+  svg * {
+    color: inherit;
+  }
+
+  &:hover {
+    background-color: var(--color-menu-bg-hover);
+    color: var(--color-menu-accent);
+  }
+}
+
+.dash-switcher-label {
+  max-width: $unit10;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-switcher-dropdown {
+  position: absolute;
+  top: calc(100% + $unit1);
+  left: 0;
+  z-index: 200;
+  min-width: $unit11;
+  background-color: var(--widget-bg);
+  border-radius: $unit2;
+  box-shadow: var(--widget-shadow-hover);
+  padding: $unit1;
+}
+
+.dash-switcher-item {
+  display: flex;
+  align-items: center;
+  border-radius: $unit1;
+
+  &.active {
+    background: rgba(0, 0, 0, 0.04);
+
+    [data-theme='dark'] & {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  &:hover .dash-switcher-item-actions {
+    opacity: 1;
+  }
+}
+
+.dash-switcher-item-btn {
+  flex: 1;
+  padding: $unit1 $unit2;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: $text1;
+  text-align: left;
+  color: var(--color-text);
+  border-radius: $unit1;
+
+  &:hover {
+    background: var(--color-bg-hover);
+  }
+}
+
+.dash-switcher-item-actions {
+  display: flex;
+  gap: $unit0;
+  padding-right: $unit1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.dash-switcher-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit4;
+  height: $unit4;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  color: var(--lighter);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+
+  &--danger:hover {
+    background: rgba($red, 0.08);
+    color: $red;
+  }
+}
+
+.dash-switcher-edit-input {
+  flex: 1;
+  padding: $unit1 $unit2;
+  border: 1px solid var(--color-accent);
+  border-radius: $unit1;
+  background: transparent;
+  font-size: $text1;
+  color: var(--color-text);
+  outline: none;
+}
+
+.dash-switcher-divider {
+  height: 1px;
+  margin: $unit1 $unit0;
+  background: var(--borderColor);
+}
+
+.dash-switcher-new-btn {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  width: 100%;
+  padding: $unit1 $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  cursor: pointer;
+  font-size: $text1;
+  color: var(--lighter);
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+}
+
+.dash-switcher-create-form {
+  display: flex;
+  gap: $unit1;
+  padding: $unit1;
+}
+
+.dash-switcher-create-input {
+  flex: 1;
+  padding: $unit1 $unit2;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background: transparent;
+  font-size: $text1;
+  color: var(--color-text);
+  outline: none;
+
+  &:focus {
+    border-color: var(--color-accent);
+  }
+}
+
+.dash-switcher-create-submit {
+  padding: $unit1 $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: var(--color-accent);
+  color: white;
+  font-size: $text1;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
 }

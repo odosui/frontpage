@@ -5,7 +5,7 @@ import * as queue from "./queue";
 import { Job } from "./types";
 
 const POLL_MS = Number(process.env.FRONTPAGE_WORKER_POLL_MS || 1000);
-const CONCURRENCY = Number(process.env.FRONTPAGE_WORKER_CONCURRENCY || 2);
+const CONCURRENCY = Number(process.env.FRONTPAGE_WORKER_CONCURRENCY || 5);
 /** A job whose worker went away this long ago is considered abandoned. */
 const STALE_MS = Number(process.env.FRONTPAGE_WORKER_STALE_MS || 5 * 60_000);
 /** Finished jobs and their snapshots are kept this long. */
@@ -82,7 +82,8 @@ export async function startWorker() {
       lastSweep = Date.now();
       try {
         const requeued = await queue.requeueStale(STALE_MS);
-        if (requeued > 0) console.log(`[sweep] requeued ${requeued} stale job(s)`);
+        if (requeued > 0)
+          console.log(`[sweep] requeued ${requeued} stale job(s)`);
         const pruned = await queue.prune(RETENTION_MS);
         if (pruned > 0) console.log(`[sweep] pruned ${pruned} old job(s)`);
       } catch (e) {

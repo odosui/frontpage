@@ -3,6 +3,7 @@ import { Suspense, lazy, useState } from 'react'
 import { BrowserRouter, Switch, Route } from 'slim-react-router'
 import { JobsProvider } from './contexts/JobsContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { ToolbarProvider } from './contexts/ToolbarContext'
 import JobsPanel from './JobsPanel'
 import TopBar from './TopBar'
 
@@ -15,20 +16,22 @@ const App: React.FC = () => {
     <BrowserRouter>
       <ThemeProvider>
         <JobsProvider>
-          <div className="app-shell">
-            <TopBar
-              jobsOpen={jobsOpen}
-              onToggleJobs={() => setJobsOpen((open) => !open)}
-            />
-            {jobsOpen && <JobsPanel onClose={() => setJobsOpen(false)} />}
-            <main className="app-content">
-              <Suspense fallback={<Fallback />}>
-                <Switch>
-                  <Route path={['/db/:id', '/']} component={Dashboard} />
-                </Switch>
-              </Suspense>
-            </main>
-          </div>
+          <ToolbarProvider>
+            <div className="app-shell">
+              <TopBar
+                jobsOpen={jobsOpen}
+                onToggleJobs={() => setJobsOpen((open) => !open)}
+              />
+              {jobsOpen && <JobsPanel onClose={() => setJobsOpen(false)} />}
+              <main className="app-content">
+                <Suspense fallback={<Fallback />}>
+                  <Switch>
+                    <Route path={['/db/:id', '/']} component={Dashboard} />
+                  </Switch>
+                </Suspense>
+              </main>
+            </div>
+          </ToolbarProvider>
         </JobsProvider>
       </ThemeProvider>
     </BrowserRouter>

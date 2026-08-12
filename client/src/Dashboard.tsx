@@ -9,12 +9,10 @@ import {
 import { useParams, useNavigate } from 'slim-react-router'
 import api, { type LayoutItem as ApiLayoutItem, type Article } from './api'
 import { useJobs } from './contexts/JobsContext'
+import { useToolbar } from './contexts/ToolbarContext'
 import debounce from './utils/debounce'
 import Widget from './Widget'
 import AddWidgetModal from './AddWidgetModal'
-import DashboardSwitcher from './DashboardSwitcher'
-import RefreshIcon from './icons/RefreshIcon'
-import PlusIcon from './icons/PlusIcon'
 import 'react-grid-layout/css/styles.css'
 
 const BASE_COLS = 24
@@ -40,6 +38,7 @@ const Dashboard: React.FC = () => {
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
   const { width, containerRef, mounted } = useContainerWidth()
   const { jobs, refresh: refreshJobs, onJobFinished } = useJobs()
+  const { setTools } = useToolbar()
 
   // a widget is "refreshing" while it has a job in flight
   const refreshing = new Set(
@@ -220,6 +219,34 @@ const Dashboard: React.FC = () => {
     [dashboardId, loadDashboards, setDashboardId],
   )
 
+  // the dashboard's controls are rendered by the top bar
+  const isRefreshing = refreshing.size > 0
+  useEffect(() => {
+    setTools({
+      dashboards,
+      current: dashboardId,
+      onSelect: setDashboardId,
+      onCreate: handleCreateDashboard,
+      onDelete: handleDeleteDashboard,
+      onRename: handleRenameDashboard,
+      onRefreshAll: refreshAll,
+      isRefreshing,
+      onAddWidget: () => setShowAddModal(true),
+    })
+  }, [
+    setTools,
+    dashboards,
+    dashboardId,
+    setDashboardId,
+    handleCreateDashboard,
+    handleDeleteDashboard,
+    handleRenameDashboard,
+    refreshAll,
+    isRefreshing,
+  ])
+
+  useEffect(() => () => setTools(null), [setTools])
+
   useEffect(() => {
     if (!openMenu) return
     const close = () => setOpenMenu(null)
@@ -274,33 +301,6 @@ const Dashboard: React.FC = () => {
       className="dashboard"
       ref={containerRef as React.LegacyRef<HTMLDivElement>}
     >
-      <div className="tool-panel">
-        <DashboardSwitcher
-          dashboards={dashboards}
-          current={dashboardId}
-          onSelect={setDashboardId}
-          onCreate={handleCreateDashboard}
-          onDelete={handleDeleteDashboard}
-          onRename={handleRenameDashboard}
-        />
-        <div className="tool-panel-actions">
-          <button
-            className={`tool-panel-btn tool-panel-btn--secondary${refreshing.size > 0 ? ' is-refreshing' : ''}`}
-            onClick={refreshAll}
-            disabled={refreshing.size > 0}
-          >
-            <RefreshIcon />
-            Refresh all
-          </button>
-          <button
-            className="tool-panel-btn tool-panel-btn--primary"
-            onClick={() => setShowAddModal(true)}
-          >
-            <PlusIcon />
-            Add new
-          </button>
-        </div>
-      </div>
       {mounted && (
         <GridLayout
           layout={layout.map((item) => ({
