@@ -22,6 +22,64 @@ export default {
 
   // Jobs
   listJobs: (limit = 50) => api('get', '/jobs', { limit }),
+
+  // Settings
+  getDatabaseStats: () => api('get', '/stats/database'),
+}
+
+export type TableStat = { name: string; rows: number; bytes: number }
+
+export type ServerStats = {
+  postgres: {
+    version: string
+    startedAt: string | null
+    settings: Record<string, string>
+    connections: { active: number; idle: number; total: number; max: number }
+    cacheHitRatio: number | null
+    commits: number
+    rollbacks: number
+    deadlocks: number
+    tempBytes: number
+    statsResetAt: string | null
+  }
+  node: {
+    version: string
+    platform: string
+    uptimeSec: number
+    rssBytes: number
+    heapUsedBytes: number
+    heapTotalBytes: number
+  }
+  pool: { total: number; idle: number; waiting: number; max: number }
+}
+
+export type DatabaseStats = {
+  server: ServerStats
+  database: { name: string; bytes: number }
+  tables: TableStat[]
+  content: {
+    dashboards: number
+    widgets: number
+    articles: number
+    newArticles: number
+    widgetsWithoutUrl: number
+    widgetsNeverFetched: number
+    newestArticleAt: string | null
+    oldestArticleAt: string | null
+  }
+  snapshots: { count: number; bytes: number; oldestAt: string | null }
+  jobs: {
+    byStatus: Partial<Record<JobStatus, number>>
+    last24h: { total: number; succeeded: number; failed: number }
+    avgDurationSec: number | null
+    oldestQueuedAt: string | null
+  }
+  dashboards: {
+    id: string
+    widgets: number
+    articles: number
+    lastFetchedAt: string | null
+  }[]
 }
 
 export const JOB_STATUSES = [

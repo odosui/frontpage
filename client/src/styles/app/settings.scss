@@ -1,0 +1,165 @@
+@use '../vars' as *;
+
+.settings {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: $unit4;
+  background-color: var(--color-bg);
+}
+
+.settings-head {
+  max-width: $unit16;
+  margin: 0 auto $unit4;
+}
+
+.settings-title {
+  font-size: $text5;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.settings-section {
+  max-width: $unit16;
+  margin: 0 auto $unit4;
+  padding: $unit4;
+  background-color: var(--widget-bg);
+  border-radius: $unit2;
+  box-shadow: var(--widget-shadow);
+}
+
+.settings-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $unit3;
+}
+
+.settings-section-title {
+  font-size: $text3;
+  font-weight: 600;
+}
+
+.settings-subtitle {
+  margin: $unit4 0 $unit2;
+  font-size: $text0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lighter);
+}
+
+.settings-reload {
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0;
+  padding: $unit1 $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: transparent;
+  color: var(--lighter);
+  font-size: $text1;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  svg,
+  svg * {
+    color: inherit;
+  }
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &.is-refreshing svg {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.settings-error {
+  padding: $unit2;
+  border: 1px solid rgba($red, 0.2);
+  border-radius: $unit1;
+  background-color: rgba($red, 0.08);
+  color: $red;
+  font-size: $text1;
+}
+
+.settings-muted {
+  color: var(--lighter);
+  font-size: $text1;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax($unit10, 1fr));
+  gap: $unit2;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+  padding: $unit2 $unit3;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+}
+
+.stat-label {
+  font-size: $text0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lighter);
+}
+
+.stat-value {
+  font-size: $text5;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-hint {
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $text1;
+
+  th,
+  td {
+    padding: $unit1 $unit2;
+    text-align: left;
+    border-bottom: 1px solid var(--borderColor);
+  }
+
+  th {
+    font-size: $text0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--lighter);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}

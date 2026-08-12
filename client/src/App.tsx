@@ -8,6 +8,7 @@ import JobsPanel from './JobsPanel'
 import TopBar from './TopBar'
 
 const Dashboard = lazy(() => import('./Dashboard'))
+const Settings = lazy(() => import('./Settings'))
 
 const App: React.FC = () => {
   const [jobsOpen, setJobsOpen] = useState(false)
@@ -26,6 +27,7 @@ const App: React.FC = () => {
               <main className="app-content">
                 <Suspense fallback={<Fallback />}>
                   <Switch>
+                    <Route path="/settings" component={Settings} />
                     <Route path={['/db/:id', '/']} component={Dashboard} />
                   </Switch>
                 </Suspense>

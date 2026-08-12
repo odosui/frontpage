@@ -79,4 +79,11 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.listJobs(query) },
   { method: "get", path: "/api/jobs/stats", handler: async () =>
       api.jobStats() },
+
+  // Settings
+  {
+    method: "get",
+    path: "/api/stats/database",
+    handler: async () => api.databaseStats(),
+  },
 ];

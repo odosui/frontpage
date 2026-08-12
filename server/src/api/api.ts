@@ -4,6 +4,7 @@ import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import * as dbs from "./dashboards";
 import { error, ok } from "./helpers";
+import * as stats from "./stats";
 import { LayoutItem } from "./types";
 
 dayjs.extend(relativeTime);
@@ -136,6 +137,10 @@ export const createApi = async () => {
     },
 
     jobStats: async () => ok({ stats: await queue.stats() }),
+
+    // Settings
+
+    databaseStats: async () => ok({ stats: await stats.collect() }),
   };
 };
 

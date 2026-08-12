@@ -6,6 +6,7 @@
 @use './app/topbar';
 @use './app/dashboard';
 @use './app/jobs';
+@use './app/settings';
 
 .app-shell {
   display: flex;
