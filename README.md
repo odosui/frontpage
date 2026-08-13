@@ -19,7 +19,7 @@ Frontpage uses LLMs to scrape front pages, extract articles, and display them in
 - Customizable widgets
 - Multiple dashboards
 - Data stored in your own PostgreSQL database
-- Supported providers: OpenRouter (default), OpenAI, Anthropic
+- Any model on OpenRouter
 - Quick start with docker-compose
 - Open source and self-hosted
 
@@ -34,7 +34,7 @@ Modern LLMs have become powerful enough and, more importantly, cheap enough to d
 
 ## Running with Docker
 
-The bundled compose file brings up both the app and a PostgreSQL database. Edit `docker-compose.yml` to set your API key (e.g., `OPENAI_API_KEY`), then:
+The bundled compose file brings up both the app and a PostgreSQL database. Edit `docker-compose.yml` to set your `OPENROUTER_API_KEY`, then:
 
 ```bash
 docker compose up -d
@@ -49,7 +49,7 @@ docker run -d \
   -p 3043:3043 \
   -e FRONTPAGE_DATABASE_URL=postgres://user:pass@host:5432/frontpage \
   -e OPENROUTER_API_KEY=your-key \
-  -e FRONTPAGE_MODEL=openrouter/google/gemini-3.1-flash-lite \
+  -e FRONTPAGE_MODEL=google/gemini-3.1-flash-lite \
   hiquest/frontpage:latest
 ```
 
@@ -94,13 +94,13 @@ Many websites have stopped providing RSS feeds, because, khmm, ads. Other times,
 
 ### What model should I use?
 
-The `FRONTPAGE_MODEL` value uses the format `provider/model`. Supported providers are `openai`, `openrouter`, and `anthropic`. For example:
+Everything goes through [OpenRouter](https://openrouter.ai), so `FRONTPAGE_MODEL` is an OpenRouter model id. For example:
 
-- `openrouter/google/gemini-3.1-flash-lite`
-- `openai/gpt-5.4-nano`
-- `anthropic/claude-sonnet-4-6`
+- `google/gemini-3.1-flash-lite`
+- `anthropic/claude-sonnet-5`
+- `deepseek/deepseek-v4-flash`
 
-The default is `openrouter/google/gemini-3.1-flash-lite`. Make sure you set the corresponding API key environment variable (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `ANTHROPIC_API_KEY`).
+The default is `google/gemini-3.1-flash-lite`. Set `OPENROUTER_API_KEY` to your key.
 
 Note: pick a *non-reasoning* model. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout (120s, override with `FRONTPAGE_AI_TIMEOUT_MS`). Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 

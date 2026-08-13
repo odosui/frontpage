@@ -1,36 +1,15 @@
 import { Article } from "../../api/types";
-import { sendMessage as sendOpenRouter } from "../ai/OpenRouter";
-import { sendMessage as sendOpenAI } from "../ai/OpenAI";
-import { sendMessage as sendAnthropic } from "../ai/Anthropic";
+import { sendMessage } from "../ai/OpenRouter";
 import { extractArticlesPrompt } from "./prompt";
 
-export const FRONTPAGE_MODEL =
-  process.env.FRONTPAGE_MODEL || "openrouter/google/gemini-3.1-flash-lite";
+/** An OpenRouter model id, the only provider we talk to. */
+export const FRONTPAGE_MODEL = normalizeModel(
+  process.env.FRONTPAGE_MODEL || "google/gemini-3.1-flash-lite",
+);
 
-function parseModel(value: string): { provider: string; model: string } {
-  const slash = value.indexOf("/");
-  if (slash === -1) {
-    throw new Error(
-      `FRONTPAGE_MODEL must be prefixed with a provider, e.g. "openai/gpt-5.4-nano" or "openrouter/google/gemini-3.1-flash-lite"`,
-    );
-  }
-  const provider = value.slice(0, slash);
-  const model = value.slice(slash + 1);
-  return { provider, model };
-}
-
-function getSendMessage() {
-  const { provider, model } = parseModel(FRONTPAGE_MODEL);
-  switch (provider) {
-    case "openai":
-      return { send: sendOpenAI, model };
-    case "openrouter":
-      return { send: sendOpenRouter, model };
-    case "anthropic":
-      return { send: sendAnthropic, model };
-    default:
-      throw new Error(`Unknown provider "${provider}" in FRONTPAGE_MODEL`);
-  }
+/** Older configs prefixed the id with the provider; accept those unchanged. */
+function normalizeModel(value: string): string {
+  return value.startsWith("openrouter/") ? value.slice("openrouter/".length) : value;
 }
 
 const HTML_LIMIT = 200_000;
@@ -86,9 +65,8 @@ export async function analyzePage(
 ): Promise<Article[]> {
   const baseUrl = new URL(url);
 
-  const { send, model } = getSendMessage();
-  const aiResp = await send(
-    model,
+  const aiResp = await sendMessage(
+    FRONTPAGE_MODEL,
     extractArticlesPrompt(baseUrl.origin, snapshot.html),
   );
 
