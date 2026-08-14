@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'slim-react-router'
 import api, { type Channel, type FeedArticle } from './api'
 import { useJobs } from './contexts/JobsContext'
@@ -11,12 +11,14 @@ const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dashboardId = routeId || 'default'
-  const setDashboardId = useCallback(
-    (id: string) => {
-      navigate(`/db/${id}`)
-    },
-    [navigate],
-  )
+  // useNavigate hands back a fresh function every render; pinning it in a ref
+  // keeps the callbacks below stable, so the toolbar effect doesn't re-fire
+  // (setTools -> re-render -> new navigate -> setTools -> ...) forever.
+  const navigateRef = useRef(navigate)
+  navigateRef.current = navigate
+  const setDashboardId = useCallback((id: string) => {
+    navigateRef.current(`/db/${id}`)
+  }, [])
   const [dashboards, setDashboards] = useState<string[]>([])
   const [channels, setChannels] = useState<Channel[]>([])
   const [feed, setFeed] = useState<FeedArticle[]>([])

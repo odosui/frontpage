@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import { type Channel } from '../api'
 
 /**
@@ -37,11 +37,10 @@ export const ToolbarProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [tools, setTools] = useState<DashboardTools | null>(null)
+  const value = useMemo(() => ({ tools, setTools }), [tools])
 
   return (
-    <ToolbarContext.Provider value={{ tools, setTools }}>
-      {children}
-    </ToolbarContext.Provider>
+    <ToolbarContext.Provider value={value}>{children}</ToolbarContext.Provider>
   )
 }
 

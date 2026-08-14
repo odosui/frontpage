@@ -107,8 +107,7 @@
 
   // surface elevation
   --surface-bg: #fff;
-  --color-article-new-bg: rgba(255, 215, 0, 0.08);
-  --color-article-new-marker: rgba(212, 160, 23, 0.5);
+  --color-article-new-marker: #d4a017;
   --surface-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --surface-shadow-hover:
@@ -205,8 +204,7 @@
 
   // surface elevation — dark needs a light ring, black shadows are invisible
   --surface-bg: #181c27;
-  --color-article-new-bg: rgba(240, 185, 80, 0.07);
-  --color-article-new-marker: rgba(240, 185, 80, 0.55);
+  --color-article-new-marker: #f0b950;
   --surface-shadow:
     0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.055);
   --surface-shadow-hover:

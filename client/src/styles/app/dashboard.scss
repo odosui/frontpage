@@ -23,9 +23,17 @@ $feed-width: $unit12;
   max-width: 100%;
   flex-shrink: 0;
   overflow-y: auto;
-  padding: $unit2;
+  padding: $unit2 $unit2 $unit6;
   border-left: 1px solid var(--borderColor);
-  background-color: var(--surface-bg);
+}
+
+.feed-heading {
+  margin: 0 0 $unit1;
+  font-size: $text0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lighter);
 }
 
 .feed-placeholder {
@@ -36,87 +44,52 @@ $feed-width: $unit12;
 }
 
 .feed-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.feed-item {
-  border-bottom: 1px solid var(--borderColor);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &--new {
-    background-color: var(--color-article-new-bg);
-    box-shadow: inset 2px 0 0 var(--color-article-new-marker);
-  }
-}
-
-.feed-link {
-  display: flex;
-  align-items: flex-start;
-  gap: $unit2;
-  padding: $unit2;
-  text-decoration: none;
-  color: var(--color-text);
-  transition: background-color 0.12s ease;
-
-  &:hover {
-    background-color: var(--color-bg-hover);
-  }
-}
-
-.feed-image {
-  width: $unit5;
-  height: $unit5;
-  border-radius: $unit0;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.feed-text {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: $unit0;
 }
 
-.feed-title {
+// the link is the row: title text with the meta trailing it inline
+.feed-item {
+  display: block;
+  padding: $unit0 0;
   font-size: $text1;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  line-height: 1.3;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+
+  // unread: bolder text plus a dot sitting inline before it, so wrapped
+  // lines start flush left instead of hanging off a gutter
+  &--new {
+    font-weight: 600;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: $unit1 - 2px;
+      height: $unit1 - 2px;
+      margin-right: $unit1;
+      vertical-align: middle;
+      border-radius: 50%;
+      background-color: var(--color-article-new-marker);
+    }
+  }
 }
 
+// flows inline right after the title, continuing its last line
 .feed-meta {
-  display: flex;
-  align-items: center;
-  gap: $unit1;
+  display: inline;
+  margin-left: $unit1;
   font-size: $text0;
+  font-weight: 400;
   color: var(--lighter);
-}
-
-.feed-channel {
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.feed-time {
-  flex-shrink: 0;
-
-  &::before {
-    content: '·';
-    margin-right: $unit1;
-  }
 }
 
 // channel management, in the top bar
