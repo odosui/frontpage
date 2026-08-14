@@ -2,10 +2,38 @@ export const AI_TIMEOUT_MS = 120_000;
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
+export type Usage = {
+  /** The model that actually served the request — may differ from the one asked for. */
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+};
+
+export type ChatMessage = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
 export async function sendMessage(
   model: string,
   message: string,
 ): Promise<string> {
+  return (await sendMessageWithUsage(model, message)).content;
+}
+
+/** As `sendMessage`, but also reports what the call cost in tokens. */
+export async function sendMessageWithUsage(
+  model: string,
+  message: string,
+): Promise<{ content: string; usage: Usage }> {
+  return sendChat(model, [{ role: "user", content: message }]);
+}
+
+/** A whole conversation, for the multi-turn agent loop. */
+export async function sendChat(
+  model: string,
+  messages: ChatMessage[],
+): Promise<{ content: string; usage: Usage }> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY environment variable is not set");
@@ -17,10 +45,7 @@ export async function sendMessage(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: "user", content: message }],
-    }),
+    body: JSON.stringify({ model, messages }),
     signal: AbortSignal.timeout(AI_TIMEOUT_MS),
   });
 
@@ -44,5 +69,12 @@ export async function sendMessage(
       `OpenRouter empty response from ${model} (finish_reason: ${reason}, tokens: ${prompt}→${completion})`,
     );
   }
-  return content;
+  return {
+    content,
+    usage: {
+      model: json.model ?? model,
+      promptTokens: json.usage?.prompt_tokens ?? 0,
+      completionTokens: json.usage?.completion_tokens ?? 0,
+    },
+  };
 }

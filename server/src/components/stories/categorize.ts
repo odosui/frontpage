@@ -1,4 +1,4 @@
-import { sendMessage } from "../ai/OpenRouter";
+import { Usage, sendMessageWithUsage } from "../ai/OpenRouter";
 import { query } from "../../db/pool";
 import { PromptArticle, categorizeStoriesPrompt } from "./prompt";
 
@@ -8,18 +8,19 @@ export type RecentArticle = PromptArticle & {
   channelId: string;
 };
 
-export type Story = { story: string; article_ids: number[] };
+/** An article as the model placed it: its prompt id plus the tags it earned. */
+export type TaggedArticle = { id: number; tags: string[] };
 
-export type BiggerStory = {
-  bigger_story: string;
+export type Story = { story: string; articles: TaggedArticle[] };
+
+export type Storyline = {
+  storyline: string;
   standalone?: boolean;
   stories: Story[];
 };
 
-export type Category = { category: string; bigger_stories: BiggerStory[] };
-
 export type StoryTree = {
-  categories: Category[];
+  storylines: Storyline[];
   unassigned?: { article_id: number; reason: string }[];
 };
 
@@ -29,6 +30,7 @@ export type CategorizeRun = {
   tree: StoryTree;
   raw: string;
   elapsedMs: number;
+  usage: Usage;
 };
 
 /**
@@ -66,10 +68,13 @@ export async function categorize(
   articles: RecentArticle[],
 ): Promise<CategorizeRun> {
   const started = Date.now();
-  const raw = await sendMessage(model, categorizeStoriesPrompt(articles));
+  const { content: raw, usage } = await sendMessageWithUsage(
+    model,
+    categorizeStoriesPrompt(articles),
+  );
   const elapsedMs = Date.now() - started;
 
-  return { model, articles, tree: parseTree(raw), raw, elapsedMs };
+  return { model, articles, tree: parseTree(raw), raw, elapsedMs, usage };
 }
 
 /** Models like to wrap JSON in prose or fences; take the outermost object. */
@@ -79,8 +84,8 @@ export function parseTree(raw: string): StoryTree {
     throw new Error("no JSON object in the model response");
   }
   const parsed = JSON.parse(match[0]) as StoryTree;
-  if (!Array.isArray(parsed.categories)) {
-    throw new Error("response has no categories array");
+  if (!Array.isArray(parsed.storylines)) {
+    throw new Error("response has no storylines array");
   }
   return parsed;
 }
