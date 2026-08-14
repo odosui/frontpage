@@ -2,7 +2,9 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
-import * as dbs from "./dashboards";
+import * as articles from "../models/articles";
+import * as channels from "../models/channels";
+import * as dashboards from "../models/dashboards";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
 import { CHANNEL_KINDS, Channel, ChannelKind } from "./types";
@@ -12,32 +14,32 @@ dayjs.extend(relativeTime);
 const MAX_ITEMS = 100;
 
 export const createApi = async () => {
-  await dbs.ensureDefaultDashboard();
+  await dashboards.ensureDefaultDashboard();
 
   return {
     health: () => ok({ status: "ok" }),
 
     listDashboards: async () => {
-      return ok({ dashboards: await dbs.listAll() });
+      return ok({ dashboards: await dashboards.listAll() });
     },
 
     createDashboard: async (body: { name: string }) => {
       if (!body.name || typeof body.name !== "string") {
         return error(400, "name is required");
       }
-      const id = dbs.slugify(body.name);
+      const id = dashboards.slugify(body.name);
       if (!id) return error(400, "invalid name");
-      if (await dbs.exists(id)) return error(409, "dashboard already exists");
-      await dbs.create(id, body.name);
+      if (await dashboards.exists(id)) return error(409, "dashboard already exists");
+      await dashboards.create(id, body.name);
       return ok({ id });
     },
 
     deleteDashboard: async (id: string) => {
-      if (!id || dbs.isDefault(id)) {
+      if (!id || dashboards.isDefault(id)) {
         return error(400, "cannot delete default dashboard");
       }
-      if (!(await dbs.exists(id))) return error(404, "dashboard not found");
-      await dbs.remove(id);
+      if (!(await dashboards.exists(id))) return error(404, "dashboard not found");
+      await dashboards.remove(id);
       return ok({ success: true });
     },
 
@@ -45,32 +47,32 @@ export const createApi = async () => {
       if (!id) return error(400, "dashboard id is required");
       if (!body.name || typeof body.name !== "string")
         return error(400, "name is required");
-      const newId = dbs.slugify(body.name);
+      const newId = dashboards.slugify(body.name);
       if (!newId) return error(400, "invalid name");
-      if (!(await dbs.exists(id))) return error(404, "dashboard not found");
-      if (await dbs.exists(newId)) return error(409, "name already taken");
-      await dbs.rename(id, newId);
+      if (!(await dashboards.exists(id))) return error(404, "dashboard not found");
+      if (await dashboards.exists(newId)) return error(409, "name already taken");
+      await dashboards.rename(id, newId);
       return ok({ id: newId });
     },
 
     /** Channels plus the merged article feed — everything the page renders. */
     getDashboard: async (dashboardId: string) => {
-      const id = dbs.resolveId(dashboardId);
-      const [channels, feed] = await Promise.all([
-        dbs.listChannels(id),
-        dbs.getFeed(id, MAX_ITEMS),
+      const id = dashboards.resolveId(dashboardId);
+      const [list, feed] = await Promise.all([
+        channels.list(id),
+        articles.feed(id, MAX_ITEMS),
       ]);
-      return ok({ channels, feed });
+      return ok({ channels: list, feed });
     },
 
     getFeed: async (dashboardId: string) => {
-      const id = dbs.resolveId(dashboardId);
-      return ok({ feed: await dbs.getFeed(id, MAX_ITEMS) });
+      const id = dashboards.resolveId(dashboardId);
+      return ok({ feed: await articles.feed(id, MAX_ITEMS) });
     },
 
     listChannels: async (dashboardId: string) => {
-      const id = dbs.resolveId(dashboardId);
-      return ok({ channels: await dbs.listChannels(id) });
+      const id = dashboards.resolveId(dashboardId);
+      return ok({ channels: await channels.list(id) });
     },
 
     /**
@@ -78,11 +80,11 @@ export const createApi = async () => {
      * which chains into analyze_page. Clients follow progress via /api/jobs.
      */
     refreshChannel: async (dashboardId: string, channelId: string) => {
-      const id = dbs.resolveId(dashboardId);
+      const id = dashboards.resolveId(dashboardId);
       if (!channelId) {
         return error(400, "channel id is required");
       }
-      const channel = await dbs.getChannel(id, channelId);
+      const channel = await channels.get(id, channelId);
       if (!channel) {
         return error(404, "channel not found");
       }
@@ -103,7 +105,7 @@ export const createApi = async () => {
     },
 
     addChannel: async (dashboardId: string, body: { channel: Channel }) => {
-      const id = dbs.resolveId(dashboardId);
+      const id = dashboards.resolveId(dashboardId);
       const channel = body.channel;
       if (!channel || !channel.id || typeof channel.id !== "string") {
         return error(400, "channel id is required");
@@ -116,16 +118,16 @@ export const createApi = async () => {
         return error(400, `kind must be one of ${CHANNEL_KINDS.join(", ")}`);
       }
       const saved: Channel = { id: channel.id, kind, url: channel.url };
-      await dbs.addChannel(id, saved);
+      await channels.add(id, saved);
       return ok({ channel: saved });
     },
 
     deleteChannel: async (dashboardId: string, channelId: string) => {
-      const id = dbs.resolveId(dashboardId);
+      const id = dashboards.resolveId(dashboardId);
       if (!channelId) {
         return error(400, "channel id is required");
       }
-      if (!(await dbs.deleteChannel(id, channelId))) {
+      if (!(await channels.remove(id, channelId))) {
         return error(404, "channel not found");
       }
       return ok({ success: true });

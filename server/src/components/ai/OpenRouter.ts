@@ -1,4 +1,4 @@
-import { AI_TIMEOUT_MS } from "./timeout";
+export const AI_TIMEOUT_MS = 120_000;
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 

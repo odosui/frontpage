@@ -1,5 +1,5 @@
 import { query } from "../db/pool";
-import { PageSnapshot } from "../components/websites/fetcher";
+import { PageSnapshot } from "../components/websites/download";
 
 /** Park a fetched page for the analyze_page job that follows. */
 export async function saveSnapshot(

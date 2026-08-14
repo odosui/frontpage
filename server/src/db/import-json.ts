@@ -7,7 +7,9 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { Article } from "../api/types";
-import * as dbs from "../api/dashboards";
+import * as articles from "../models/articles";
+import * as channels from "../models/channels";
+import * as dashboards from "../models/dashboards";
 import { describeDatabase } from "./config";
 import { migrateUp } from "./migrator";
 import { closePool } from "./pool";
@@ -30,7 +32,7 @@ async function main() {
   }
 
   for (const file of files) {
-    const id = dbs.slugify(file.replace(/\.json$/, ""));
+    const id = dashboards.slugify(file.replace(/\.json$/, ""));
     if (!id) {
       console.log(`[import] skipping ${file}: not a valid dashboard id`);
       continue;
@@ -42,25 +44,25 @@ async function main() {
       continue;
     }
 
-    const already = await dbs.exists(id);
+    const already = await dashboards.exists(id);
     // an existing-but-empty dashboard (e.g. the seeded `default`) is still a
     // valid import target — only real content is protected
-    if (already && !overwrite && (await dbs.listChannels(id)).length > 0) {
+    if (already && !overwrite && (await channels.list(id)).length > 0) {
       console.log(`[import] skipping ${id}: already has channels`);
       continue;
     }
-    if (!already) await dbs.create(id, id);
+    if (!already) await dashboards.create(id, id);
 
-    let articles = 0;
+    let articleCount = 0;
     // the old files carried grid coordinates too; only the name and url survive
     for (const item of layout) {
-      await dbs.addChannel(id, { id: item.i, kind: "web", url: item.url });
-      await dbs.replaceArticles(id, item.i, item.items || []);
-      articles += (item.items || []).length;
+      await channels.add(id, { id: item.i, kind: "web", url: item.url });
+      await articles.replace(id, item.i, item.items || []);
+      articleCount += (item.items || []).length;
     }
 
     console.log(
-      `[import] ${id}: ${layout.length} channels, ${articles} articles`,
+      `[import] ${id}: ${layout.length} channels, ${articleCount} articles`,
     );
   }
 }

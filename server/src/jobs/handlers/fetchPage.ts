@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
-import * as dbs from "../../api/dashboards";
-import { fetchPage } from "../../components/websites/fetcher";
-import { saveSnapshot } from "../snapshots";
+import * as channels from "../../models/channels";
+import { fetchPage } from "../../components/websites/download";
+import { saveSnapshot } from "../../models/snapshots";
 import { JobHandler } from "../types";
 
 export type FetchPagePayload = {
@@ -9,32 +9,26 @@ export type FetchPagePayload = {
   channelId: string;
 };
 
-/**
- * Download a channel's page and hand it to an analyze_page job. Kept separate
- * from the analysis so a slow model can't force a re-download.
- *
- * Skips the (expensive) analysis entirely when the page hasn't changed since
- * the last successful run — either because the server said 304, or because
- * the cleaned html hashes to the same value.
- */
 export const fetchPageHandler: JobHandler = async (payload, { log }) => {
   const { dashboardId, channelId } = payload as FetchPagePayload;
   if (!dashboardId || !channelId) {
     throw new Error("fetch_page requires dashboardId and channelId");
   }
 
-  const channel = await dbs.getChannel(dashboardId, channelId);
+  const channel = await channels.get(dashboardId, channelId);
   if (!channel) {
     throw new Error(`channel ${dashboardId}/${channelId} no longer exists`);
   }
   if (!channel.url) {
-    throw new Error(`channel ${dashboardId}/${channelId} has no url configured`);
+    throw new Error(
+      `channel ${dashboardId}/${channelId} has no url configured`,
+    );
   }
   if (channel.kind !== "web") {
     throw new Error(`fetch_page cannot handle a ${channel.kind} channel`);
   }
 
-  const state = await dbs.getFetchState(dashboardId, channelId);
+  const state = await channels.getFetchState(dashboardId, channelId);
   // only trust the validators if a previous analysis actually completed,
   // otherwise a 304 would strand the channel with no articles
   const validators = state?.contentHash
@@ -48,7 +42,7 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
     return { result: { url: channel.url, unchanged: "not-modified" } };
   }
 
-  await dbs.saveValidators(dashboardId, channelId, {
+  await channels.saveValidators(dashboardId, channelId, {
     etag: page.etag ?? null,
     lastModified: page.lastModified ?? null,
   });

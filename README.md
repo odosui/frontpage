@@ -102,9 +102,9 @@ There are two of them, because the app does two different jobs:
 - `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every channel refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
 - `FRONTPAGE_MODEL_BIG` (default `anthropic/claude-opus-5`) groups the collected articles into categories and running stories. It runs rarely and on short input — headlines only — and the quality gap between models is wide here, so it is worth paying for.
 
-Note: for the *small* model, pick a *non-reasoning* one. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout (120s, override with `FRONTPAGE_AI_TIMEOUT_MS`). Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
+Note: for the _small_ model, pick a _non-reasoning_ one. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout. Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 
-Model choice also affects *image* extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your feed looks text-only, try a different model before assuming the sites lack images.
+Model choice also affects _image_ extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your feed looks text-only, try a different model before assuming the sites lack images.
 
 ### So is this another service wrapped around a prompt?
 

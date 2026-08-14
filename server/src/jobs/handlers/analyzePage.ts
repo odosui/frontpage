@@ -1,7 +1,8 @@
-import * as dbs from "../../api/dashboards";
+import * as articles from "../../models/articles";
+import * as channels from "../../models/channels";
 import { SMALL_MODEL } from "../../components/ai/models";
-import { analyzePage } from "../../components/websites/fetcher";
-import { deleteSnapshot, loadSnapshot } from "../snapshots";
+import { extractArticles } from "../../components/websites/extract";
+import { deleteSnapshot, loadSnapshot } from "../../models/snapshots";
 import { JobHandler } from "../types";
 
 export type AnalyzePagePayload = {
@@ -31,18 +32,18 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
   }
 
   log(`analyzing ${snapshot.url} with ${SMALL_MODEL}`);
-  const articles = await analyzePage(snapshot.url, snapshot);
+  const extracted = await extractArticles(snapshot.url, snapshot);
 
   // drop duplicates within the response; the insert filters against what is
   // already stored
   const seen = new Set<string>();
-  const unique = articles.filter((a) => {
+  const unique = extracted.filter((a) => {
     if (seen.has(a.url)) return false;
     seen.add(a.url);
     return true;
   });
 
-  const items = await dbs.prependArticles(
+  const items = await articles.prepend(
     dashboardId,
     channelId,
     unique,
@@ -52,18 +53,18 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
 
   // only now is it safe to remember this page as "already analyzed"
   if (contentHash) {
-    await dbs.saveContentHash(dashboardId, channelId, contentHash);
+    await channels.saveContentHash(dashboardId, channelId, contentHash);
   }
 
   await deleteSnapshot(snapshotId);
 
-  log(`extracted ${articles.length}, ${added} new`);
+  log(`extracted ${extracted.length}, ${added} new`);
 
   return {
     result: {
       url: snapshot.url,
       model: SMALL_MODEL,
-      extracted: articles.length,
+      extracted: extracted.length,
       added,
     },
   };
