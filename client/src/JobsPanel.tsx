@@ -83,7 +83,7 @@ const JobsPanel: React.FC<JobsPanelProps> = ({ onClose }) => {
 }
 
 const JobRow: React.FC<{ job: Job }> = ({ job }) => {
-  const target = [job.payload.dashboardId, job.payload.widgetId]
+  const target = [job.payload.dashboardId, job.payload.channelId]
     .filter(Boolean)
     .join(' / ')
 

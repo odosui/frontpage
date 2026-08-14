@@ -1,24 +1,11 @@
 import * as React from 'react'
-import { useEffect, useState, useCallback, useRef } from 'react'
-import {
-  GridLayout,
-  useContainerWidth,
-  type Layout,
-  type LayoutItem,
-} from 'react-grid-layout'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'slim-react-router'
-import api, { type LayoutItem as ApiLayoutItem, type Article } from './api'
+import api, { type Channel, type FeedArticle } from './api'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
-import debounce from './utils/debounce'
-import Widget from './Widget'
-import AddWidgetModal from './AddWidgetModal'
-import 'react-grid-layout/css/styles.css'
-
-const BASE_COLS = 24
-const GRID_ROW_HEIGHT = 40
-const WIDGET_MIN_W = 2
-const WIDGET_MIN_H = 4
+import AddChannelModal from './AddChannelModal'
+import Feed from './Feed'
 
 const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
@@ -31,32 +18,25 @@ const Dashboard: React.FC = () => {
     [navigate],
   )
   const [dashboards, setDashboards] = useState<string[]>([])
-  const [layout, setLayout] = useState<ApiLayoutItem[]>([])
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [feed, setFeed] = useState<FeedArticle[]>([])
   const [loaded, setLoaded] = useState(false)
-  const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
-  const { width, containerRef, mounted } = useContainerWidth()
   const { jobs, refresh: refreshJobs, onJobFinished } = useJobs()
   const { setTools } = useToolbar()
 
-  // a widget is "refreshing" while it has a job in flight
+  // a channel is "refreshing" while it has a job in flight
   const refreshing = new Set(
     jobs
       .filter(
         (job) =>
           (job.status === 'queued' || job.status === 'running') &&
           job.payload.dashboardId === dashboardId &&
-          job.payload.widgetId,
+          job.payload.channelId,
       )
-      .map((job) => job.payload.widgetId as string),
+      .map((job) => job.payload.channelId as string),
   )
-
-  const saveLayout = useRef(
-    debounce((id: string, newLayout: ApiLayoutItem[]) => {
-      api.saveLayout(id, newLayout)
-    }, 500),
-  ).current
 
   const loadDashboards = useCallback(() => {
     api.listDashboards().then((data: { dashboards: string[] }) => {
@@ -70,118 +50,91 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     setLoaded(false)
-    api.getLayout(dashboardId).then((data: { layout: ApiLayoutItem[] }) => {
-      setLayout(data.layout && data.layout.length > 0 ? data.layout : [])
-      setLoaded(true)
-    })
+    api
+      .getDashboard(dashboardId)
+      .then((data: { channels: Channel[]; feed: FeedArticle[] }) => {
+        setChannels(data.channels || [])
+        setFeed(data.feed || [])
+        setLoaded(true)
+      })
   }, [dashboardId])
 
-  const onLayoutChange = useCallback(
-    (newLayout: Layout) => {
-      setLayout((prev) => {
-        const mapped: ApiLayoutItem[] = newLayout.map((item: LayoutItem) => {
-          const existing = prev.find((p) => p.i === item.i)
+  const reloadFeed = useCallback(() => {
+    api
+      .getFeed(dashboardId)
+      .then((data: { feed: FeedArticle[] }) => setFeed(data.feed || []))
+      .catch(() => undefined)
+  }, [dashboardId])
 
-          const t: ApiLayoutItem = {
-            i: item.i,
-            x: item.x,
-            y: item.y,
-            w: item.w,
-            h: item.h,
-            url: existing?.url ?? '',
-            items: existing?.items,
-          }
+  const clearError = useCallback((id: string) => {
+    setErrors((prev) => {
+      if (!prev.has(id)) return prev
+      const next = new Map(prev)
+      next.delete(id)
+      return next
+    })
+  }, [])
 
-          return t
-        })
-        const posChanged = mapped.some((m) => {
-          const p = prev.find((o) => o.i === m.i)
-          return !p || p.x !== m.x || p.y !== m.y || p.w !== m.w || p.h !== m.h
-        })
-        if (posChanged) {
-          saveLayout(
-            dashboardId,
-            mapped.map(({ items, ...rest }) => rest),
-          )
-        }
-        return mapped
-      })
-    },
-    [saveLayout, dashboardId],
-  )
-
-  const deleteWidget = useCallback(
+  const deleteChannel = useCallback(
     (id: string) => {
-      if (!window.confirm('Delete this widget?')) return
-      api.deleteWidget(dashboardId, id).then(() => {
-        setLayout((prev) => prev.filter((item) => item.i !== id))
+      if (!window.confirm(`Delete channel "${id}" and its articles?`)) return
+      api.deleteChannel(dashboardId, id).then(() => {
+        setChannels((prev) => prev.filter((c) => c.id !== id))
+        setFeed((prev) => prev.filter((a) => a.channelId !== id))
+        clearError(id)
       })
     },
-    [dashboardId],
+    [dashboardId, clearError],
   )
 
   /** Queues the work; the worker does it and the jobs poll reports back. */
-  const refreshWidget = useCallback(
+  const refreshChannel = useCallback(
     (id: string) => {
-      setErrors((prev) => {
-        const next = new Map(prev)
-        next.delete(id)
-        return next
-      })
+      clearError(id)
       api
-        .refreshWidget(dashboardId, id)
+        .refreshChannel(dashboardId, id)
         .then(() => refreshJobs())
         .catch((err: Error) => {
           setErrors((prev) => new Map(prev).set(id, err.message))
         })
     },
-    [dashboardId, refreshJobs],
+    [dashboardId, refreshJobs, clearError],
   )
 
-  // pull in fresh articles as each widget's analysis lands
+  // pull the feed back in as each channel's analysis lands
   useEffect(() => {
     return onJobFinished((job) => {
-      const { dashboardId: jobDashboard, widgetId } = job.payload
-      if (jobDashboard !== dashboardId || !widgetId) return
+      const { dashboardId: jobDashboard, channelId } = job.payload
+      if (jobDashboard !== dashboardId || !channelId) return
 
       if (job.status === 'failed') {
         setErrors((prev) =>
-          new Map(prev).set(widgetId, job.error || `${job.type} failed`),
+          new Map(prev).set(channelId, job.error || `${job.type} failed`),
         )
         return
       }
 
       if (job.type !== 'analyze_page') return
-      api
-        .getWidgetItems(dashboardId, widgetId)
-        .then((data: { items: Article[] }) => {
-          setLayout((prev) =>
-            prev.map((item) =>
-              item.i === widgetId ? { ...item, items: data.items } : item,
-            ),
-          )
-          setErrors((prev) => {
-            const next = new Map(prev)
-            next.delete(widgetId)
-            return next
-          })
-        })
-        .catch(() => undefined)
+      clearError(channelId)
+      reloadFeed()
     })
-  }, [dashboardId, onJobFinished])
+  }, [dashboardId, onJobFinished, reloadFeed, clearError])
 
   const refreshAll = useCallback(() => {
-    layout.forEach((item) => refreshWidget(item.i))
-  }, [layout, refreshWidget])
+    channels.forEach((channel) => refreshChannel(channel.id))
+  }, [channels, refreshChannel])
 
-  const addWidget = useCallback(
-    (widget: ApiLayoutItem) => {
-      api.addWidget(dashboardId, widget).then(() => {
-        setLayout((prev) => [...prev, widget])
-        refreshWidget(widget.i)
+  const addChannel = useCallback(
+    (channel: Channel) => {
+      api.addChannel(dashboardId, channel).then(() => {
+        setChannels((prev) => [
+          ...prev.filter((c) => c.id !== channel.id),
+          channel,
+        ])
+        refreshChannel(channel.id)
       })
     },
-    [dashboardId, refreshWidget],
+    [dashboardId, refreshChannel],
   )
 
   const handleCreateDashboard = useCallback(
@@ -231,8 +184,15 @@ const Dashboard: React.FC = () => {
       onRename: handleRenameDashboard,
       onRefreshAll: refreshAll,
       isRefreshing,
-      onAddWidget: () => setShowAddModal(true),
+      onAddChannel: () => setShowAddModal(true),
+      channels,
+      refreshingChannels: refreshing,
+      channelErrors: errors,
+      onRefreshChannel: refreshChannel,
+      onDeleteChannel: deleteChannel,
     })
+    // `refreshing` is rebuilt every render; isRefreshing/jobs cover its changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     setTools,
     dashboards,
@@ -243,16 +203,13 @@ const Dashboard: React.FC = () => {
     handleRenameDashboard,
     refreshAll,
     isRefreshing,
+    channels,
+    errors,
+    refreshChannel,
+    deleteChannel,
   ])
 
   useEffect(() => () => setTools(null), [setTools])
-
-  useEffect(() => {
-    if (!openMenu) return
-    const close = () => setOpenMenu(null)
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
-  }, [openMenu])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -283,61 +240,19 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey)
   }, [dashboards, dashboardId, setDashboardId, refreshAll])
 
-  // Calculate how many "pages" of BASE_COLS are needed based on widget positions
-  const maxRight = layout.reduce(
-    (max, item) => Math.max(max, item.x + item.w),
-    0,
-  )
-  const pages = Math.max(1, Math.ceil(maxRight / BASE_COLS))
-  // Add 1 extra page so users always have room to drag widgets further right
-  const totalPages = pages + 1
-  const gridCols = BASE_COLS * totalPages
-  const gridWidth = width * totalPages
-
   if (!loaded) return null
 
   return (
-    <div
-      className="dashboard"
-      ref={containerRef as React.LegacyRef<HTMLDivElement>}
-    >
-      {mounted && (
-        <GridLayout
-          layout={layout.map((item) => ({
-            ...item,
-            minW: WIDGET_MIN_W,
-            minH: WIDGET_MIN_H,
-          }))}
-          width={gridWidth}
-          gridConfig={{ cols: gridCols, rowHeight: GRID_ROW_HEIGHT }}
-          dragConfig={{ enabled: true, handle: '.widget-header' }}
-          resizeConfig={{ enabled: true }}
-          onLayoutChange={onLayoutChange}
-        >
-          {layout.map((item) => (
-            <div key={item.i}>
-              <Widget
-                item={item}
-                isMenuOpen={openMenu === item.i}
-                isRefreshing={refreshing.has(item.i)}
-                error={errors.get(item.i)}
-                onMenuToggle={() =>
-                  setOpenMenu(openMenu === item.i ? null : item.i)
-                }
-                onRefresh={() => {
-                  setOpenMenu(null)
-                  refreshWidget(item.i)
-                }}
-                onDelete={() => deleteWidget(item.i)}
-              />
-            </div>
-          ))}
-        </GridLayout>
-      )}
-      <AddWidgetModal
+    <div className="dashboard">
+      {/* left of the feed is deliberately empty — more to come */}
+      <div className="dashboard-main" />
+      <aside className="dashboard-feed">
+        <Feed articles={feed} hasChannels={channels.length > 0} />
+      </aside>
+      <AddChannelModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onAdd={addWidget}
+        onAdd={addChannel}
       />
     </div>
   )

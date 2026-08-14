@@ -6,11 +6,11 @@ import { JobHandler } from "../types";
 
 export type FetchPagePayload = {
   dashboardId: string;
-  widgetId: string;
+  channelId: string;
 };
 
 /**
- * Download a widget's page and hand it to an analyze_page job. Kept separate
+ * Download a channel's page and hand it to an analyze_page job. Kept separate
  * from the analysis so a slow model can't force a re-download.
  *
  * Skips the (expensive) analysis entirely when the page hasn't changed since
@@ -18,34 +18,37 @@ export type FetchPagePayload = {
  * the cleaned html hashes to the same value.
  */
 export const fetchPageHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, widgetId } = payload as FetchPagePayload;
-  if (!dashboardId || !widgetId) {
-    throw new Error("fetch_page requires dashboardId and widgetId");
+  const { dashboardId, channelId } = payload as FetchPagePayload;
+  if (!dashboardId || !channelId) {
+    throw new Error("fetch_page requires dashboardId and channelId");
   }
 
-  const widget = await dbs.getWidget(dashboardId, widgetId);
-  if (!widget) {
-    throw new Error(`widget ${dashboardId}/${widgetId} no longer exists`);
+  const channel = await dbs.getChannel(dashboardId, channelId);
+  if (!channel) {
+    throw new Error(`channel ${dashboardId}/${channelId} no longer exists`);
   }
-  if (!widget.url) {
-    throw new Error(`widget ${dashboardId}/${widgetId} has no url configured`);
+  if (!channel.url) {
+    throw new Error(`channel ${dashboardId}/${channelId} has no url configured`);
+  }
+  if (channel.kind !== "web") {
+    throw new Error(`fetch_page cannot handle a ${channel.kind} channel`);
   }
 
-  const state = await dbs.getFetchState(dashboardId, widgetId);
+  const state = await dbs.getFetchState(dashboardId, channelId);
   // only trust the validators if a previous analysis actually completed,
-  // otherwise a 304 would strand the widget with no articles
+  // otherwise a 304 would strand the channel with no articles
   const validators = state?.contentHash
     ? { etag: state.etag, lastModified: state.lastModified }
     : undefined;
 
-  const page = await fetchPage(widget.url, validators);
+  const page = await fetchPage(channel.url, validators);
 
   if (page.notModified) {
-    log(`${widget.url} unchanged (304), skipping analysis`);
-    return { result: { url: widget.url, unchanged: "not-modified" } };
+    log(`${channel.url} unchanged (304), skipping analysis`);
+    return { result: { url: channel.url, unchanged: "not-modified" } };
   }
 
-  await dbs.saveValidators(dashboardId, widgetId, {
+  await dbs.saveValidators(dashboardId, channelId, {
     etag: page.etag ?? null,
     lastModified: page.lastModified ?? null,
   });
@@ -53,19 +56,19 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
   const contentHash = createHash("sha256").update(page.html).digest("hex");
 
   if (state?.contentHash === contentHash) {
-    log(`${widget.url} unchanged (same content), skipping analysis`);
-    return { result: { url: widget.url, unchanged: "same-content" } };
+    log(`${channel.url} unchanged (same content), skipping analysis`);
+    return { result: { url: channel.url, unchanged: "same-content" } };
   }
 
-  const snapshotId = await saveSnapshot(widget.url, page);
+  const snapshotId = await saveSnapshot(channel.url, page);
 
   log(
-    `fetched ${widget.url} — ${page.html.length} chars, ${page.hrefs.length} links`,
+    `fetched ${channel.url} — ${page.html.length} chars, ${page.hrefs.length} links`,
   );
 
   return {
     result: {
-      url: widget.url,
+      url: channel.url,
       snapshotId,
       htmlChars: page.html.length,
       links: page.hrefs.length,
@@ -75,10 +78,10 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
         type: "analyze_page",
         payload: {
           dashboardId,
-          widgetId,
+          channelId,
           snapshotId,
           contentHash,
-          url: widget.url,
+          url: channel.url,
         },
       },
     ],

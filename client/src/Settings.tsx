@@ -139,13 +139,13 @@ const StatsBody: React.FC<{ stats: DatabaseStats }> = ({ stats }) => {
         <Stat label="Total size" value={bytes(database.bytes)} hint={database.name} />
         <Stat label="Dashboards" value={num(content.dashboards)} />
         <Stat
-          label="Widgets"
-          value={num(content.widgets)}
+          label="Channels"
+          value={num(content.channels)}
           hint={hints([
-            content.widgetsWithoutUrl > 0 &&
-              `${content.widgetsWithoutUrl} without a url`,
-            content.widgetsNeverFetched > 0 &&
-              `${content.widgetsNeverFetched} never fetched`,
+            content.channelsWithoutUrl > 0 &&
+              `${content.channelsWithoutUrl} without a url`,
+            content.channelsNeverFetched > 0 &&
+              `${content.channelsNeverFetched} never fetched`,
           ])}
         />
         <Stat
@@ -221,7 +221,7 @@ const StatsBody: React.FC<{ stats: DatabaseStats }> = ({ stats }) => {
         <thead>
           <tr>
             <th>Dashboard</th>
-            <th className="num">Widgets</th>
+            <th className="num">Channels</th>
             <th className="num">Articles</th>
             <th className="num">Last fetch</th>
           </tr>
@@ -230,7 +230,7 @@ const StatsBody: React.FC<{ stats: DatabaseStats }> = ({ stats }) => {
           {stats.dashboards.map((d) => (
             <tr key={d.id}>
               <td>{d.id}</td>
-              <td className="num">{num(d.widgets)}</td>
+              <td className="num">{num(d.channels)}</td>
               <td className="num">{num(d.articles)}</td>
               <td className="num">
                 {d.lastFetchedAt ? ago(d.lastFetchedAt) : 'never'}

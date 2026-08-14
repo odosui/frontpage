@@ -36,42 +36,42 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.renameDashboard(pathParams.id ?? "", body),
   },
 
-  // Layout operations scoped to dashboard
+  // Channels and the feed, scoped to a dashboard
   {
     method: "get",
-    path: "/api/dashboards/:dashboardId/layout",
+    path: "/api/dashboards/:dashboardId",
     handler: async ({ pathParams }) =>
-      api.getLayout(pathParams.dashboardId ?? ""),
-  },
-  {
-    method: "put",
-    path: "/api/dashboards/:dashboardId/layout",
-    handler: async ({ pathParams, body }) =>
-      api.saveLayout(pathParams.dashboardId ?? "", body),
-  },
-  {
-    method: "post",
-    path: "/api/dashboards/:dashboardId/widget",
-    handler: async ({ pathParams, body }) =>
-      api.addWidget(pathParams.dashboardId ?? "", body),
-  },
-  {
-    method: "post",
-    path: "/api/dashboards/:dashboardId/widget/:id/refresh",
-    handler: async ({ pathParams }) =>
-      api.refreshWidget(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+      api.getDashboard(pathParams.dashboardId ?? ""),
   },
   {
     method: "get",
-    path: "/api/dashboards/:dashboardId/widget/:id/items",
+    path: "/api/dashboards/:dashboardId/feed",
     handler: async ({ pathParams }) =>
-      api.getWidgetItems(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+      api.getFeed(pathParams.dashboardId ?? ""),
+  },
+  {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/channels",
+    handler: async ({ pathParams }) =>
+      api.listChannels(pathParams.dashboardId ?? ""),
+  },
+  {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/channels",
+    handler: async ({ pathParams, body }) =>
+      api.addChannel(pathParams.dashboardId ?? "", body),
+  },
+  {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/channels/:id/refresh",
+    handler: async ({ pathParams }) =>
+      api.refreshChannel(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
   {
     method: "delete",
-    path: "/api/dashboards/:dashboardId/widget/:id",
+    path: "/api/dashboards/:dashboardId/channels/:id",
     handler: async ({ pathParams }) =>
-      api.deleteWidget(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+      api.deleteChannel(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
 
   // Jobs

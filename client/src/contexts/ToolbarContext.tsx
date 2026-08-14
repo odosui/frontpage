@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { createContext, useContext, useState } from 'react'
+import { type Channel } from '../api'
 
 /**
  * The dashboard's controls live in the top bar, which is rendered outside the
@@ -14,7 +15,12 @@ export interface DashboardTools {
   onRename: (id: string, name: string) => void
   onRefreshAll: () => void
   isRefreshing: boolean
-  onAddWidget: () => void
+  onAddChannel: () => void
+  channels: Channel[]
+  refreshingChannels: Set<string>
+  channelErrors: Map<string, string>
+  onRefreshChannel: (id: string) => void
+  onDeleteChannel: (id: string) => void
 }
 
 interface ToolbarValue {

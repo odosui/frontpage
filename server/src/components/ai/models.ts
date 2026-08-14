@@ -5,7 +5,7 @@
  */
 
 /**
- * Extracting articles out of a front page. Runs on every widget refresh, on
+ * Extracting articles out of a front page. Runs on every channel refresh, on
  * 200k characters of HTML, so it has to be fast, cheap and non-reasoning.
  */
 export const SMALL_MODEL = normalizeModel(

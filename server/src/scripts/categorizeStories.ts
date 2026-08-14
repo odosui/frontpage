@@ -22,7 +22,7 @@ async function main() {
 
   const articles = await recentArticles(args.limit);
   if (articles.length === 0) {
-    throw new Error("no articles in the database — refresh a widget first");
+    throw new Error("no articles in the database — refresh a channel first");
   }
   console.log(`${articles.length} articles, ${models.length} model(s)\n`);
 

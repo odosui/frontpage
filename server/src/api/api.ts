@@ -5,7 +5,7 @@ import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import * as dbs from "./dashboards";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
-import { LayoutItem } from "./types";
+import { CHANNEL_KINDS, Channel, ChannelKind } from "./types";
 
 dayjs.extend(relativeTime);
 
@@ -53,70 +53,80 @@ export const createApi = async () => {
       return ok({ id: newId });
     },
 
-    getLayout: async (dashboardId: string) => {
+    /** Channels plus the merged article feed — everything the page renders. */
+    getDashboard: async (dashboardId: string) => {
       const id = dbs.resolveId(dashboardId);
-      return ok({ layout: await dbs.getLayout(id, MAX_ITEMS) });
+      const [channels, feed] = await Promise.all([
+        dbs.listChannels(id),
+        dbs.getFeed(id, MAX_ITEMS),
+      ]);
+      return ok({ channels, feed });
     },
 
-    saveLayout: async (dashboardId: string, body: { layout: LayoutItem[] }) => {
+    getFeed: async (dashboardId: string) => {
       const id = dbs.resolveId(dashboardId);
-      if (!Array.isArray(body.layout)) {
-        return error(400, "layout must be an array");
-      }
-      await dbs.saveLayout(id, body.layout);
-      return ok({ success: true });
+      return ok({ feed: await dbs.getFeed(id, MAX_ITEMS) });
+    },
+
+    listChannels: async (dashboardId: string) => {
+      const id = dbs.resolveId(dashboardId);
+      return ok({ channels: await dbs.listChannels(id) });
     },
 
     /**
      * Queues the work rather than doing it — the worker picks up fetch_page,
      * which chains into analyze_page. Clients follow progress via /api/jobs.
      */
-    refreshWidget: async (dashboardId: string, widgetId: string) => {
+    refreshChannel: async (dashboardId: string, channelId: string) => {
       const id = dbs.resolveId(dashboardId);
-      if (!widgetId) {
-        return error(400, "widget id is required");
+      if (!channelId) {
+        return error(400, "channel id is required");
       }
-      const widget = await dbs.getWidget(id, widgetId);
-      if (!widget) {
-        return error(404, "widget not found");
+      const channel = await dbs.getChannel(id, channelId);
+      if (!channel) {
+        return error(404, "channel not found");
       }
-      if (!widget.url) {
-        return error(400, "widget has no url configured");
+      if (!channel.url) {
+        return error(400, "channel has no url configured");
+      }
+      if (channel.kind !== "web") {
+        return error(400, `${channel.kind} channels cannot be fetched yet`);
       }
 
       const job = await queue.enqueue({
         type: "fetch_page",
-        payload: { dashboardId: id, widgetId, url: widget.url },
+        payload: { dashboardId: id, channelId, url: channel.url },
       });
-      console.log(`[refresh] ${id}/${widgetId} queued as job ${job.id}`);
+      console.log(`[refresh] ${id}/${channelId} queued as job ${job.id}`);
 
       return ok({ job });
     },
 
-    getWidgetItems: async (dashboardId: string, widgetId: string) => {
+    addChannel: async (dashboardId: string, body: { channel: Channel }) => {
       const id = dbs.resolveId(dashboardId);
-      if (!widgetId) {
-        return error(400, "widget id is required");
+      const channel = body.channel;
+      if (!channel || !channel.id || typeof channel.id !== "string") {
+        return error(400, "channel id is required");
       }
-      return ok({ items: await dbs.getArticles(id, widgetId, MAX_ITEMS) });
+      if (!channel.url || typeof channel.url !== "string") {
+        return error(400, "channel url is required");
+      }
+      const kind = (channel.kind || "web") as ChannelKind;
+      if (!CHANNEL_KINDS.includes(kind)) {
+        return error(400, `kind must be one of ${CHANNEL_KINDS.join(", ")}`);
+      }
+      const saved: Channel = { id: channel.id, kind, url: channel.url };
+      await dbs.addChannel(id, saved);
+      return ok({ channel: saved });
     },
 
-    addWidget: async (dashboardId: string, body: { widget: LayoutItem }) => {
+    deleteChannel: async (dashboardId: string, channelId: string) => {
       const id = dbs.resolveId(dashboardId);
-      if (!body.widget) {
-        return error(400, "widget is required");
+      if (!channelId) {
+        return error(400, "channel id is required");
       }
-      await dbs.addWidget(id, body.widget);
-      return ok({ widget: body.widget });
-    },
-
-    deleteWidget: async (dashboardId: string, widgetId: string) => {
-      const id = dbs.resolveId(dashboardId);
-      if (!widgetId) {
-        return error(400, "widget id is required");
-      }
-      if (!(await dbs.deleteWidget(id, widgetId))) {
-        return error(404, "widget not found");
+      if (!(await dbs.deleteChannel(id, channelId))) {
+        return error(404, "channel not found");
       }
       return ok({ success: true });
     },

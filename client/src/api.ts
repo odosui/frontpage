@@ -6,19 +6,15 @@ export default {
   renameDashboard: (id: string, name: string) =>
     apiJson('patch', `/dashboards/${id}`, { name }),
 
-  // Layout operations scoped to a dashboard
-  getLayout: (dashboardId: string) =>
-    api('get', `/dashboards/${dashboardId}/layout`),
-  saveLayout: (dashboardId: string, layout: LayoutItem[]) =>
-    apiJson('put', `/dashboards/${dashboardId}/layout`, { layout }),
-  addWidget: (dashboardId: string, widget: LayoutItem) =>
-    apiJson('post', `/dashboards/${dashboardId}/widget`, { widget }),
-  deleteWidget: (dashboardId: string, id: string) =>
-    api('delete', `/dashboards/${dashboardId}/widget/${id}`),
-  refreshWidget: (dashboardId: string, id: string) =>
-    api('post', `/dashboards/${dashboardId}/widget/${id}/refresh`),
-  getWidgetItems: (dashboardId: string, id: string) =>
-    api('get', `/dashboards/${dashboardId}/widget/${id}/items`),
+  // Channels and the feed, scoped to a dashboard
+  getDashboard: (dashboardId: string) => api('get', `/dashboards/${dashboardId}`),
+  getFeed: (dashboardId: string) => api('get', `/dashboards/${dashboardId}/feed`),
+  addChannel: (dashboardId: string, channel: Channel) =>
+    apiJson('post', `/dashboards/${dashboardId}/channels`, { channel }),
+  deleteChannel: (dashboardId: string, id: string) =>
+    api('delete', `/dashboards/${dashboardId}/channels/${id}`),
+  refreshChannel: (dashboardId: string, id: string) =>
+    api('post', `/dashboards/${dashboardId}/channels/${id}/refresh`),
 
   // Jobs
   listJobs: (limit = 50) => api('get', '/jobs', { limit }),
@@ -59,11 +55,11 @@ export type DatabaseStats = {
   tables: TableStat[]
   content: {
     dashboards: number
-    widgets: number
+    channels: number
     articles: number
     newArticles: number
-    widgetsWithoutUrl: number
-    widgetsNeverFetched: number
+    channelsWithoutUrl: number
+    channelsNeverFetched: number
     newestArticleAt: string | null
     oldestArticleAt: string | null
   }
@@ -76,7 +72,7 @@ export type DatabaseStats = {
   }
   dashboards: {
     id: string
-    widgets: number
+    channels: number
     articles: number
     lastFetchedAt: string | null
   }[]
@@ -95,7 +91,7 @@ export type Job = {
   id: string
   type: string
   status: JobStatus
-  payload: { dashboardId?: string; widgetId?: string; url?: string }
+  payload: { dashboardId?: string; channelId?: string; url?: string }
   result: Record<string, unknown> | null
   error: string | null
   attempts: number
@@ -116,14 +112,21 @@ export type Article = {
   new?: boolean
 }
 
-export type LayoutItem = {
-  i: string
-  x: number
-  y: number
-  w: number
-  h: number
+/** Sources we know how to pull from. Only `web` is implemented so far. */
+export const CHANNEL_KINDS = ['web', 'rss', 'telegram', 'twitter'] as const
+
+export type ChannelKind = (typeof CHANNEL_KINDS)[number]
+
+export type Channel = {
+  id: string
+  kind: ChannelKind
   url: string
-  items?: Article[]
+}
+
+/** An article as the feed shows it: with the channel it came from. */
+export type FeedArticle = Article & {
+  channelId: string
+  createdAt: string
 }
 
 type FetchParams = Parameters<typeof fetch>[1]

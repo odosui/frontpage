@@ -8,7 +8,7 @@
 
 AI-powered website aggregator.
 
-Frontpage uses LLMs to scrape front pages, extract articles, and display them in a customizable dashboard. Add any website you want to follow, organize sources into columns, and get a single view of what's new across the web.
+Frontpage uses LLMs to scrape front pages, extract articles, and display them in a single feed. Add any channel you want to follow and get one view of what's new across the web.
 
 <p align="center">
   <img src="media/screen.png" alt="screenshot" width="800" />
@@ -16,7 +16,7 @@ Frontpage uses LLMs to scrape front pages, extract articles, and display them in
 
 ## Features
 
-- Customizable widgets
+- Channels: any site you want on your front page
 - Multiple dashboards
 - Data stored in your own PostgreSQL database
 - Any model on OpenRouter
@@ -26,7 +26,7 @@ Frontpage uses LLMs to scrape front pages, extract articles, and display them in
 ## Keyboard shortcuts
 
 - `Alt` + `←` / `→` — switch to previous / next dashboard (wraps around)
-- `Alt` + `R` — refresh all widgets on the current dashboard
+- `Alt` + `R` — refresh all channels on the current dashboard
 
 ## Motivation
 
@@ -56,7 +56,7 @@ docker run -d \
 
 ## Storage
 
-Everything — dashboards, widgets, and fetched articles — lives in PostgreSQL. Point the app at your database with `FRONTPAGE_DATABASE_URL` (or `DATABASE_URL`):
+Everything — dashboards, channels, and fetched articles — lives in PostgreSQL. Point the app at your database with `FRONTPAGE_DATABASE_URL` (or `DATABASE_URL`):
 
 ```
 FRONTPAGE_DATABASE_URL=postgres://user:password@localhost:5432/frontpage
@@ -85,7 +85,7 @@ Earlier versions stored dashboards as json files under `~/.frontpage`. To bring 
 npm run import-json
 ```
 
-It reads from `FRONTPAGE_HOME` (default `~/.frontpage`), skips dashboards that already have widgets, and leaves the json files untouched. Pass `-- --overwrite` to replace existing dashboards instead.
+It reads from `FRONTPAGE_HOME` (default `~/.frontpage`), skips dashboards that already have channels, and leaves the json files untouched. Pass `-- --overwrite` to replace existing dashboards instead.
 
 ## FAQ
 
@@ -99,12 +99,12 @@ Everything goes through [OpenRouter](https://openrouter.ai), so both settings ta
 
 There are two of them, because the app does two different jobs:
 
-- `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every widget refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
+- `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every channel refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
 - `FRONTPAGE_MODEL_BIG` (default `anthropic/claude-opus-5`) groups the collected articles into categories and running stories. It runs rarely and on short input — headlines only — and the quality gap between models is wide here, so it is worth paying for.
 
 Note: for the *small* model, pick a *non-reasoning* one. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout (120s, override with `FRONTPAGE_AI_TIMEOUT_MS`). Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 
-Model choice also affects *image* extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your widgets look text-only, try a different model before assuming the sites lack images.
+Model choice also affects *image* extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your feed looks text-only, try a different model before assuming the sites lack images.
 
 ### So is this another service wrapped around a prompt?
 

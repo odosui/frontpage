@@ -66,7 +66,7 @@
   }
 }
 
-// dashboard actions + jobs widget sit at the far right of the bar
+// dashboard actions + jobs button sit at the far right of the bar
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -223,9 +223,9 @@
   left: 0;
   z-index: 200;
   min-width: $unit11;
-  background-color: var(--widget-bg);
+  background-color: var(--surface-bg);
   border-radius: $unit2;
-  box-shadow: var(--widget-shadow-hover);
+  box-shadow: var(--surface-shadow-hover);
   padding: $unit1;
 }
 

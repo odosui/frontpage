@@ -24,9 +24,9 @@
   max-width: $unit16;
   margin: 0 auto $unit4;
   padding: $unit4;
-  background-color: var(--widget-bg);
+  background-color: var(--surface-bg);
   border-radius: $unit2;
-  box-shadow: var(--widget-shadow);
+  box-shadow: var(--surface-shadow);
 }
 
 .settings-section-head {

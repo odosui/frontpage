@@ -105,15 +105,13 @@
   --color-git-changes: #f0883e;
   --color-git-clean: #2ea043;
 
-  // widget elevation
-  --widget-bg: #fff;
-  --widget-header-bg: transparent;
-  --widget-header-text: #999;
+  // surface elevation
+  --surface-bg: #fff;
   --color-article-new-bg: rgba(255, 215, 0, 0.08);
   --color-article-new-marker: rgba(212, 160, 23, 0.5);
-  --widget-shadow:
+  --surface-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --widget-shadow-hover:
+  --surface-shadow-hover:
     0 8px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   // jobs
@@ -205,15 +203,13 @@
   --color-git-changes: #f0883e;
   --color-git-clean: #3fb950;
 
-  // widget elevation — dark needs a light ring, black shadows are invisible
-  --widget-bg: #181c27;
-  --widget-header-bg: rgba(255, 255, 255, 0.035);
-  --widget-header-text: #99a2c0;
+  // surface elevation — dark needs a light ring, black shadows are invisible
+  --surface-bg: #181c27;
   --color-article-new-bg: rgba(240, 185, 80, 0.07);
   --color-article-new-marker: rgba(240, 185, 80, 0.55);
-  --widget-shadow:
+  --surface-shadow:
     0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.055);
-  --widget-shadow-hover:
+  --surface-shadow-hover:
     0 8px 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.11);
 
   // jobs

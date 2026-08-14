@@ -3,7 +3,7 @@ import { getPool, query } from "../db/pool";
 /** Tables we report on, in the order the settings page lists them. */
 const TABLES = [
   "dashboards",
-  "widgets",
+  "channels",
   "articles",
   "page_snapshots",
   "jobs",
@@ -45,11 +45,11 @@ export type DatabaseStats = {
   tables: TableStat[];
   content: {
     dashboards: number;
-    widgets: number;
+    channels: number;
     articles: number;
     newArticles: number;
-    widgetsWithoutUrl: number;
-    widgetsNeverFetched: number;
+    channelsWithoutUrl: number;
+    channelsNeverFetched: number;
     newestArticleAt: string | null;
     oldestArticleAt: string | null;
   };
@@ -66,7 +66,7 @@ export type DatabaseStats = {
   };
   dashboards: {
     id: string;
-    widgets: number;
+    channels: number;
     articles: number;
     lastFetchedAt: string | null;
   }[];
@@ -206,22 +206,22 @@ async function tableStats(): Promise<TableStat[]> {
 async function contentStats() {
   const { rows } = await query<Record<string, string | null>>(
     `select (select count(*) from dashboards)                       as dashboards,
-            (select count(*) from widgets)                          as widgets,
-            (select count(*) from articles)                         as articles,
-            (select count(*) from articles where is_new)            as new_articles,
-            (select count(*) from widgets where url = '')           as widgets_without_url,
-            (select count(*) from widgets where fetched_at is null) as widgets_never_fetched,
-            (select max(created_at) from articles)                  as newest_article_at,
-            (select min(created_at) from articles)                  as oldest_article_at`,
+            (select count(*) from channels)                          as channels,
+            (select count(*) from articles)                          as articles,
+            (select count(*) from articles where is_new)             as new_articles,
+            (select count(*) from channels where url = '')           as channels_without_url,
+            (select count(*) from channels where fetched_at is null) as channels_never_fetched,
+            (select max(created_at) from articles)                   as newest_article_at,
+            (select min(created_at) from articles)                   as oldest_article_at`,
   );
   const r = rows[0] ?? {};
   return {
     dashboards: Number(r.dashboards ?? 0),
-    widgets: Number(r.widgets ?? 0),
+    channels: Number(r.channels ?? 0),
     articles: Number(r.articles ?? 0),
     newArticles: Number(r.new_articles ?? 0),
-    widgetsWithoutUrl: Number(r.widgets_without_url ?? 0),
-    widgetsNeverFetched: Number(r.widgets_never_fetched ?? 0),
+    channelsWithoutUrl: Number(r.channels_without_url ?? 0),
+    channelsNeverFetched: Number(r.channels_never_fetched ?? 0),
     newestArticleAt: iso(r.newest_article_at),
     oldestArticleAt: iso(r.oldest_article_at),
   };
@@ -290,25 +290,25 @@ async function jobsByStatus(): Promise<Record<string, number>> {
 async function dashboardStats() {
   const { rows } = await query<{
     id: string;
-    widgets: string;
+    channels: string;
     articles: string;
     last_fetched_at: string | null;
   }>(
-    // subqueries rather than joins: joining widgets and articles together
+    // subqueries rather than joins: joining channels and articles together
     // multiplies the two counts by each other
     `select d.id,
-            (select count(*) from widgets w where w.dashboard_id = d.id)
-              as widgets,
+            (select count(*) from channels c where c.dashboard_id = d.id)
+              as channels,
             (select count(*) from articles a where a.dashboard_id = d.id)
               as articles,
-            (select max(w.fetched_at) from widgets w where w.dashboard_id = d.id)
+            (select max(c.fetched_at) from channels c where c.dashboard_id = d.id)
               as last_fetched_at
      from dashboards d
      order by articles desc, d.id`,
   );
   return rows.map((r) => ({
     id: r.id,
-    widgets: Number(r.widgets),
+    channels: Number(r.channels),
     articles: Number(r.articles),
     lastFetchedAt: iso(r.last_fetched_at),
   }));

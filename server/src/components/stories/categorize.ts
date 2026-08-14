@@ -5,7 +5,7 @@ import { PromptArticle, categorizeStoriesPrompt } from "./prompt";
 export type RecentArticle = PromptArticle & {
   url: string;
   dashboardId: string;
-  widgetId: string;
+  channelId: string;
 };
 
 export type Story = { story: string; article_ids: number[] };
@@ -40,10 +40,10 @@ export async function recentArticles(limit: number): Promise<RecentArticle[]> {
     title: string;
     url: string;
     dashboard_id: string;
-    widget_id: string;
+    channel_id: string;
     created_at: Date;
   }>(
-    `select title, url, dashboard_id, widget_id, created_at
+    `select title, url, dashboard_id, channel_id, created_at
      from articles
      order by created_at desc, id desc
      limit $1`,
@@ -54,9 +54,9 @@ export async function recentArticles(limit: number): Promise<RecentArticle[]> {
     id: i + 1,
     title: r.title,
     url: r.url,
-    source: hostname(r.url) || r.widget_id,
+    source: hostname(r.url) || r.channel_id,
     dashboardId: r.dashboard_id,
-    widgetId: r.widget_id,
+    channelId: r.channel_id,
     publishedAt: new Date(r.created_at).toISOString().slice(0, 16).replace("T", " "),
     }));
 }

@@ -2,6 +2,7 @@ import { HomeIcon, GearIcon, ZapIcon } from '@primer/octicons-react'
 import { Link, useLocation } from 'slim-react-router'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
+import ChannelsMenu from './ChannelsMenu'
 import DashboardSwitcher from './DashboardSwitcher'
 import RefreshIcon from './icons/RefreshIcon'
 import PlusIcon from './icons/PlusIcon'
@@ -49,9 +50,16 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
       <div className="topbar-actions">
         {tools && (
           <>
-            <button className="topbar-btn" onClick={tools.onAddWidget}>
+            <ChannelsMenu
+              channels={tools.channels}
+              refreshing={tools.refreshingChannels}
+              errors={tools.channelErrors}
+              onRefresh={tools.onRefreshChannel}
+              onDelete={tools.onDeleteChannel}
+            />
+            <button className="topbar-btn" onClick={tools.onAddChannel}>
               <PlusIcon />
-              Add new
+              Add channel
             </button>
             <button
               className={`topbar-btn${tools.isRefreshing ? ' is-refreshing' : ''}`}

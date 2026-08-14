@@ -6,22 +6,22 @@ import { JobHandler } from "../types";
 
 export type AnalyzePagePayload = {
   dashboardId: string;
-  widgetId: string;
+  channelId: string;
   snapshotId: string;
   /** Hash of the analyzed html, recorded so the next fetch can skip a no-op. */
   contentHash?: string;
 };
 
-/** How many articles a widget keeps. Mirrors the API's page size. */
+/** How many articles a channel keeps. Mirrors the API's page size. */
 const MAX_ITEMS = 100;
 
 /** Run the model over a fetched page and store whatever articles are new. */
 export const analyzePageHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, widgetId, snapshotId, contentHash } =
+  const { dashboardId, channelId, snapshotId, contentHash } =
     payload as AnalyzePagePayload;
-  if (!dashboardId || !widgetId || !snapshotId) {
+  if (!dashboardId || !channelId || !snapshotId) {
     throw new Error(
-      "analyze_page requires dashboardId, widgetId and snapshotId",
+      "analyze_page requires dashboardId, channelId and snapshotId",
     );
   }
 
@@ -44,7 +44,7 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
 
   const items = await dbs.prependArticles(
     dashboardId,
-    widgetId,
+    channelId,
     unique,
     MAX_ITEMS,
   );
@@ -52,7 +52,7 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
 
   // only now is it safe to remember this page as "already analyzed"
   if (contentHash) {
-    await dbs.saveContentHash(dashboardId, widgetId, contentHash);
+    await dbs.saveContentHash(dashboardId, channelId, contentHash);
   }
 
   await deleteSnapshot(snapshotId);
