@@ -77,7 +77,7 @@ export const createApi = async () => {
 
     /**
      * Queues the work rather than doing it — the worker picks up fetch_page,
-     * which chains into analyze_page. Clients follow progress via /api/jobs.
+     * which chains into extract_articles. Clients follow progress via /api/jobs.
      */
     refreshChannel: async (dashboardId: string, channelId: string) => {
       const id = dashboards.resolveId(dashboardId);

@@ -5,7 +5,7 @@ import { extractArticles } from "../../components/websites/extract";
 import { deleteSnapshot, loadSnapshot } from "../../models/snapshots";
 import { JobHandler } from "../types";
 
-export type AnalyzePagePayload = {
+export type ExtractArticlesPayload = {
   dashboardId: string;
   channelId: string;
   snapshotId: string;
@@ -17,12 +17,12 @@ export type AnalyzePagePayload = {
 const MAX_ITEMS = 100;
 
 /** Run the model over a fetched page and store whatever articles are new. */
-export const analyzePageHandler: JobHandler = async (payload, { log }) => {
+export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
   const { dashboardId, channelId, snapshotId, contentHash } =
-    payload as AnalyzePagePayload;
+    payload as ExtractArticlesPayload;
   if (!dashboardId || !channelId || !snapshotId) {
     throw new Error(
-      "analyze_page requires dashboardId, channelId and snapshotId",
+      "extract_articles requires dashboardId, channelId and snapshotId",
     );
   }
 

@@ -69,7 +69,7 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
     },
     enqueue: [
       {
-        type: "analyze_page",
+        type: "extract_articles",
         payload: {
           dashboardId,
           channelId,

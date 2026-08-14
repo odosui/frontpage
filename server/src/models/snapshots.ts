@@ -1,7 +1,7 @@
 import { query } from "../db/pool";
 import { PageSnapshot } from "../components/websites/download";
 
-/** Park a fetched page for the analyze_page job that follows. */
+/** Park a fetched page for the extract_articles job that follows. */
 export async function saveSnapshot(
   url: string,
   snapshot: PageSnapshot,

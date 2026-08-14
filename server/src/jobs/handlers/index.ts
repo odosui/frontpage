@@ -1,10 +1,10 @@
 import { JobHandler } from "../types";
-import { analyzePageHandler } from "./analyzePage";
+import { extractArticlesHandler } from "./extractArticles";
 import { fetchPageHandler } from "./fetchPage";
 
 export const handlers: Record<string, JobHandler> = {
   fetch_page: fetchPageHandler,
-  analyze_page: analyzePageHandler,
+  extract_articles: extractArticlesHandler,
 };
 
 export const JOB_TYPES = Object.keys(handlers);

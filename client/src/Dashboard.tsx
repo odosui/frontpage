@@ -116,7 +116,7 @@ const Dashboard: React.FC = () => {
         return
       }
 
-      if (job.type !== 'analyze_page') return
+      if (job.type !== 'extract_articles') return
       clearError(channelId)
       reloadFeed()
     })
