@@ -49,7 +49,8 @@ docker run -d \
   -p 3043:3043 \
   -e FRONTPAGE_DATABASE_URL=postgres://user:pass@host:5432/frontpage \
   -e OPENROUTER_API_KEY=your-key \
-  -e FRONTPAGE_MODEL=google/gemini-3.1-flash-lite \
+  -e FRONTPAGE_MODEL_SMALL=google/gemini-3.1-flash-lite \
+  -e FRONTPAGE_MODEL_BIG=anthropic/claude-opus-5 \
   hiquest/frontpage:latest
 ```
 
@@ -94,15 +95,14 @@ Many websites have stopped providing RSS feeds, because, khmm, ads. Other times,
 
 ### What model should I use?
 
-Everything goes through [OpenRouter](https://openrouter.ai), so `FRONTPAGE_MODEL` is an OpenRouter model id. For example:
+Everything goes through [OpenRouter](https://openrouter.ai), so both settings take an OpenRouter model id. Set `OPENROUTER_API_KEY` to your key.
 
-- `google/gemini-3.1-flash-lite`
-- `anthropic/claude-sonnet-5`
-- `deepseek/deepseek-v4-flash`
+There are two of them, because the app does two different jobs:
 
-The default is `google/gemini-3.1-flash-lite`. Set `OPENROUTER_API_KEY` to your key.
+- `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every widget refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
+- `FRONTPAGE_MODEL_BIG` (default `anthropic/claude-opus-5`) groups the collected articles into categories and running stories. It runs rarely and on short input — headlines only — and the quality gap between models is wide here, so it is worth paying for.
 
-Note: pick a *non-reasoning* model. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout (120s, override with `FRONTPAGE_AI_TIMEOUT_MS`). Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
+Note: for the *small* model, pick a *non-reasoning* one. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout (120s, override with `FRONTPAGE_AI_TIMEOUT_MS`). Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 
 Model choice also affects *image* extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your widgets look text-only, try a different model before assuming the sites lack images.
 

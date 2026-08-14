@@ -1,16 +1,7 @@
 import { Article } from "../../api/types";
 import { sendMessage } from "../ai/OpenRouter";
+import { SMALL_MODEL } from "../ai/models";
 import { extractArticlesPrompt } from "./prompt";
-
-/** An OpenRouter model id, the only provider we talk to. */
-export const FRONTPAGE_MODEL = normalizeModel(
-  process.env.FRONTPAGE_MODEL || "google/gemini-3.1-flash-lite",
-);
-
-/** Older configs prefixed the id with the provider; accept those unchanged. */
-function normalizeModel(value: string): string {
-  return value.startsWith("openrouter/") ? value.slice("openrouter/".length) : value;
-}
 
 const HTML_LIMIT = 200_000;
 /** Stop reading a response past this much decompressed html. */
@@ -66,7 +57,7 @@ export async function analyzePage(
   const baseUrl = new URL(url);
 
   const aiResp = await sendMessage(
-    FRONTPAGE_MODEL,
+    SMALL_MODEL,
     extractArticlesPrompt(baseUrl.origin, snapshot.html),
   );
 

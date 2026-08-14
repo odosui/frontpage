@@ -14,6 +14,7 @@
     "migrate:status": "ts-node src/db/cli.ts status",
     "migrate:new": "ts-node src/db/cli.ts new",
     "import-json": "ts-node src/db/import-json.ts",
+    "stories": "ts-node src/scripts/categorizeStories.ts",
     "db": "node dist/db/cli.js",
     "test:watch": "vitest",
     "test": "vitest run",

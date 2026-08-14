@@ -1,8 +1,6 @@
 import * as dbs from "../../api/dashboards";
-import {
-  FRONTPAGE_MODEL,
-  analyzePage,
-} from "../../components/websites/fetcher";
+import { SMALL_MODEL } from "../../components/ai/models";
+import { analyzePage } from "../../components/websites/fetcher";
 import { deleteSnapshot, loadSnapshot } from "../snapshots";
 import { JobHandler } from "../types";
 
@@ -32,7 +30,7 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
     throw new Error(`page snapshot ${snapshotId} is gone — re-fetch the page`);
   }
 
-  log(`analyzing ${snapshot.url} with ${FRONTPAGE_MODEL}`);
+  log(`analyzing ${snapshot.url} with ${SMALL_MODEL}`);
   const articles = await analyzePage(snapshot.url, snapshot);
 
   // drop duplicates within the response; the insert filters against what is
@@ -64,7 +62,7 @@ export const analyzePageHandler: JobHandler = async (payload, { log }) => {
   return {
     result: {
       url: snapshot.url,
-      model: FRONTPAGE_MODEL,
+      model: SMALL_MODEL,
       extracted: articles.length,
       added,
     },

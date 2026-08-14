@@ -27,3 +27,6 @@ playwright-report
 test-results
 mt.pid
 docs-static
+
+# scratch output (story categorization runs)
+tmp/
