@@ -22,6 +22,8 @@ export type FeedArticle = Article & {
   createdAt: string;
   /** 1-10, as scored by the categorizing agent; null until it has run. */
   importance: number | null;
+  /** Broadest first; empty until the article has been categorized. */
+  tags: string[];
 };
 
 /**

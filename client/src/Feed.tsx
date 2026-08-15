@@ -1,15 +1,46 @@
+import { PlayIcon } from '@primer/octicons-react'
 import { type FeedArticle } from './api'
 import { timeAgo } from './utils/dates'
 
 type Props = {
   articles: FeedArticle[]
   hasChannels: boolean
+  /** Articles waiting for the categorizing agent. */
+  uncategorized: number
+  running: boolean
+  onRunAgent: () => void
 }
 
-const Feed = ({ articles, hasChannels }: Props) => {
+const Feed = ({
+  articles,
+  hasChannels,
+  uncategorized,
+  running,
+  onRunAgent,
+}: Props) => {
   return (
     <div>
-      <h2 className="feed-heading">Latest</h2>
+      <div className="feed-head">
+        <h2 className="feed-heading">
+          Latest
+          {uncategorized > 0 && (
+            <span className="feed-uncategorized">{uncategorized} uncat</span>
+          )}
+        </h2>
+        <button
+          className="feed-run"
+          onClick={onRunAgent}
+          disabled={running || uncategorized === 0}
+          title={
+            uncategorized === 0
+              ? 'Everything is categorized'
+              : `Categorize ${uncategorized} article${uncategorized > 1 ? 's' : ''}`
+          }
+        >
+          <PlayIcon size={12} />
+          {running ? 'Running…' : 'Run'}
+        </button>
+      </div>
       {articles.length === 0 ? (
         <p className="feed-placeholder">
           {hasChannels

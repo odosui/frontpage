@@ -227,6 +227,36 @@ $feed-width: $unit12;
   }
 }
 
+/**
+ * Tags under each article. Each one carries its own --tag-hue, hashed from the
+ * word in the component, so the same tag is always the same colour without a
+ * hand-kept palette. Lightness and saturation stay fixed, which keeps the row
+ * varied but never garish.
+ */
+.story-tags {
+  list-style: none;
+  margin: 0 0 $unit1;
+  padding: 0 $unit1 0 $unit3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $unit0;
+}
+
+.story-tag {
+  padding: 0 $unit1;
+  font-size: $text0;
+  line-height: $unit3;
+  border-radius: $unit2;
+  color: hsl(var(--tag-hue) 55% 32%);
+  background-color: hsl(var(--tag-hue) 70% 94%);
+}
+
+// the app switches themes on [data-theme='dark'] only; light is the default
+[data-theme='dark'] .story-tag {
+  color: hsl(var(--tag-hue) 60% 78%);
+  background-color: hsl(var(--tag-hue) 35% 20%);
+}
+
 // continues the title's last line, like the feed's meta does
 .story-article-meta {
   display: inline;
@@ -248,8 +278,54 @@ $feed-width: $unit12;
   border-left: 1px solid var(--borderColor);
 }
 
+// the heading carries the queue depth, with the run button beside it
+.feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $unit1;
+  margin-bottom: $unit1;
+}
+
+.feed-uncategorized {
+  margin-left: $unit1;
+  color: var(--color-accent);
+}
+
+.feed-run {
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0;
+  flex-shrink: 0;
+  padding: $unit0 $unit1;
+  font-size: $text0;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit0;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+
+  svg {
+    color: inherit;
+    fill: currentColor;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--color-accent);
+    background-color: var(--color-bg-hover);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
 .feed-heading {
-  margin: 0 0 $unit1;
+  margin: 0;
   font-size: $text0;
   font-weight: 600;
   text-transform: uppercase;

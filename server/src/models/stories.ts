@@ -1,4 +1,5 @@
 import { query, withTransaction } from "../db/pool";
+import * as articles from "./articles";
 import { StoryFeedEntry } from "../api/types";
 import { slugify } from "../utils/slug";
 
@@ -13,6 +14,7 @@ type StoryRow = {
 };
 
 type StoryArticleRow = {
+  id: string;
   story_id: string;
   title: string;
   url: string;
@@ -68,13 +70,15 @@ export async function feed(
 
   const byId = new Map(entries.map((e) => [e.id, e]));
   const { rows: articleRows } = await query<StoryArticleRow>(
-    `select story_id, title, url, image, is_new as new, channel_id,
+    `select id, story_id, title, url, image, is_new as new, channel_id,
             created_at, importance
      from articles
      where story_id = any($1::bigint[])
      order by created_at desc, position, id`,
     [[...byId.keys()]],
   );
+
+  const tags = await articles.tagsFor(articleRows.map((r) => Number(r.id)));
 
   for (const row of articleRows) {
     byId.get(Number(row.story_id))?.articles.push({
@@ -85,6 +89,7 @@ export async function feed(
       channelId: row.channel_id,
       createdAt: row.created_at.toISOString(),
       importance: row.importance,
+      tags: tags.get(Number(row.id)) ?? [],
     });
   }
 

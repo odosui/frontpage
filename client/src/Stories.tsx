@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { type StoryFeedEntry } from './api'
 import { timeAgo } from './utils/dates'
 
@@ -34,35 +35,61 @@ const Stories = ({ stories, hasArticles }: Props) => {
           </h2>
           <div className="story-articles">
             {story.articles.map((article) => (
-              <a
-                key={`${article.channelId}:${article.url}`}
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`story-article${
-                  article.new ? ' story-article--new' : ''
-                }`}
-                title={article.title}
-              >
-                <span
-                  className={`story-article-dot is-${band(article.importance)}`}
-                  title={
-                    article.importance === null
-                      ? 'Not scored yet'
-                      : `Importance ${article.importance}/10`
-                  }
-                />
-                {article.title}
-                <span className="story-article-meta">
-                  {article.channelId} · {timeAgo(article.createdAt)}
-                </span>
-              </a>
+              <div key={`${article.channelId}:${article.url}`}>
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`story-article${
+                    article.new ? ' story-article--new' : ''
+                  }`}
+                  title={article.title}
+                >
+                  <span
+                    className={`story-article-dot is-${band(article.importance)}`}
+                    title={
+                      article.importance === null
+                        ? 'Not scored yet'
+                        : `Importance ${article.importance}/10`
+                    }
+                  />
+                  {article.title}
+                  <span className="story-article-meta">
+                    {article.channelId} · {timeAgo(article.createdAt)}
+                  </span>
+                </a>
+                {article.tags.length > 0 && (
+                  <ul className="story-tags">
+                    {article.tags.map((tag) => (
+                      <li
+                        key={tag}
+                        className="story-tag"
+                        style={{ '--tag-hue': hue(tag) } as React.CSSProperties}
+                      >
+                        {tag}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             ))}
           </div>
         </article>
       ))}
     </div>
   )
+}
+
+/**
+ * A stable colour per tag: the same word always lands on the same hue, so
+ * "russia" reads the same everywhere without a hand-kept colour map.
+ */
+function hue(tag: string): number {
+  let h = 0
+  for (let i = 0; i < tag.length; i++) {
+    h = (h * 31 + tag.charCodeAt(i)) % 360
+  }
+  return h
 }
 
 /**

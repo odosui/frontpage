@@ -29,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [channels, setChannels] = useState<Channel[]>([])
   const [feed, setFeed] = useState<FeedArticle[]>([])
   const [stories, setStories] = useState<StoryFeedEntry[]>([])
+  const [uncategorized, setUncategorized] = useState(0)
   const [selection, setSelection] = useState<Selection>(null)
   const [loaded, setLoaded] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -67,10 +68,12 @@ const Dashboard: React.FC = () => {
           channels: Channel[]
           feed: FeedArticle[]
           stories: StoryFeedEntry[]
+          uncategorized: number
         }) => {
           setChannels(data.channels || [])
           setFeed(data.feed || [])
           setStories(data.stories || [])
+          setUncategorized(data.uncategorized || 0)
           setLoaded(true)
         },
       )
@@ -79,7 +82,10 @@ const Dashboard: React.FC = () => {
   const reloadFeed = useCallback(() => {
     api
       .getFeed(dashboardId)
-      .then((data: { feed: FeedArticle[] }) => setFeed(data.feed || []))
+      .then((data: { feed: FeedArticle[]; uncategorized: number }) => {
+        setFeed(data.feed || [])
+        setUncategorized(data.uncategorized || 0)
+      })
       .catch(() => undefined)
   }, [dashboardId])
 
@@ -137,7 +143,11 @@ const Dashboard: React.FC = () => {
 
       // an agent run is what files articles into stories
       if (job.type === 'run_agent') {
-        if (job.status === 'succeeded') reloadStories()
+        if (job.status === 'succeeded') {
+          reloadStories()
+          // articles just left the queue, so the count moved too
+          reloadFeed()
+        }
         return
       }
 
@@ -159,6 +169,21 @@ const Dashboard: React.FC = () => {
   const refreshAll = useCallback(() => {
     channels.forEach((channel) => refreshChannel(channel.id))
   }, [channels, refreshChannel])
+
+  /** Queues a categorizing run over whatever is still uncategorized. */
+  const runAgent = useCallback(() => {
+    api
+      .runAgent(dashboardId, 'categorizing_agent')
+      .then(() => refreshJobs())
+      .catch(() => undefined)
+  }, [dashboardId, refreshJobs])
+
+  const agentRunning = jobs.some(
+    (job) =>
+      job.type === 'run_agent' &&
+      (job.status === 'queued' || job.status === 'running') &&
+      job.payload.dashboardId === dashboardId,
+  )
 
   const addChannel = useCallback(
     (channel: Channel) => {
@@ -302,7 +327,13 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
       <aside className="dashboard-feed">
-        <Feed articles={feed} hasChannels={channels.length > 0} />
+        <Feed
+          articles={feed}
+          hasChannels={channels.length > 0}
+          uncategorized={uncategorized}
+          running={agentRunning}
+          onRunAgent={runAgent}
+        />
       </aside>
       <AddChannelModal
         isOpen={showAddModal}

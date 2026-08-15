@@ -36,6 +36,8 @@ export async function feed(
     channelId: r.channel_id,
     createdAt: new Date(r.created_at).toISOString(),
     importance: r.importance,
+    // the narrow latest column does not render tags; the story feed fills them
+    tags: [],
   }));
 }
 
@@ -64,6 +66,68 @@ export async function markSkipped(
     ],
   );
   return rowCount ?? 0;
+}
+
+/**
+ * Clears the unread marks on a channel. `prepend` does this as part of storing
+ * a fetch, but a fetch that finds the page unchanged never gets that far — the
+ * articles are still the ones the reader has already seen, so they stop being
+ * new either way. Returns how many rows it cleared.
+ */
+export async function markRead(
+  dashboardId: string,
+  channelId: string,
+): Promise<number> {
+  const { rowCount } = await query(
+    `update articles set is_new = false
+      where dashboard_id = $1 and channel_id = $2 and is_new`,
+    [dashboardId, channelId],
+  );
+  return rowCount ?? 0;
+}
+
+/**
+ * The tags on each of these articles, alphabetically. article_tags is a plain
+ * (article_id, tag_id) pair with no ordinal, so the order the agent wrote them
+ * in — broadest first — isn't recoverable; alphabetical at least keeps the
+ * chips stable between renders.
+ */
+export async function tagsFor(ids: number[]): Promise<Map<number, string[]>> {
+  const byArticle = new Map<number, string[]>();
+  if (ids.length === 0) return byArticle;
+
+  const { rows } = await query<{ article_id: string; name: string }>(
+    `select at.article_id, t.name
+       from article_tags at
+       join tags t on t.id = at.tag_id
+      where at.article_id = any($1::bigint[])
+      order by at.article_id, t.name`,
+    [ids],
+  );
+
+  for (const row of rows) {
+    const id = Number(row.article_id);
+    const list = byArticle.get(id);
+    if (list) list.push(row.name);
+    else byArticle.set(id, [row.name]);
+  }
+  return byArticle;
+}
+
+/** How many articles are waiting for the categorizing agent right now. */
+export async function uncategorizedCount(
+  dashboardId: string,
+  days: number,
+): Promise<number> {
+  const { rows } = await query<{ count: string }>(
+    `select count(*) from articles
+      where dashboard_id = $1
+        and story_id is null
+        and skipped_at is null
+        and created_at >= now() - make_interval(days => $2::int)`,
+    [dashboardId, days],
+  );
+  return Number(rows[0]?.count ?? 0);
 }
 
 export type UncategorizedArticle = {

@@ -3,6 +3,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/registry";
+import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
 import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as channels from "../models/channels";
@@ -66,17 +67,22 @@ export const createApi = async () => {
     /** Channels plus the merged article feed — everything the page renders. */
     getDashboard: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      const [list, feed, storyFeed] = await Promise.all([
+      const [list, feed, storyFeed, uncategorized] = await Promise.all([
         channels.list(id),
         articles.feed(id, MAX_ITEMS),
         stories.feed(id, MAX_STORIES),
+        articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
       ]);
-      return ok({ channels: list, feed, stories: storyFeed });
+      return ok({ channels: list, feed, stories: storyFeed, uncategorized });
     },
 
     getFeed: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      return ok({ feed: await articles.feed(id, MAX_ITEMS) });
+      const [feed, uncategorized] = await Promise.all([
+        articles.feed(id, MAX_ITEMS),
+        articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
+      ]);
+      return ok({ feed, uncategorized });
     },
 
     /** The categorized view: stories with their articles, newest story first. */
