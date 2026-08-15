@@ -1,11 +1,16 @@
 import * as React from 'react'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'slim-react-router'
-import api, { type Channel, type FeedArticle } from './api'
+import api, {
+  type Channel,
+  type FeedArticle,
+  type StoryFeedEntry,
+} from './api'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AddChannelModal from './AddChannelModal'
 import Feed from './Feed'
+import Stories from './Stories'
 
 const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
@@ -22,6 +27,7 @@ const Dashboard: React.FC = () => {
   const [dashboards, setDashboards] = useState<string[]>([])
   const [channels, setChannels] = useState<Channel[]>([])
   const [feed, setFeed] = useState<FeedArticle[]>([])
+  const [stories, setStories] = useState<StoryFeedEntry[]>([])
   const [loaded, setLoaded] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
@@ -54,17 +60,33 @@ const Dashboard: React.FC = () => {
     setLoaded(false)
     api
       .getDashboard(dashboardId)
-      .then((data: { channels: Channel[]; feed: FeedArticle[] }) => {
-        setChannels(data.channels || [])
-        setFeed(data.feed || [])
-        setLoaded(true)
-      })
+      .then(
+        (data: {
+          channels: Channel[]
+          feed: FeedArticle[]
+          stories: StoryFeedEntry[]
+        }) => {
+          setChannels(data.channels || [])
+          setFeed(data.feed || [])
+          setStories(data.stories || [])
+          setLoaded(true)
+        },
+      )
   }, [dashboardId])
 
   const reloadFeed = useCallback(() => {
     api
       .getFeed(dashboardId)
       .then((data: { feed: FeedArticle[] }) => setFeed(data.feed || []))
+      .catch(() => undefined)
+  }, [dashboardId])
+
+  const reloadStories = useCallback(() => {
+    api
+      .getStories(dashboardId)
+      .then((data: { stories: StoryFeedEntry[] }) =>
+        setStories(data.stories || []),
+      )
       .catch(() => undefined)
   }, [dashboardId])
 
@@ -84,9 +106,11 @@ const Dashboard: React.FC = () => {
         setChannels((prev) => prev.filter((c) => c.id !== id))
         setFeed((prev) => prev.filter((a) => a.channelId !== id))
         clearError(id)
+        // its articles went with it, so stories may have lost entries
+        reloadStories()
       })
     },
-    [dashboardId, clearError],
+    [dashboardId, clearError, reloadStories],
   )
 
   /** Queues the work; the worker does it and the jobs poll reports back. */
@@ -107,7 +131,15 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     return onJobFinished((job) => {
       const { dashboardId: jobDashboard, channelId } = job.payload
-      if (jobDashboard !== dashboardId || !channelId) return
+      if (jobDashboard !== dashboardId) return
+
+      // an agent run is what files articles into stories
+      if (job.type === 'run_agent') {
+        if (job.status === 'succeeded') reloadStories()
+        return
+      }
+
+      if (!channelId) return
 
       if (job.status === 'failed') {
         setErrors((prev) =>
@@ -120,7 +152,7 @@ const Dashboard: React.FC = () => {
       clearError(channelId)
       reloadFeed()
     })
-  }, [dashboardId, onJobFinished, reloadFeed, clearError])
+  }, [dashboardId, onJobFinished, reloadFeed, reloadStories, clearError])
 
   const refreshAll = useCallback(() => {
     channels.forEach((channel) => refreshChannel(channel.id))
@@ -246,8 +278,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard">
-      {/* left of the feed is deliberately empty — more to come */}
-      <div className="dashboard-main" />
+      <main className="dashboard-main">
+        <Stories stories={stories} hasArticles={feed.length > 0} />
+      </main>
       <aside className="dashboard-feed">
         <Feed articles={feed} hasChannels={channels.length > 0} />
       </aside>

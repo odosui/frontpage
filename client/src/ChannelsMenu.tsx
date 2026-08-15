@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { type Channel } from './api'
 import ChevronDownIcon from './icons/ChevronDownIcon'
+import PlusIcon from './icons/PlusIcon'
 import RefreshIcon from './icons/RefreshIcon'
 import TrashIcon from './icons/TrashIcon'
 
@@ -8,20 +9,26 @@ type Props = {
   channels: Channel[]
   refreshing: Set<string>
   errors: Map<string, string>
+  isRefreshingAll: boolean
   onRefresh: (id: string) => void
   onDelete: (id: string) => void
+  onAdd: () => void
+  onRefreshAll: () => void
 }
 
 /**
  * Channels no longer have a tile of their own to hang controls off, so their
- * per-channel actions live here.
+ * per-channel actions live here, along with the dashboard-wide add/refresh.
  */
 const ChannelsMenu = ({
   channels,
   refreshing,
   errors,
+  isRefreshingAll,
   onRefresh,
   onDelete,
+  onAdd,
+  onRefreshAll,
 }: Props) => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -85,6 +92,32 @@ const ChannelsMenu = ({
               </div>
             </div>
           ))}
+
+          <div className="channels-divider" />
+
+          <button
+            className="channels-menu-btn"
+            onClick={() => {
+              setOpen(false)
+              onAdd()
+            }}
+          >
+            <PlusIcon />
+            Add channel
+          </button>
+          <button
+            className={`channels-menu-btn${
+              isRefreshingAll ? ' is-refreshing' : ''
+            }`}
+            disabled={isRefreshingAll || channels.length === 0}
+            onClick={() => {
+              setOpen(false)
+              onRefreshAll()
+            }}
+          >
+            <RefreshIcon />
+            Refresh all
+          </button>
         </div>
       )}
     </div>

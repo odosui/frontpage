@@ -1,6 +1,7 @@
 import { runAgent } from "../../components/agents/runner";
 import { getAgent } from "../../components/agents/registry";
 import {
+  DEFAULT_WINDOW_DAYS,
   parseTree,
   uncategorizedArticles,
 } from "../../components/stories/categorize";
@@ -14,11 +15,11 @@ export type RunAgentPayload = {
   /** The dashboard the agent is confined to. */
   dashboardId: string;
   model?: string;
-  /** How many uncategorized articles to hand the agent. */
+  /** How far back to look for uncategorized articles. */
+  days?: number;
+  /** Optional cap on the batch; by default the whole window goes in. */
   limit?: number;
 };
-
-const DEFAULT_LIMIT = 25;
 
 /**
  * Runs one agent session in the worker. The runner persists every turn as it
@@ -26,22 +27,27 @@ const DEFAULT_LIMIT = 25;
  * still running — the job result only carries the summary.
  */
 export const runAgentHandler: JobHandler = async (payload, { log }) => {
-  const { kind, model, limit, dashboardId } = payload as RunAgentPayload;
+  const { kind, model, days, limit, dashboardId } = payload as RunAgentPayload;
   if (!kind || !dashboardId) {
     throw new Error("run_agent requires a kind and a dashboardId");
   }
 
   const agent = getAgent(kind);
-  const articles = await uncategorizedArticles(
-    dashboardId,
-    limit ?? DEFAULT_LIMIT,
-  );
+  const window = days ?? DEFAULT_WINDOW_DAYS;
+  const articles = await uncategorizedArticles(dashboardId, {
+    days: window,
+    limit,
+  });
   if (articles.length === 0) {
     throw new Error(
-      `every article in ${dashboardId} is already categorized — nothing to do`,
+      `every article in ${dashboardId} from the last ${window} days is ` +
+        `already categorized — nothing to do`,
     );
   }
-  log(`${articles.length} uncategorized articles in ${dashboardId}`);
+  log(
+    `${articles.length} uncategorized articles in ${dashboardId} ` +
+      `from the last ${window} days`,
+  );
 
   const run = await runAgent(agent, {
     model: model || SMALL_MODEL,

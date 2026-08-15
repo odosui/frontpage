@@ -12,10 +12,92 @@ $feed-width: $unit12;
   overflow: hidden;
 }
 
-// deliberately empty for now — the rest of the app lands here later
+// the storyline / story / articles view
 .dashboard-main {
   flex: 1;
   min-width: 0;
+  overflow-y: auto;
+  padding: $unit3 $unit4 $unit6;
+}
+
+.stories {
+  max-width: $unit14;
+  display: flex;
+  flex-direction: column;
+  gap: $unit4;
+}
+
+.stories-placeholder {
+  color: var(--lighter);
+  font-size: $text1;
+  line-height: 1.4;
+}
+
+.story-storyline {
+  margin-bottom: $unit0;
+  font-size: $text0;
+  font-weight: 500;
+  color: var(--lighter);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.story-title {
+  margin: 0 0 $unit2;
+  font-size: $text5;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.story-articles {
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+  // aligns the articles under the headline as a group hanging off it
+  padding-left: $unit2;
+  border-left: 2px solid var(--borderColor);
+}
+
+.story-article {
+  display: block;
+  font-size: $text2;
+  line-height: 1.35;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+
+  // unread: bolder, with the same inline dot the feed uses
+  &--new {
+    font-weight: 600;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: $unit1 - 2px;
+      height: $unit1 - 2px;
+      margin-right: $unit1;
+      vertical-align: middle;
+      border-radius: 50%;
+      background-color: var(--color-article-new-marker);
+    }
+  }
+}
+
+// continues the title's last line, like the feed's meta does
+.story-article-meta {
+  display: inline;
+  margin-left: $unit1;
+  font-size: $text0;
+  font-weight: 400;
+  color: var(--lighter);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .dashboard-feed {
@@ -118,6 +200,48 @@ $feed-width: $unit12;
   padding: $unit2;
   font-size: $text1;
   color: var(--lighter);
+}
+
+// separates the per-channel rows from the dashboard-wide actions below
+.channels-divider {
+  height: 1px;
+  margin: $unit1 $unit0;
+  background: var(--borderColor);
+}
+
+.channels-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  width: 100%;
+  padding: $unit1 $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  font-size: $text1;
+  color: var(--lighter);
+  cursor: pointer;
+
+  // these icons stroke with currentColor, so they only need the colour back
+  svg,
+  svg * {
+    color: inherit;
+  }
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  &.is-refreshing svg {
+    animation: spin 1s linear infinite;
+  }
 }
 
 .channels-item {

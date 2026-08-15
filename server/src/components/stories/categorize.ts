@@ -35,17 +35,24 @@ export type CategorizeRun = {
   usage: Usage;
 };
 
+/** How far back a categorizing run looks by default. */
+export const DEFAULT_WINDOW_DAYS = 7;
+
 /**
- * The batch to work on: articles in this dashboard that no story has claimed
- * yet, newest first. Ids are renumbered 1..n for the prompt so the model never
- * has to echo six-digit database ids back — `articleId` keeps the real one for
- * persistence.
+ * The batch to work on: every article in this dashboard from the last `days`
+ * that no story has claimed yet, newest first. Ids are renumbered 1..n for the
+ * prompt so the model never has to echo six-digit database ids back —
+ * `articleId` keeps the real one for persistence. `limit` caps the batch only
+ * if given.
  */
 export async function uncategorizedArticles(
   dashboardId: string,
-  limit: number,
+  {
+    days = DEFAULT_WINDOW_DAYS,
+    limit,
+  }: { days?: number | undefined; limit?: number | undefined } = {},
 ): Promise<RecentArticle[]> {
-  const rows = await articles.uncategorized(dashboardId, limit);
+  const rows = await articles.uncategorized(dashboardId, { days, limit });
 
   return rows.map((r, i) => ({
     id: i + 1,

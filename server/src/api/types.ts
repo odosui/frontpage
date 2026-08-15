@@ -21,3 +21,18 @@ export type FeedArticle = Article & {
   channelId: string;
   createdAt: string;
 };
+
+/**
+ * One story with the articles under it. The storyline is only a label here —
+ * the same one can head several entries, since the list is ordered by story,
+ * not grouped by arc.
+ */
+export type StoryFeedEntry = {
+  id: number;
+  title: string;
+  slug: string;
+  storyline: { id: number; title: string; slug: string } | null;
+  /** The story's newest article — what the list is sorted by. */
+  updatedAt: string;
+  articles: FeedArticle[];
+};

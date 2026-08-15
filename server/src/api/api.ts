@@ -7,6 +7,7 @@ import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as channels from "../models/channels";
 import * as dashboards from "../models/dashboards";
+import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
 import { CHANNEL_KINDS, Channel, ChannelKind } from "./types";
@@ -14,6 +15,7 @@ import { CHANNEL_KINDS, Channel, ChannelKind } from "./types";
 dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
+const MAX_STORIES = 50;
 
 export const createApi = async () => {
   await dashboards.ensureDefaultDashboard();
@@ -60,16 +62,23 @@ export const createApi = async () => {
     /** Channels plus the merged article feed — everything the page renders. */
     getDashboard: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      const [list, feed] = await Promise.all([
+      const [list, feed, storyFeed] = await Promise.all([
         channels.list(id),
         articles.feed(id, MAX_ITEMS),
+        stories.feed(id, MAX_STORIES),
       ]);
-      return ok({ channels: list, feed });
+      return ok({ channels: list, feed, stories: storyFeed });
     },
 
     getFeed: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
       return ok({ feed: await articles.feed(id, MAX_ITEMS) });
+    },
+
+    /** The categorized view: stories with their articles, newest story first. */
+    getStories: async (dashboardId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      return ok({ stories: await stories.feed(id, MAX_STORIES) });
     },
 
     listChannels: async (dashboardId: string) => {
@@ -201,7 +210,7 @@ export const createApi = async () => {
      */
     runAgent: async (
       dashboardId: string,
-      body: { kind?: string; model?: string; limit?: number },
+      body: { kind?: string; model?: string; days?: number; limit?: number },
     ) => {
       const id = dashboards.resolveId(dashboardId);
       const kind = body?.kind || "";
@@ -217,6 +226,7 @@ export const createApi = async () => {
           kind,
           dashboardId: id,
           model: body.model,
+          days: body.days,
           limit: body.limit,
         },
       });

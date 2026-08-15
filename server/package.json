@@ -15,7 +15,6 @@
     "migrate:new": "ts-node src/db/cli.ts new",
     "import-json": "ts-node src/db/import-json.ts",
     "stories": "ts-node src/scripts/categorizeStories.ts",
-    "agent": "ts-node src/scripts/runAgent.ts",
     "db": "node dist/db/cli.js",
     "test:watch": "vitest",
     "test": "vitest run",

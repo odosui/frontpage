@@ -9,8 +9,6 @@ import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import ChannelsMenu from './ChannelsMenu'
 import DashboardSwitcher from './DashboardSwitcher'
-import RefreshIcon from './icons/RefreshIcon'
-import PlusIcon from './icons/PlusIcon'
 
 const NAV_ITEMS = [
   { path: '/db/default', icon: HomeIcon },
@@ -59,28 +57,16 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
               channels={tools.channels}
               refreshing={tools.refreshingChannels}
               errors={tools.channelErrors}
+              isRefreshingAll={tools.isRefreshing}
               onRefresh={tools.onRefreshChannel}
               onDelete={tools.onDeleteChannel}
+              onAdd={tools.onAddChannel}
+              onRefreshAll={tools.onRefreshAll}
             />
-            <Link
-              className="topbar-btn"
-              to={`/db/${tools.current}/agents`}
-            >
+            <Link className="topbar-btn" to={`/db/${tools.current}/agents`}>
               <DependabotIcon size={16} />
               Agents
             </Link>
-            <button className="topbar-btn" onClick={tools.onAddChannel}>
-              <PlusIcon />
-              Add channel
-            </button>
-            <button
-              className={`topbar-btn${tools.isRefreshing ? ' is-refreshing' : ''}`}
-              onClick={tools.onRefreshAll}
-              disabled={tools.isRefreshing}
-            >
-              <RefreshIcon />
-              Refresh all
-            </button>
           </>
         )}
 

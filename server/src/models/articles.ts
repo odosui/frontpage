@@ -48,10 +48,14 @@ export type UncategorizedArticle = {
  * Articles in this dashboard that no story has claimed yet, newest first.
  * This is the agent's work queue: once a run persists, these rows carry a
  * story_id and drop out, so the next run never re-does them.
+ *
+ * The window is what defines the batch — `days` back from now, everything in
+ * it. `limit` is only a safety valve for a runaway backlog; leave it undefined
+ * to take the whole window.
  */
 export async function uncategorized(
   dashboardId: string,
-  limit: number,
+  { days, limit }: { days: number; limit?: number | undefined },
 ): Promise<UncategorizedArticle[]> {
   const { rows } = await query<{
     id: string;
@@ -62,10 +66,12 @@ export async function uncategorized(
   }>(
     `select id, title, url, channel_id, created_at
      from articles
-     where dashboard_id = $1 and story_id is null
+     where dashboard_id = $1
+       and story_id is null
+       and created_at >= now() - make_interval(days => $2::int)
      order by created_at desc, position, id
-     limit $2`,
-    [dashboardId, limit],
+     limit $3`,
+    [dashboardId, days, limit ?? null],
   );
 
   return rows.map((r) => ({

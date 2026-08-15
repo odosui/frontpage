@@ -51,6 +51,12 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   },
   {
     method: "get",
+    path: "/api/dashboards/:dashboardId/stories",
+    handler: async ({ pathParams }) =>
+      api.getStories(pathParams.dashboardId ?? ""),
+  },
+  {
+    method: "get",
     path: "/api/dashboards/:dashboardId/channels",
     handler: async ({ pathParams }) =>
       api.listChannels(pathParams.dashboardId ?? ""),

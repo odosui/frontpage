@@ -22,7 +22,9 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const models = args.models.length > 0 ? args.models : [BIG_MODEL];
 
-  const articles = await uncategorizedArticles(args.dashboard, args.limit);
+  const articles = await uncategorizedArticles(args.dashboard, {
+    limit: args.limit,
+  });
   if (articles.length === 0) {
     throw new Error(
       `no uncategorized articles in ${args.dashboard} — refresh a channel first`,

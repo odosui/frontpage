@@ -9,6 +9,8 @@ export default {
   // Channels and the feed, scoped to a dashboard
   getDashboard: (dashboardId: string) => api('get', `/dashboards/${dashboardId}`),
   getFeed: (dashboardId: string) => api('get', `/dashboards/${dashboardId}/feed`),
+  getStories: (dashboardId: string) =>
+    api('get', `/dashboards/${dashboardId}/stories`),
   addChannel: (dashboardId: string, channel: Channel) =>
     apiJson('post', `/dashboards/${dashboardId}/channels`, { channel }),
   deleteChannel: (dashboardId: string, id: string) =>
@@ -181,6 +183,26 @@ export type Channel = {
 export type FeedArticle = Article & {
   channelId: string
   createdAt: string
+}
+
+export type Storyline = {
+  id: number
+  title: string
+  slug: string
+}
+
+/**
+ * One story with the articles under it. The storyline is only a label — the
+ * same one can head several entries, since the list is ordered by story.
+ */
+export type StoryFeedEntry = {
+  id: number
+  title: string
+  slug: string
+  storyline: Storyline | null
+  /** The story's newest article — what the list is sorted by. */
+  updatedAt: string
+  articles: FeedArticle[]
 }
 
 type FetchParams = Parameters<typeof fetch>[1]

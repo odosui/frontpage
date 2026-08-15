@@ -1,5 +1,92 @@
-import { withTransaction } from "../db/pool";
+import { query, withTransaction } from "../db/pool";
+import { StoryFeedEntry } from "../api/types";
 import { slugify } from "../utils/slug";
+
+type StoryRow = {
+  id: string;
+  title: string;
+  slug: string;
+  storyline_id: string | null;
+  storyline_title: string | null;
+  storyline_slug: string | null;
+  updated_at: Date;
+};
+
+type StoryArticleRow = {
+  story_id: string;
+  title: string;
+  url: string;
+  image: string;
+  new: boolean;
+  channel_id: string;
+  created_at: Date;
+};
+
+/**
+ * The dashboard's stories, each with its articles. Ordered by the story's
+ * newest article rather than by storyline, so a fresh headline pulls its story
+ * to the top even when an older story from the same arc sits above it.
+ *
+ * Stories nobody has filed an article under are left out — there is nothing to
+ * render for them.
+ */
+export async function feed(
+  dashboardId: string,
+  limit: number,
+): Promise<StoryFeedEntry[]> {
+  const { rows } = await query<StoryRow>(
+    `select s.id, s.title, s.slug,
+            sl.id as storyline_id, sl.title as storyline_title,
+            sl.slug as storyline_slug,
+            max(a.created_at) as updated_at
+     from stories s
+     join articles a on a.story_id = s.id
+     left join storylines sl on sl.id = s.storyline_id
+     where s.dashboard_id = $1
+     group by s.id, sl.id
+     order by max(a.created_at) desc, s.id desc
+     limit $2`,
+    [dashboardId, limit],
+  );
+  if (rows.length === 0) return [];
+
+  const entries = rows.map<StoryFeedEntry>((r) => ({
+    id: Number(r.id),
+    title: r.title,
+    slug: r.slug,
+    storyline: r.storyline_id
+      ? {
+          id: Number(r.storyline_id),
+          title: r.storyline_title ?? "",
+          slug: r.storyline_slug ?? "",
+        }
+      : null,
+    updatedAt: r.updated_at.toISOString(),
+    articles: [],
+  }));
+
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const { rows: articleRows } = await query<StoryArticleRow>(
+    `select story_id, title, url, image, is_new as new, channel_id, created_at
+     from articles
+     where story_id = any($1::bigint[])
+     order by created_at desc, position, id`,
+    [[...byId.keys()]],
+  );
+
+  for (const row of articleRows) {
+    byId.get(Number(row.story_id))?.articles.push({
+      title: row.title,
+      url: row.url,
+      image: row.image,
+      new: row.new,
+      channelId: row.channel_id,
+      createdAt: row.created_at.toISOString(),
+    });
+  }
+
+  return entries;
+}
 
 /** One story to save, with the articles that belong to it and their tags. */
 export type StoryEntry = {
