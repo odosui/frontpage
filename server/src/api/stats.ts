@@ -1,14 +1,5 @@
 import { getPool, query } from "../db/pool";
 
-/** Tables we report on, in the order the settings page lists them. */
-const TABLES = [
-  "dashboards",
-  "channels",
-  "articles",
-  "page_snapshots",
-  "jobs",
-] as const;
-
 export type TableStat = {
   name: string;
   rows: number;
@@ -182,18 +173,34 @@ async function databaseSize() {
   return { name: rows[0]?.name ?? "", bytes: Number(rows[0]?.bytes ?? 0) };
 }
 
+/** Identifiers safe to interpolate; the catalogue never yields anything else. */
+const PLAIN_IDENT = /^[a-z_][a-z0-9_]*$/;
+
 /**
+ * Every table in the public schema, discovered rather than listed: a hardcoded
+ * list silently stops reporting whatever the next migration adds.
+ *
  * Live row estimates come from the planner stats, which can lag; the tables
  * here are small enough to just count them for real.
  */
 async function tableStats(): Promise<TableStat[]> {
-  const counts = TABLES.map(
-    (t) => `select '${t}' as name, count(*)::bigint as rows from ${t}`,
-  ).join(" union all ");
+  const { rows: tables } = await query<{ name: string }>(
+    `select tablename as name from pg_tables
+     where schemaname = 'public'
+     order by tablename`,
+  );
+
+  const names = tables.map((t) => t.name).filter((n) => PLAIN_IDENT.test(n));
+  if (names.length === 0) return [];
+
+  const counts = names
+    .map((t) => `select '${t}' as name, count(*)::bigint as rows from "${t}"`)
+    .join(" union all ");
 
   const { rows } = await query<{ name: string; rows: string; bytes: string }>(
     `select c.name, c.rows, pg_total_relation_size(c.name::regclass) as bytes
-     from (${counts}) c`,
+     from (${counts}) c
+     order by bytes desc, c.name`,
   );
 
   return rows.map((r) => ({
