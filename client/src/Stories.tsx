@@ -26,10 +26,12 @@ const Stories = ({ stories, hasArticles }: Props) => {
     <div className="stories">
       {stories.map((story) => (
         <article key={story.id} className="story">
-          {story.storyline && (
-            <div className="story-storyline">{story.storyline.title}</div>
-          )}
-          <h2 className="story-title">{story.title}</h2>
+          <h2 className="story-title">
+            {story.storyline && (
+              <span className="story-storyline">{story.storyline.title}</span>
+            )}
+            <span className="story-title-text">{story.title}</span>
+          </h2>
           <div className="story-articles">
             {story.articles.map((article) => (
               <a

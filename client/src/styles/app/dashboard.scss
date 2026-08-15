@@ -37,30 +37,47 @@ $feed-width: $unit12;
   line-height: 1.4;
 }
 
-// a hairline is enough to separate stories; the spacing does the rest
-.story + .story {
-  padding-top: $unit4;
-  border-top: 1px solid var(--borderColor);
+// each story is its own surface — the card edge, not a rule, is what the eye
+// uses to find where one story ends and the next begins
+.story {
+  padding: $unit2 $unit3 $unit2;
+  border-radius: $unit2;
+  background-color: var(--surface-bg);
+  box-shadow: var(--surface-shadow);
 }
 
-.story-storyline {
-  margin-bottom: $unit0;
-  font-size: $text0;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
+// the header line: storyline then story, identical but for colour — that
+// alone is enough to tell them apart at this size.
 .story-title {
-  margin: 0 0 $unit2;
-  font-size: $text4;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--color-text);
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: $unit0 $unit1;
+  // lines the header text up with the article text below it
+  margin: 0 0 $unit1 $unit3;
+  font-size: $text0;
+  font-weight: 500;
+  line-height: 1.4;
+  text-transform: uppercase;
+  // small uppercase needs real tracking to stay readable
+  letter-spacing: 0.08em;
+  color: var(--lighter);
   text-wrap: balance;
 }
 
+// the storyline reads as plain header text; the colour is spent on the story.
+// both spans need their colour set outright — the global `*` rule would
+// otherwise paint them --color-text instead of letting them inherit
+.story-storyline {
+  color: var(--lighter);
+  white-space: nowrap;
+}
+
+.story-title-text {
+  color: var(--color-accent);
+}
+
+// the articles are the payload, so they get the plain dark text
 .story-articles {
   display: flex;
   flex-direction: column;
@@ -70,9 +87,9 @@ $feed-width: $unit12;
   display: block;
   position: relative;
   // the marker sits in its own gutter so wrapped lines stay flush
-  padding: $unit1 $unit1 $unit1 $unit3;
-  font-size: $text1;
-  line-height: 1.5;
+  padding: $unit0 $unit1 $unit0 $unit3;
+  font-size: $text2;
+  line-height: 1.45;
   text-decoration: none;
   color: var(--color-text);
   border-radius: $unit1;
@@ -88,12 +105,12 @@ $feed-width: $unit12;
   // only unread articles carry a marker; it sits in the gutter, centred on the
   // first line of the headline
   &--new {
-    font-weight: 600;
+    font-weight: 500;
 
     &::before {
       content: '';
       position: absolute;
-      top: calc(#{$unit1} + 0.75em - #{($unit0 + 1px) * 0.5});
+      top: calc(#{$unit0} + 0.75em - #{($unit0 + 1px) * 0.5});
       left: $unit1;
       width: $unit0 + 1px;
       height: $unit0 + 1px;
