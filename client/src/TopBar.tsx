@@ -24,7 +24,7 @@ interface TopBarProps {
 
 const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
   const location = useLocation()
-  const { activeCount, stats } = useJobs()
+  const { activeCount } = useJobs()
   const { tools } = useToolbar()
   const [agentsOpen, setAgentsOpen] = useState(false)
 
@@ -92,10 +92,14 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
           aria-expanded={jobsOpen}
         >
           <ZapIcon size={16} />
-          <span className="topbar-jobs-label">{jobsLabel(activeCount)}</span>
-          {stats.failed > 0 && (
-            <span className="topbar-jobs-failed">{stats.failed} failed</span>
-          )}
+          <span className="topbar-jobs-label">
+            {/* holds the width open at the longest label, so the button
+                doesn't resize as jobs come and go */}
+            <span className="topbar-jobs-sizer" aria-hidden="true">
+              {jobsLabel(0)}
+            </span>
+            <span className="topbar-jobs-value">{jobsLabel(activeCount)}</span>
+          </span>
         </button>
       </div>
     </header>

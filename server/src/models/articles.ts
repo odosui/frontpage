@@ -17,8 +17,10 @@ export async function feed(
     new: boolean;
     channel_id: string;
     created_at: Date;
+    importance: number | null;
   }>(
-    `select title, url, image, is_new as new, channel_id, created_at
+    `select title, url, image, is_new as new, channel_id, created_at,
+            importance
      from articles
      where dashboard_id = $1
      order by created_at desc, position, id
@@ -33,7 +35,35 @@ export async function feed(
     new: r.new,
     channelId: r.channel_id,
     createdAt: new Date(r.created_at).toISOString(),
+    importance: r.importance,
   }));
+}
+
+/**
+ * Takes articles the agent judged not to be news out of the work queue, with
+ * the reason it gave, so a later look can tell a deliberate rejection from an
+ * article nothing has touched yet. Returns how many rows it actually stamped.
+ */
+export async function markSkipped(
+  dashboardId: string,
+  rejected: { id: number; reason: string }[],
+): Promise<number> {
+  if (rejected.length === 0) return 0;
+
+  const { rowCount } = await query(
+    `update articles a
+        set skipped_at = now(), skipped_reason = r.reason
+       from unnest($2::bigint[], $3::text[]) as r(id, reason)
+      where a.id = r.id
+        and a.dashboard_id = $1
+        and a.story_id is null`,
+    [
+      dashboardId,
+      rejected.map((r) => r.id),
+      rejected.map((r) => r.reason.slice(0, 200)),
+    ],
+  );
+  return rowCount ?? 0;
 }
 
 export type UncategorizedArticle = {
@@ -47,7 +77,8 @@ export type UncategorizedArticle = {
 /**
  * Articles in this dashboard that no story has claimed yet, newest first.
  * This is the agent's work queue: once a run persists, these rows carry a
- * story_id and drop out, so the next run never re-does them.
+ * story_id — or a skipped_at, if the agent judged them not to be news — and
+ * drop out, so the next run never re-does them.
  *
  * The window is what defines the batch — `days` back from now, everything in
  * it. `limit` is only a safety valve for a runaway backlog; leave it undefined
@@ -68,6 +99,7 @@ export async function uncategorized(
      from articles
      where dashboard_id = $1
        and story_id is null
+       and skipped_at is null
        and created_at >= now() - make_interval(days => $2::int)
      order by created_at desc, position, id
      limit $3`,

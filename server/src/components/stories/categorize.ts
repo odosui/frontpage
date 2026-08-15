@@ -10,8 +10,15 @@ export type RecentArticle = PromptArticle & {
   channelId: string;
 };
 
-/** An article as the model placed it: its prompt id plus the tags it earned. */
-export type TaggedArticle = { id: number; tags: string[] };
+/**
+ * An article as the model placed it: its prompt id, how much it matters (1-10),
+ * and the tags it earned.
+ */
+export type TaggedArticle = {
+  id: number;
+  importance?: number;
+  tags: string[];
+};
 
 export type Story = { story: string; articles: TaggedArticle[] };
 

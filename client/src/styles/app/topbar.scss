@@ -137,6 +137,7 @@
   // the global `*` rule sets a color on every element, so the label and the
   // icon's paths have to opt back into the button's colour explicitly
   .topbar-jobs-label,
+  .topbar-jobs-label *,
   svg,
   svg * {
     color: inherit;
@@ -163,17 +164,21 @@
   }
 }
 
+// the text swaps between "No jobs running" and "N jobs running" as work comes
+// and goes. Both labels sit in one grid cell, so the width is the longest real
+// string — no guessed measure, and nothing to trim off the end.
 .topbar-jobs-label {
+  display: grid;
+  text-align: left;
   font-variant-numeric: tabular-nums;
+
+  > * {
+    grid-area: 1 / 1;
+  }
 }
 
-.topbar-jobs-failed {
-  padding: 0 $unit0;
-  border-radius: $unit0;
-  background-color: var(--color-job-failed);
-  color: #fff;
-  font-size: $text0 - 2px;
-  font-weight: 600;
+.topbar-jobs-sizer {
+  visibility: hidden;
 }
 
 // Dashboard switcher dropdown

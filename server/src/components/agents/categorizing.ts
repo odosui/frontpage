@@ -4,12 +4,19 @@ import { grepStorylines } from "./tools/grepStorylines";
 import { grepTags } from "./tools/grepTags";
 import { AgentDefinition } from "./types";
 
+const GENERAL = `
+You are an an intelligent assistants that makes sense of events and news going on in the world across (geo)politics, business, technology, and science or entertainment. Your highest goal is to understand where the world is going, analyzing and tracking, reading between the lines when necessary, see the big picture, see the connections, be able to analize and approximate the future as much as possible given the provided information, and help humans make better decisions.`;
+
 export const categorizingAgent: AgentDefinition = {
   kind: "categorizing_agent",
   name: "CategorizingAgent",
   maxSteps: 12,
   tools: [getStorylines, grepStorylines, getTags, grepTags],
-  instructions: `You are a news desk editor. You are given a batch of fresh headlines and you
+  instructions: `
+
+  ${GENERAL}
+
+  You are given a batch of fresh headlines and you
 group them into stories, place those stories under storylines, and tag every
 article.
 

@@ -20,6 +20,7 @@ type StoryArticleRow = {
   new: boolean;
   channel_id: string;
   created_at: Date;
+  importance: number | null;
 };
 
 /**
@@ -67,7 +68,8 @@ export async function feed(
 
   const byId = new Map(entries.map((e) => [e.id, e]));
   const { rows: articleRows } = await query<StoryArticleRow>(
-    `select story_id, title, url, image, is_new as new, channel_id, created_at
+    `select story_id, title, url, image, is_new as new, channel_id,
+            created_at, importance
      from articles
      where story_id = any($1::bigint[])
      order by created_at desc, position, id`,
@@ -82,6 +84,7 @@ export async function feed(
       new: row.new,
       channelId: row.channel_id,
       createdAt: row.created_at.toISOString(),
+      importance: row.importance,
     });
   }
 
@@ -92,7 +95,7 @@ export async function feed(
 export type StoryEntry = {
   storyline: string;
   story: string;
-  articles: { id: number; tags: string[] }[];
+  articles: { id: number; importance: number | null; tags: string[] }[];
 };
 
 export type SaveResult = {
@@ -172,10 +175,13 @@ export async function save(
       result.stories++;
 
       for (const article of entry.articles) {
+        // a re-run may leave importance out; coalesce keeps the earlier score
         const moved = await client.query(
-          `update articles set story_id = $3
+          `update articles
+             set story_id = $3,
+                 importance = coalesce($4, importance)
            where id = $1 and dashboard_id = $2`,
-          [article.id, dashboardId, storyId],
+          [article.id, dashboardId, storyId, article.importance],
         );
         result.articles += moved.rowCount ?? 0;
 

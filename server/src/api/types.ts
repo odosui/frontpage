@@ -20,6 +20,8 @@ export type Channel = {
 export type FeedArticle = Article & {
   channelId: string;
   createdAt: string;
+  /** 1-10, as scored by the categorizing agent; null until it has run. */
+  importance: number | null;
 };
 
 /**

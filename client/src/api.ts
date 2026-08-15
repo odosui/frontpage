@@ -7,8 +7,10 @@ export default {
     apiJson('patch', `/dashboards/${id}`, { name }),
 
   // Channels and the feed, scoped to a dashboard
-  getDashboard: (dashboardId: string) => api('get', `/dashboards/${dashboardId}`),
-  getFeed: (dashboardId: string) => api('get', `/dashboards/${dashboardId}/feed`),
+  getDashboard: (dashboardId: string) =>
+    api('get', `/dashboards/${dashboardId}`),
+  getFeed: (dashboardId: string) =>
+    api('get', `/dashboards/${dashboardId}/feed`),
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${dashboardId}/stories`),
   addChannel: (dashboardId: string, channel: Channel) =>
@@ -26,8 +28,8 @@ export default {
   listAgentSessions: (dashboardId: string, limit = 30) =>
     api('get', `/dashboards/${dashboardId}/agents/sessions`, { limit }),
   getAgentSession: (id: number) => api('get', `/agents/sessions/${id}`),
-  runAgent: (dashboardId: string, kind: string, model?: string) =>
-    apiJson('post', `/dashboards/${dashboardId}/agents/run`, { kind, model }),
+  runAgent: (dashboardId: string, kind: string) =>
+    apiJson('post', `/dashboards/${dashboardId}/agents/run`, { kind }),
 
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),
@@ -174,6 +176,8 @@ export type Channel = {
 export type FeedArticle = Article & {
   channelId: string
   createdAt: string
+  /** 1-10, as scored by the categorizing agent; null until it has run. */
+  importance: number | null
 }
 
 export type Storyline = {

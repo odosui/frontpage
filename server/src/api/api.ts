@@ -33,7 +33,8 @@ export const createApi = async () => {
       }
       const id = dashboards.slugify(body.name);
       if (!id) return error(400, "invalid name");
-      if (await dashboards.exists(id)) return error(409, "dashboard already exists");
+      if (await dashboards.exists(id))
+        return error(409, "dashboard already exists");
       await dashboards.create(id, body.name);
       return ok({ id });
     },
@@ -42,7 +43,8 @@ export const createApi = async () => {
       if (!id || dashboards.isDefault(id)) {
         return error(400, "cannot delete default dashboard");
       }
-      if (!(await dashboards.exists(id))) return error(404, "dashboard not found");
+      if (!(await dashboards.exists(id)))
+        return error(404, "dashboard not found");
       await dashboards.remove(id);
       return ok({ success: true });
     },
@@ -53,8 +55,10 @@ export const createApi = async () => {
         return error(400, "name is required");
       const newId = dashboards.slugify(body.name);
       if (!newId) return error(400, "invalid name");
-      if (!(await dashboards.exists(id))) return error(404, "dashboard not found");
-      if (await dashboards.exists(newId)) return error(409, "name already taken");
+      if (!(await dashboards.exists(id)))
+        return error(404, "dashboard not found");
+      if (await dashboards.exists(newId))
+        return error(409, "name already taken");
       await dashboards.rename(id, newId);
       return ok({ id: newId });
     },
@@ -208,10 +212,7 @@ export const createApi = async () => {
      * Queues an agent run rather than running it here: the worker does the work
      * and writes each turn as it happens, so the ui can watch it unfold.
      */
-    runAgent: async (
-      dashboardId: string,
-      body: { kind?: string; model?: string; days?: number },
-    ) => {
+    runAgent: async (dashboardId: string, body: { kind?: string }) => {
       const id = dashboards.resolveId(dashboardId);
       const kind = body?.kind || "";
       if (!AGENT_KINDS.includes(kind)) {
@@ -225,8 +226,6 @@ export const createApi = async () => {
         payload: {
           kind,
           dashboardId: id,
-          model: body.model,
-          days: body.days,
         },
       });
       return ok({ job });

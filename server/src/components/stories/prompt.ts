@@ -14,8 +14,8 @@ const SCHEMA = `{
         {
           "story": "Attack on Novorossiysk",
           "articles": [
-            { "id": 3, "tags": ["russia", "ukraine", "drone strike", "black sea"] },
-            { "id": 11, "tags": ["russia", "ukraine", "drone strike", "oil terminal"] }
+            { "id": 3, "importance": 7, "tags": ["russia", "ukraine", "drone strike", "black sea"] },
+            { "id": 11, "importance": 6, "tags": ["russia", "ukraine", "drone strike", "oil terminal"] }
           ]
         }
       ]
@@ -72,8 +72,28 @@ Every article carries its own tags — two articles in the same story may differ
   the next. Prefer a tag you have already used over a new near-duplicate.
 - Do not restate the story headline as a tag, and do not tag the outlet name.
 
+IMPORTANCE
+
+Every article also carries an "importance": a whole number from 1 to 10 saying
+how much a reader following world events should care about it.
+
+  9-10  changes the course of a country or the world — war breaks out, a head
+        of state falls, a market crashes
+  7-8   major national or global news — a big offensive, an election result,
+        a central bank decision, a major company collapsing
+  5-6   solid news that matters beyond its own field — a court ruling, a
+        notable product launch, a regional escalation
+  3-4   routine coverage, incremental updates, local incidents
+  1-2   trivia, human interest, lifestyle, sport results, celebrity
+
+Judge the event itself, not how loudly the headline is written. Two articles in
+the same story usually get the same importance; they differ only when one adds
+significantly more. Use the whole range — most articles are not 8s, and a batch
+where everything scores 6 or 7 is wrong.
+
 RULES
 - Every article id appears exactly once, either in a story or in "unassigned".
+- Every article in a story carries both "importance" and "tags".
 - Merge duplicates aggressively: same event means same story, however differently
   the outlets worded it.
 - Write all storyline and story titles in English, sentence case, no final

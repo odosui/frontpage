@@ -7,7 +7,7 @@ import {
 } from "../../components/stories/categorize";
 import { persistTree } from "../../components/stories/persist";
 import { categorizeStoriesPrompt } from "../../components/stories/prompt";
-import { SMALL_MODEL } from "../../components/ai/models";
+import { BIG_MODEL } from "../../components/ai/models";
 import { JobHandler } from "../types";
 
 export type RunAgentPayload = {
@@ -39,11 +39,14 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
     days: window,
     limit: BATCH_LIMIT,
   });
+  // an empty queue is the normal state of a caught-up dashboard, not a
+  // failure: finish without spending a model call
   if (articles.length === 0) {
-    throw new Error(
+    log(
       `every article in ${dashboardId} from the last ${window} days is ` +
         `already categorized — nothing to do`,
     );
+    return { result: { skipped: true, articles: 0 } };
   }
   log(
     `${articles.length} uncategorized articles in ${dashboardId} ` +
@@ -51,7 +54,7 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
   );
 
   const run = await runAgent(agent, {
-    model: model || SMALL_MODEL,
+    model: model || BIG_MODEL,
     task: categorizeStoriesPrompt(articles),
     dashboardId,
     log,
@@ -69,7 +72,8 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
     `saved ${saved.stories} stories under ${saved.storylines} new / ` +
       `${saved.reusedStorylines} existing storylines, ` +
       `${saved.articles} articles, ` +
-      `${saved.tags} new / ${saved.reusedTags} existing tags` +
+      `${saved.tags} new / ${saved.reusedTags} existing tags, ` +
+      `${saved.skipped} skipped as not news` +
       (saved.unknownIds.length
         ? ` (ignored ${saved.unknownIds.length} invented ids)`
         : ""),

@@ -1,4 +1,6 @@
-export const AI_TIMEOUT_MS = 120_000;
+/** Slow reasoning models can sit well past a minute; raise it when comparing them. */
+export const AI_TIMEOUT_MS =
+  Number(process.env.FRONTPAGE_AI_TIMEOUT_MS) || 120_000;
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 

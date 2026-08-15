@@ -44,6 +44,14 @@ const Stories = ({ stories, hasArticles }: Props) => {
                 }`}
                 title={article.title}
               >
+                <span
+                  className={`story-article-dot is-${band(article.importance)}`}
+                  title={
+                    article.importance === null
+                      ? 'Not scored yet'
+                      : `Importance ${article.importance}/10`
+                  }
+                />
                 {article.title}
                 <span className="story-article-meta">
                   {article.channelId} · {timeAgo(article.createdAt)}
@@ -55,6 +63,19 @@ const Stories = ({ stories, hasArticles }: Props) => {
       ))}
     </div>
   )
+}
+
+/**
+ * The 1-10 score in five colour bands — the dot carries the reading, the exact
+ * number is in its tooltip.
+ */
+function band(importance: number | null): string {
+  if (importance === null) return 'none'
+  if (importance <= 2) return 'lowest'
+  if (importance <= 4) return 'low'
+  if (importance <= 6) return 'mid'
+  if (importance <= 8) return 'high'
+  return 'highest'
 }
 
 export default Stories
