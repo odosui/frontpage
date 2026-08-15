@@ -120,6 +120,9 @@ async function readCapped(res: Response): Promise<string> {
 
 function cleanHtml(html: string) {
   const stripped = (html.match(/<body[\s\S]*?<\/body>/i)?.[0] ?? html)
+    // Postgres rejects NUL in a text column, so a page carrying one used to
+    // fail every fetch for good ("invalid byte sequence for encoding UTF8")
+    .replace(/\u0000/g, "")
     // Remove non-content tags
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")

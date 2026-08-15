@@ -9,7 +9,12 @@ export async function saveSnapshot(
   const { rows } = await query<{ id: string }>(
     `insert into page_snapshots (url, html, hrefs)
      values ($1, $2, $3::jsonb) returning id`,
-    [url, snapshot.html, JSON.stringify(snapshot.hrefs)],
+    // belt and braces: jsonb rejects \u0000 too, and an href can carry one
+    [
+      url,
+      snapshot.html.replace(/\u0000/g, ""),
+      JSON.stringify(snapshot.hrefs.map((h) => h.replace(/\u0000/g, ""))),
+    ],
   );
   return String(rows[0]!.id);
 }

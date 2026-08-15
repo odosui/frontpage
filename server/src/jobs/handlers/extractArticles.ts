@@ -11,6 +11,9 @@ export type ExtractArticlesPayload = {
   snapshotId: string;
   /** Hash of the analyzed html, recorded so the next fetch can skip a no-op. */
   contentHash?: string;
+  /** HTTP validators from the fetch, recorded only once this run succeeds. */
+  etag?: string | null;
+  lastModified?: string | null;
 };
 
 /** How many articles a channel keeps. Mirrors the API's page size. */
@@ -18,7 +21,7 @@ const MAX_ITEMS = 100;
 
 /** Run the model over a fetched page and store whatever articles are new. */
 export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, channelId, snapshotId, contentHash } =
+  const { dashboardId, channelId, snapshotId, contentHash, etag, lastModified } =
     payload as ExtractArticlesPayload;
   if (!dashboardId || !channelId || !snapshotId) {
     throw new Error(
@@ -51,7 +54,12 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
   );
   const added = items.filter((a) => a.new).length;
 
-  // only now is it safe to remember this page as "already analyzed"
+  // only now is it safe to remember this page as "already analyzed" — both the
+  // hash and the HTTP validators, so a failed run always re-downloads
+  await channels.saveValidators(dashboardId, channelId, {
+    etag: etag ?? null,
+    lastModified: lastModified ?? null,
+  });
   if (contentHash) {
     await channels.saveContentHash(dashboardId, channelId, contentHash);
   }

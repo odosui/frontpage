@@ -96,9 +96,95 @@ export async function feed(
   return entries;
 }
 
+export type StoryMatch = {
+  title: string;
+  storyline: string | null;
+  articleCount: number;
+};
+
+/**
+ * Stories whose title contains the given text, newest first. This is what lets
+ * one run attach to an event another run already filed: reusing a story's exact
+ * title matches its slug on save, so the article joins that story instead of
+ * starting a near-identical one.
+ */
+export async function search(
+  dashboardId: string,
+  term: string,
+  limit: number,
+): Promise<StoryMatch[]> {
+  const { rows } = await query<{
+    title: string;
+    storyline: string | null;
+    articles: string;
+  }>(
+    `select s.title, sl.title as storyline, count(a.id) as articles
+       from stories s
+       left join storylines sl on sl.id = s.storyline_id
+       left join articles a on a.story_id = s.id
+      where s.dashboard_id = $1 and s.title ilike '%' || $2 || '%'
+      group by s.id, sl.title
+      order by max(a.created_at) desc nulls last, s.id desc
+      limit $3`,
+    [dashboardId, term, limit],
+  );
+
+  return rows.map((r) => ({
+    title: r.title,
+    storyline: r.storyline,
+    articleCount: Number(r.articles),
+  }));
+}
+
+/**
+ * Every story filed under one storyline, newest first. Grepping by title only
+ * finds an event when the run already guesses its wording; opening the arc it
+ * belongs to shows the run what is actually in there, so a story that was named
+ * differently the first time still gets found instead of forked.
+ *
+ * The storyline is resolved by slug first — runs are told to reuse exact titles
+ * — and falls back to a substring match on the title, newest arc wins.
+ */
+export async function underStoryline(
+  dashboardId: string,
+  storyline: string,
+  limit: number,
+): Promise<{ storyline: string; stories: StoryMatch[] } | null> {
+  const { rows: found } = await query<{ id: string; title: string }>(
+    `select id, title from storylines
+      where dashboard_id = $1 and (slug = $2 or title ilike '%' || $3 || '%')
+      order by (slug = $2) desc, created_at desc, id desc
+      limit 1`,
+    [dashboardId, slugify(storyline), storyline],
+  );
+  const arc = found[0];
+  if (!arc) return null;
+
+  const { rows } = await query<{ title: string; articles: string }>(
+    `select s.title, count(a.id) as articles
+       from stories s
+       left join articles a on a.story_id = s.id
+      where s.dashboard_id = $1 and s.storyline_id = $2
+      group by s.id
+      order by max(a.created_at) desc nulls last, s.id desc
+      limit $3`,
+    [dashboardId, arc.id, limit],
+  );
+
+  return {
+    storyline: arc.title,
+    stories: rows.map((r) => ({
+      title: r.title,
+      storyline: arc.title,
+      articleCount: Number(r.articles),
+    })),
+  };
+}
+
 /** One story to save, with the articles that belong to it and their tags. */
 export type StoryEntry = {
-  storyline: string;
+  /** Null for a story that belongs to no running arc. */
+  storyline: string | null;
   story: string;
   articles: { id: number; importance: number | null; tags: string[] }[];
 };
@@ -141,12 +227,17 @@ export async function save(
     const tagIds = new Map<string, number>();
 
     for (const entry of entries) {
-      const storylineSlug = slugify(entry.storyline);
       const storySlug = slugify(entry.story);
-      if (!storylineSlug || !storySlug || entry.articles.length === 0) continue;
+      if (!storySlug || entry.articles.length === 0) continue;
 
-      let storylineId = storylineIds.get(storylineSlug);
-      if (storylineId === undefined) {
+      // a standalone story hangs off no arc at all, rather than off one
+      // literally called "standalone"
+      const storylineSlug = entry.storyline ? slugify(entry.storyline) : "";
+      let storylineId: number | null = storylineSlug
+        ? (storylineIds.get(storylineSlug) ?? null)
+        : null;
+
+      if (storylineSlug && storylineId === null) {
         const existing = await client.query<{ id: string }>(
           "select id from storylines where dashboard_id = $1 and slug = $2",
           [dashboardId, storylineSlug],

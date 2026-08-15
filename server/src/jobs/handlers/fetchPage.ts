@@ -45,11 +45,6 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
     return { result: { url: channel.url, unchanged: "not-modified", read } };
   }
 
-  await channels.saveValidators(dashboardId, channelId, {
-    etag: page.etag ?? null,
-    lastModified: page.lastModified ?? null,
-  });
-
   const contentHash = createHash("sha256").update(page.html).digest("hex");
 
   if (state?.contentHash === contentHash) {
@@ -77,11 +72,16 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
     enqueue: [
       {
         type: "extract_articles",
+        // the validators ride along and are only recorded once the articles
+        // are stored: saving them here would make the next fetch answer 304
+        // and skip analysis for good if extraction never completed
         payload: {
           dashboardId,
           channelId,
           snapshotId,
           contentHash,
+          etag: page.etag ?? null,
+          lastModified: page.lastModified ?? null,
           url: channel.url,
         },
       },

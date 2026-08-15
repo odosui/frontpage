@@ -17,7 +17,7 @@ export const grepStorylines: AgentTool = {
     );
     if (rows.length === 0) return `(no storyline matching "${term}")`;
     return rows
-      .map((s) => `#${s.id} ${s.title} — ${s.storyCount} stories`)
+      .map((s) => `${s.title} — ${s.storyCount} stories`)
       .join("\n");
   },
 };

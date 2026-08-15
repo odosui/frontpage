@@ -54,23 +54,15 @@ const Stories = ({ stories, hasArticles }: Props) => {
                     }
                   />
                   {article.title}
+                  {article.tags.map((tag) => (
+                    <span key={tag} className="story-tag">
+                      {tag}
+                    </span>
+                  ))}
                   <span className="story-article-meta">
                     {article.channelId} · {timeAgo(article.createdAt)}
                   </span>
                 </a>
-                {article.tags.length > 0 && (
-                  <ul className="story-tags">
-                    {article.tags.map((tag) => (
-                      <li
-                        key={tag}
-                        className="story-tag"
-                        style={{ '--tag-hue': hue(tag) } as React.CSSProperties}
-                      >
-                        {tag}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
             ))}
           </div>
@@ -78,18 +70,6 @@ const Stories = ({ stories, hasArticles }: Props) => {
       ))}
     </div>
   )
-}
-
-/**
- * A stable colour per tag: the same word always lands on the same hue, so
- * "russia" reads the same everywhere without a hand-kept colour map.
- */
-function hue(tag: string): number {
-  let h = 0
-  for (let i = 0; i < tag.length; i++) {
-    h = (h * 31 + tag.charCodeAt(i)) % 360
-  }
-  return h
 }
 
 /**

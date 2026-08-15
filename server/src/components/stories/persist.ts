@@ -1,6 +1,6 @@
 import * as articles from "../../models/articles";
 import * as stories from "../../models/stories";
-import { StoryTree } from "./categorize";
+import { StoryTree, Storyline } from "./categorize";
 import { PromptArticle } from "./prompt";
 
 export type PersistResult = stories.SaveResult & {
@@ -44,8 +44,8 @@ export async function persistTree(
 
       if (articles.length === 0) continue;
       entries.push({
-        storyline: storyline.storyline,
-        story: story.story,
+        storyline: storylineTitle(storyline),
+        story: cleanTitle(story.story),
         articles,
       });
     }
@@ -66,6 +66,28 @@ export async function persistTree(
   const saved = await stories.save(dashboardId, entries);
   const skipped = await articles.markSkipped(dashboardId, rejected);
   return { ...saved, unknownIds, skipped };
+}
+
+/**
+ * The arc this story sits under, or null when it sits under none. The prompt
+ * asks for `"standalone": true` on a story that starts its own thread, but
+ * models also just write "standalone" as the title — both mean no arc, and
+ * neither should become a storyline row of its own.
+ */
+function storylineTitle(storyline: Storyline): string | null {
+  if (storyline.standalone) return null;
+  const title = cleanTitle(storyline.storyline);
+  if (!title || title.toLowerCase() === "standalone") return null;
+  return title;
+}
+
+/**
+ * Strips a leading "#12 " that a model copied out of a tool listing. The
+ * listings no longer print ids, but a title carrying one would otherwise fork
+ * the arc it was meant to reuse — and compound on the next run.
+ */
+function cleanTitle(title: string): string {
+  return (title ?? "").replace(/^(?:#\d+\s+)+/, "").trim();
 }
 
 /**
