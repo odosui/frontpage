@@ -80,6 +80,27 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   { method: "get", path: "/api/jobs/stats", handler: async () =>
       api.jobStats() },
 
+  // Agents
+  { method: "get", path: "/api/agents", handler: async () => api.listAgents() },
+  {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/agents/sessions",
+    handler: async ({ pathParams, query }) =>
+      api.listAgentSessions(pathParams.dashboardId ?? "", query),
+  },
+  {
+    method: "get",
+    path: "/api/agents/sessions/:id",
+    handler: async ({ pathParams }) =>
+      api.getAgentSession(pathParams.id ?? ""),
+  },
+  {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/agents/run",
+    handler: async ({ pathParams, body }) =>
+      api.runAgent(pathParams.dashboardId ?? "", body),
+  },
+
   // Settings
   {
     method: "get",

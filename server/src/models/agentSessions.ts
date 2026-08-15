@@ -150,6 +150,14 @@ export async function append(
   return toMessage(rows[0]!);
 }
 
+export async function get(id: number): Promise<AgentSession | null> {
+  const { rows } = await query<SessionRow>(
+    `select ${SESSION_COLUMNS} from agent_sessions where id = $1`,
+    [id],
+  );
+  return rows[0] ? toSession(rows[0]) : null;
+}
+
 export async function messages(sessionId: number): Promise<AgentMessage[]> {
   const { rows } = await query<MessageRow>(
     `select ${MESSAGE_COLUMNS} from agent_messages
@@ -178,15 +186,16 @@ export async function fail(sessionId: number, error: string): Promise<void> {
 }
 
 export async function list(
+  dashboardId: string,
   kind: string | undefined,
   limit: number,
 ): Promise<AgentSession[]> {
   const { rows } = await query<SessionRow>(
     `select ${SESSION_COLUMNS} from agent_sessions
-     where ($1::text is null or kind = $1)
+     where dashboard_id = $1 and ($2::text is null or kind = $2)
      order by created_at desc, id desc
-     limit $2`,
-    [kind ?? null, limit],
+     limit $3`,
+    [dashboardId, kind ?? null, limit],
   );
   return rows.map(toSession);
 }

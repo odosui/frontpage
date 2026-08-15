@@ -1,7 +1,7 @@
 import * as sessions from "../../models/agentSessions";
 import { ChatMessage, sendChat } from "../ai/OpenRouter";
 import { describeTools, parseToolCalls } from "./protocol";
-import { AgentDefinition, ToolCall } from "./types";
+import { AgentContext, AgentDefinition, ToolCall } from "./types";
 
 export type AgentRun = {
   sessionId: number;
@@ -19,7 +19,8 @@ export type RunOptions = {
   model: string;
   /** The task, as the opening user message. */
   task: string;
-  dashboardId?: string;
+  /** The dashboard the agent is confined to. */
+  dashboardId: string;
   /** Progress reporting; the runner itself never prints. */
   log?: (message: string) => void;
 };
@@ -35,6 +36,7 @@ export async function runAgent(
   options: RunOptions,
 ): Promise<AgentRun> {
   const { model, task, dashboardId } = options;
+  const ctx: AgentContext = { dashboardId };
   const log = options.log ?? (() => undefined);
   const started = Date.now();
 
@@ -88,7 +90,7 @@ export async function runAgent(
 
       const results: string[] = [];
       for (const call of calls) {
-        const output = await execute(agent, call);
+        const output = await execute(agent, call, ctx);
         await sessions.append(session.id, {
           role: "tool",
           content: output,
@@ -128,6 +130,7 @@ export async function runAgent(
 async function execute(
   agent: AgentDefinition,
   call: ToolCall,
+  ctx: AgentContext,
 ): Promise<string> {
   const tool = agent.tools.find((t) => t.name === call.name);
   if (!tool) {
@@ -136,7 +139,7 @@ async function execute(
   }
 
   try {
-    return await tool.run(call.args);
+    return await tool.run(call.args, ctx);
   } catch (e) {
     return `ERROR: ${call.name} failed: ${(e as Error).message}`;
   }

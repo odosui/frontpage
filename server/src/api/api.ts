@@ -2,6 +2,8 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
+import { AGENT_KINDS, getAgent } from "../components/agents/registry";
+import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as channels from "../models/channels";
 import * as dashboards from "../models/dashboards";
@@ -149,6 +151,77 @@ export const createApi = async () => {
     },
 
     jobStats: async () => ok({ stats: await queue.stats() }),
+
+    // Agents
+
+    listAgents: async () =>
+      ok({
+        agents: AGENT_KINDS.map((kind) => {
+          const agent = getAgent(kind);
+          return {
+            kind: agent.kind,
+            name: agent.name,
+            tools: agent.tools.map((t) => ({
+              name: t.name,
+              usage: t.usage,
+              description: t.description,
+            })),
+          };
+        }),
+      }),
+
+    listAgentSessions: async (
+      dashboardId: string,
+      params: { kind?: string; limit?: string },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const limit = Math.min(Math.max(Number(params.limit) || 30, 1), 200);
+      return ok({
+        sessions: await agentSessions.list(id, params.kind, limit),
+      });
+    },
+
+    /** The session plus its whole transcript — what the ui polls while it runs. */
+    getAgentSession: async (id: string) => {
+      const sessionId = Number(id);
+      if (!Number.isFinite(sessionId)) {
+        return error(400, "session id must be a number");
+      }
+      const session = await agentSessions.get(sessionId);
+      if (!session) return error(404, "session not found");
+      return ok({
+        session,
+        messages: await agentSessions.messages(sessionId),
+      });
+    },
+
+    /**
+     * Queues an agent run rather than running it here: the worker does the work
+     * and writes each turn as it happens, so the ui can watch it unfold.
+     */
+    runAgent: async (
+      dashboardId: string,
+      body: { kind?: string; model?: string; limit?: number },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const kind = body?.kind || "";
+      if (!AGENT_KINDS.includes(kind)) {
+        return error(400, `kind must be one of ${AGENT_KINDS.join(", ")}`);
+      }
+      if (!(await dashboards.exists(id))) {
+        return error(404, "dashboard not found");
+      }
+      const job = await queue.enqueue({
+        type: "run_agent",
+        payload: {
+          kind,
+          dashboardId: id,
+          model: body.model,
+          limit: body.limit,
+        },
+      });
+      return ok({ job });
+    },
 
     // Settings
 

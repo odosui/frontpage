@@ -36,29 +36,34 @@ function toStoryline(row: Row): Storyline {
 }
 
 /** Newest storylines first — what an agent needs to avoid inventing a duplicate. */
-export async function latest(limit: number): Promise<Storyline[]> {
+export async function latest(
+  dashboardId: string,
+  limit: number,
+): Promise<Storyline[]> {
   const { rows } = await query<Row>(
     `${SELECT}
+     where s.dashboard_id = $1
      group by s.id
      order by s.created_at desc, s.id desc
-     limit $1`,
-    [limit],
+     limit $2`,
+    [dashboardId, limit],
   );
   return rows.map(toStoryline);
 }
 
 /** Case-insensitive substring match on the title. */
 export async function search(
+  dashboardId: string,
   term: string,
   limit: number,
 ): Promise<Storyline[]> {
   const { rows } = await query<Row>(
     `${SELECT}
-     where s.title ilike '%' || $1 || '%'
+     where s.dashboard_id = $1 and s.title ilike '%' || $2 || '%'
      group by s.id
      order by s.created_at desc, s.id desc
-     limit $2`,
-    [term, limit],
+     limit $3`,
+    [dashboardId, term, limit],
   );
   return rows.map(toStoryline);
 }

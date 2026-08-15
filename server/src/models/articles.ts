@@ -36,6 +36,47 @@ export async function feed(
   }));
 }
 
+export type UncategorizedArticle = {
+  id: number;
+  title: string;
+  url: string;
+  channelId: string;
+  createdAt: string;
+};
+
+/**
+ * Articles in this dashboard that no story has claimed yet, newest first.
+ * This is the agent's work queue: once a run persists, these rows carry a
+ * story_id and drop out, so the next run never re-does them.
+ */
+export async function uncategorized(
+  dashboardId: string,
+  limit: number,
+): Promise<UncategorizedArticle[]> {
+  const { rows } = await query<{
+    id: string;
+    title: string;
+    url: string;
+    channel_id: string;
+    created_at: Date;
+  }>(
+    `select id, title, url, channel_id, created_at
+     from articles
+     where dashboard_id = $1 and story_id is null
+     order by created_at desc, position, id
+     limit $2`,
+    [dashboardId, limit],
+  );
+
+  return rows.map((r) => ({
+    id: Number(r.id),
+    title: r.title,
+    url: r.url,
+    channelId: r.channel_id,
+    createdAt: r.created_at.toISOString(),
+  }));
+}
+
 /**
  * Put `items` at the top of a channel's list, marked as new, demoting whatever
  * was already there. Items whose url is already stored are skipped. Runs under

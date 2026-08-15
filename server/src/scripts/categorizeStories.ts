@@ -4,7 +4,7 @@ import {
   CategorizeRun,
   RecentArticle,
   categorize,
-  recentArticles,
+  uncategorizedArticles,
 } from "../components/stories/categorize";
 import { BIG_MODEL } from "../components/ai/models";
 import { ModelPrice, costOf, loadPrices } from "../components/ai/pricing";
@@ -22,9 +22,11 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const models = args.models.length > 0 ? args.models : [BIG_MODEL];
 
-  const articles = await recentArticles(args.limit);
+  const articles = await uncategorizedArticles(args.dashboard, args.limit);
   if (articles.length === 0) {
-    throw new Error("no articles in the database — refresh a channel first");
+    throw new Error(
+      `no uncategorized articles in ${args.dashboard} — refresh a channel first`,
+    );
   }
   console.log(`${articles.length} articles, ${models.length} model(s)\n`);
 
@@ -260,6 +262,7 @@ function describe(article: RecentArticle | undefined, id: number): string {
 function parseArgs(argv: string[]) {
   const models: string[] = [];
   let limit = 20;
+  let dashboard = "default";
   let out = join(process.cwd(), "tmp", "stories");
 
   for (let i = 0; i < argv.length; i++) {
@@ -273,6 +276,10 @@ function parseArgs(argv: string[]) {
         limit = Number(value) || limit;
         i++;
         break;
+      case "--dashboard":
+        if (value) dashboard = value;
+        i++;
+        break;
       case "--out":
         if (value) out = value;
         i++;
@@ -280,7 +287,7 @@ function parseArgs(argv: string[]) {
     }
   }
 
-  return { models, limit, out };
+  return { models, limit, dashboard, out };
 }
 
 main()

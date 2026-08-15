@@ -7,6 +7,7 @@
 @use './app/dashboard';
 @use './app/jobs';
 @use './app/settings';
+@use './app/agents';
 
 .app-shell {
   display: flex;

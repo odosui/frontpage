@@ -19,6 +19,23 @@ export default {
   // Jobs
   listJobs: (limit = 50) => api('get', '/jobs', { limit }),
 
+  // Agents
+  listAgents: () => api('get', '/agents'),
+  listAgentSessions: (dashboardId: string, limit = 30) =>
+    api('get', `/dashboards/${dashboardId}/agents/sessions`, { limit }),
+  getAgentSession: (id: number) => api('get', `/agents/sessions/${id}`),
+  runAgent: (
+    dashboardId: string,
+    kind: string,
+    model?: string,
+    limit?: number,
+  ) =>
+    apiJson('post', `/dashboards/${dashboardId}/agents/run`, {
+      kind,
+      model,
+      limit,
+    }),
+
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),
 }
@@ -104,6 +121,43 @@ export type Job = {
 }
 
 export type JobStats = Record<JobStatus, number>
+
+export const AGENT_STATUSES = ['running', 'finished', 'failed'] as const
+
+export type AgentStatus = (typeof AGENT_STATUSES)[number]
+
+export type AgentSession = {
+  id: number
+  kind: string
+  dashboardId: string | null
+  status: AgentStatus
+  model: string
+  error: string | null
+  createdAt: string
+  finishedAt: string | null
+}
+
+export type MessageRole = 'system' | 'user' | 'assistant' | 'tool'
+
+export type AgentMessage = {
+  id: number
+  sessionId: number
+  position: number
+  role: MessageRole
+  content: string
+  toolName: string | null
+  toolArgs: string[] | null
+  model: string | null
+  promptTokens: number | null
+  completionTokens: number | null
+  createdAt: string
+}
+
+export type AgentInfo = {
+  kind: string
+  name: string
+  tools: { name: string; usage: string; description: string }[]
+}
 
 export type Article = {
   title: string

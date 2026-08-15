@@ -1,8 +1,10 @@
 import { Usage, sendMessageWithUsage } from "../ai/OpenRouter";
-import { query } from "../../db/pool";
+import * as articles from "../../models/articles";
 import { PromptArticle, categorizeStoriesPrompt } from "./prompt";
 
 export type RecentArticle = PromptArticle & {
+  /** The real articles.id, as opposed to the 1..n id used in the prompt. */
+  articleId: number;
   url: string;
   dashboardId: string;
   channelId: string;
@@ -34,33 +36,27 @@ export type CategorizeRun = {
 };
 
 /**
- * Newest articles across every dashboard. Ids are renumbered 1..n for the
- * prompt so the model never has to echo six-digit database ids back.
+ * The batch to work on: articles in this dashboard that no story has claimed
+ * yet, newest first. Ids are renumbered 1..n for the prompt so the model never
+ * has to echo six-digit database ids back — `articleId` keeps the real one for
+ * persistence.
  */
-export async function recentArticles(limit: number): Promise<RecentArticle[]> {
-  const { rows } = await query<{
-    title: string;
-    url: string;
-    dashboard_id: string;
-    channel_id: string;
-    created_at: Date;
-  }>(
-    `select title, url, dashboard_id, channel_id, created_at
-     from articles
-     order by created_at desc, id desc
-     limit $1`,
-    [limit],
-  );
+export async function uncategorizedArticles(
+  dashboardId: string,
+  limit: number,
+): Promise<RecentArticle[]> {
+  const rows = await articles.uncategorized(dashboardId, limit);
 
   return rows.map((r, i) => ({
     id: i + 1,
+    articleId: r.id,
     title: r.title,
     url: r.url,
-    source: hostname(r.url) || r.channel_id,
-    dashboardId: r.dashboard_id,
-    channelId: r.channel_id,
-    publishedAt: new Date(r.created_at).toISOString().slice(0, 16).replace("T", " "),
-    }));
+    source: hostname(r.url) || r.channelId,
+    dashboardId,
+    channelId: r.channelId,
+    publishedAt: r.createdAt.slice(0, 16).replace("T", " "),
+  }));
 }
 
 export async function categorize(

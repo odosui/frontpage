@@ -1,4 +1,9 @@
-import { HomeIcon, GearIcon, ZapIcon } from '@primer/octicons-react'
+import {
+  HomeIcon,
+  GearIcon,
+  ZapIcon,
+  DependabotIcon,
+} from '@primer/octicons-react'
 import { Link, useLocation } from 'slim-react-router'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
@@ -57,6 +62,13 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
               onRefresh={tools.onRefreshChannel}
               onDelete={tools.onDeleteChannel}
             />
+            <Link
+              className="topbar-btn"
+              to={`/db/${tools.current}/agents`}
+            >
+              <DependabotIcon size={16} />
+              Agents
+            </Link>
             <button className="topbar-btn" onClick={tools.onAddChannel}>
               <PlusIcon />
               Add channel

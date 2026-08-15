@@ -1,0 +1,242 @@
+@use '../vars' as *;
+
+// Session list on the left, live transcript on the right
+
+.agents {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.agents-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: $unit11;
+  flex-shrink: 0;
+  border-right: 1px solid var(--borderColor);
+  overflow-y: auto;
+}
+
+.agents-launch {
+  padding: $unit2;
+  border-bottom: 1px solid var(--borderColor);
+}
+
+.agents-back {
+  display: block;
+  margin-bottom: $unit1;
+  font-size: $text0;
+  color: var(--color-text);
+  opacity: 0.7;
+  text-decoration: none;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.agents-run-btn {
+  width: 100%;
+  padding: $unit1 $unit2;
+  font-size: $text1;
+  color: #fff;
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: $unit0;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.agents-sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agents-session {
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+  width: 100%;
+  padding: $unit1 $unit2;
+  font-size: $text0;
+  text-align: left;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--borderColor);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-hover-bg);
+  }
+
+  &.is-active {
+    background-color: var(--color-hover-bg);
+    box-shadow: inset $unit0 0 0 var(--color-accent);
+  }
+}
+
+.agents-session-top {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+}
+
+.agents-session-id {
+  font-weight: 600;
+}
+
+.agents-session-time,
+.agents-session-model {
+  opacity: 0.65;
+}
+
+.agents-session-model {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// running pulses, the terminal states are flat
+.agents-dot {
+  width: $unit1;
+  height: $unit1;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--color-text);
+
+  &.is-running {
+    background-color: $green;
+    animation: agents-pulse 1.2s ease-in-out infinite;
+  }
+
+  &.is-finished {
+    background-color: $green;
+  }
+
+  &.is-failed {
+    background-color: $red;
+  }
+}
+
+@keyframes agents-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.agents-transcript {
+  flex: 1;
+  min-width: 0;
+  padding: $unit3;
+  overflow-y: auto;
+}
+
+.agents-head {
+  margin-bottom: $unit3;
+}
+
+.agents-title {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  margin: 0 0 $unit0;
+  font-size: $text3;
+}
+
+.agents-meta {
+  font-size: $text0;
+  opacity: 0.7;
+}
+
+.agents-messages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $unit2;
+  max-width: $unit16;
+}
+
+.agents-msg {
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  overflow: hidden;
+
+  // the two that matter while watching: what the agent said, what came back
+  &.is-assistant {
+    border-color: var(--color-accent);
+  }
+
+  &.is-tool {
+    background-color: var(--color-hover-bg);
+  }
+
+  // context, folded away visually so the conversation reads first
+  &.is-system,
+  &.is-user {
+    opacity: 0.55;
+  }
+}
+
+.agents-msg-head {
+  display: flex;
+  justify-content: space-between;
+  gap: $unit2;
+  padding: $unit1 $unit2;
+  font-size: $text0;
+  border-bottom: 1px solid var(--borderColor);
+}
+
+.agents-msg-role {
+  font-weight: 600;
+}
+
+.agents-msg-tokens {
+  opacity: 0.6;
+}
+
+.agents-msg-body {
+  margin: 0;
+  padding: $unit2;
+  max-height: $unit12;
+  overflow: auto;
+  font-size: $text0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agents-msg.is-pending {
+  border-style: dashed;
+  padding: $unit2;
+}
+
+.agents-thinking {
+  font-size: $text0;
+  opacity: 0.7;
+  animation: agents-pulse 1.2s ease-in-out infinite;
+}
+
+.agents-empty {
+  padding: $unit2;
+  font-size: $text0;
+  opacity: 0.6;
+}
+
+.agents-error {
+  margin: $unit1 0 0;
+  font-size: $text0;
+  color: $red;
+}

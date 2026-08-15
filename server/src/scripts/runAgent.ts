@@ -5,7 +5,10 @@ import { costOf, loadPrices } from "../components/ai/pricing";
 import { categorizingAgent } from "../components/agents/categorizing";
 import { runAgent } from "../components/agents/runner";
 import { getAgent } from "../components/agents/registry";
-import { parseTree, recentArticles } from "../components/stories/categorize";
+import {
+  parseTree,
+  uncategorizedArticles,
+} from "../components/stories/categorize";
 import { categorizeStoriesPrompt } from "../components/stories/prompt";
 import * as sessions from "../models/agentSessions";
 import { closePool } from "../db/pool";
@@ -21,9 +24,9 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const agent = getAgent(args.kind);
 
-  const articles = await recentArticles(args.limit);
+  const articles = await uncategorizedArticles(args.dashboard, args.limit);
   if (articles.length === 0) {
-    throw new Error("no articles in the database — refresh a channel first");
+    throw new Error(`no uncategorized articles in ${args.dashboard}`);
   }
   console.log(
     `${agent.name} · ${args.model} · ${articles.length} articles · ` +
@@ -32,6 +35,7 @@ async function main() {
 
   const run = await runAgent(agent, {
     model: args.model,
+    dashboardId: args.dashboard,
     task: categorizeStoriesPrompt(articles),
     log: (message) => console.log(`  ${message}`),
   });
@@ -92,6 +96,7 @@ function parseArgs(argv: string[]) {
   let kind = categorizingAgent.kind;
   let model = SMALL_MODEL;
   let limit = 40;
+  let dashboard = "default";
   let out = join(process.cwd(), "tmp", "agents");
 
   for (let i = 0; i < argv.length; i++) {
@@ -109,6 +114,10 @@ function parseArgs(argv: string[]) {
         limit = Number(value) || limit;
         i++;
         break;
+      case "--dashboard":
+        if (value) dashboard = value;
+        i++;
+        break;
       case "--out":
         if (value) out = value;
         i++;
@@ -116,7 +125,7 @@ function parseArgs(argv: string[]) {
     }
   }
 
-  return { kind, model, limit, out };
+  return { kind, model, limit, dashboard, out };
 }
 
 main()

@@ -36,26 +36,34 @@ function toTag(row: Row): Tag {
  * Most-used tags first. An agent picking tags should see the established
  * vocabulary before it invents a near-duplicate of one.
  */
-export async function popular(limit: number): Promise<Tag[]> {
+export async function popular(
+  dashboardId: string,
+  limit: number,
+): Promise<Tag[]> {
   const { rows } = await query<Row>(
     `${SELECT}
+     where t.dashboard_id = $1
      group by t.id
      order by article_count desc, t.name
-     limit $1`,
-    [limit],
+     limit $2`,
+    [dashboardId, limit],
   );
   return rows.map(toTag);
 }
 
 /** Case-insensitive substring match on the tag name. */
-export async function search(term: string, limit: number): Promise<Tag[]> {
+export async function search(
+  dashboardId: string,
+  term: string,
+  limit: number,
+): Promise<Tag[]> {
   const { rows } = await query<Row>(
     `${SELECT}
-     where t.name ilike '%' || $1 || '%'
+     where t.dashboard_id = $1 and t.name ilike '%' || $2 || '%'
      group by t.id
      order by article_count desc, t.name
-     limit $2`,
-    [term, limit],
+     limit $3`,
+    [dashboardId, term, limit],
   );
   return rows.map(toTag);
 }
