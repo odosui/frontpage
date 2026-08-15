@@ -12,12 +12,91 @@ $feed-width: $unit12;
   overflow: hidden;
 }
 
-// the storyline / story / articles view
+// the storyline / story / articles view: the tree takes one part, the stories
+// beside it two, and each pane scrolls on its own rather than the whole main
 .dashboard-main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.dashboard-tree {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: $unit3 $unit2;
+  border-right: 1px solid var(--borderColor);
+}
+
+.dashboard-stories {
+  flex: 2;
+  min-width: 0;
   overflow-y: auto;
   padding: $unit6 $unit4;
+}
+
+// storyline → story navigation, filtering the list beside it
+
+.tree-list,
+.tree-stories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: $unit2;
+}
+
+// every row is the same shape: a full-width label that wraps
+.tree-all,
+.tree-storyline,
+.tree-story {
+  display: block;
+  width: 100%;
+  padding: $unit0 $unit1;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  &.is-active {
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent);
+  }
+}
+
+.tree-all {
+  margin-bottom: $unit3;
+  font-size: $text1;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tree-storyline {
+  font-size: $text0;
+  font-weight: 600;
+  color: var(--lighter);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+// stepped in, so the stories read as sitting under their storyline
+.tree-story {
+  padding-left: $unit4;
+  font-size: $text1;
+  line-height: 1.35;
+  color: var(--color-text);
 }
 
 // one comfortable reading column, centred in whatever room the main area has

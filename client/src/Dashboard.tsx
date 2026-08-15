@@ -11,6 +11,7 @@ import { useToolbar } from './contexts/ToolbarContext'
 import AddChannelModal from './AddChannelModal'
 import Feed from './Feed'
 import Stories from './Stories'
+import StorylineTree, { type Selection } from './StorylineTree'
 
 const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
@@ -28,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [channels, setChannels] = useState<Channel[]>([])
   const [feed, setFeed] = useState<FeedArticle[]>([])
   const [stories, setStories] = useState<StoryFeedEntry[]>([])
+  const [selection, setSelection] = useState<Selection>(null)
   const [loaded, setLoaded] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
@@ -274,12 +276,30 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey)
   }, [dashboards, dashboardId, setDashboardId, refreshAll])
 
+  // the tree filters the list beside it. A selection that survives a reload
+  // but matches nothing would leave the pane blank, so it falls back to all.
+  const filtered = stories.filter((story) => {
+    if (selection === null) return true
+    if (selection.kind === 'story') return story.id === selection.id
+    return story.storyline?.id === selection.id
+  })
+  const visibleStories = filtered.length > 0 ? filtered : stories
+
   if (!loaded) return null
 
   return (
     <div className="dashboard">
       <main className="dashboard-main">
-        <Stories stories={stories} hasArticles={feed.length > 0} />
+        <div className="dashboard-tree">
+          <StorylineTree
+            stories={stories}
+            selection={selection}
+            onSelect={setSelection}
+          />
+        </div>
+        <div className="dashboard-stories">
+          <Stories stories={visibleStories} hasArticles={feed.length > 0} />
+        </div>
       </main>
       <aside className="dashboard-feed">
         <Feed articles={feed} hasChannels={channels.length > 0} />
