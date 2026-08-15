@@ -17,71 +17,86 @@ $feed-width: $unit12;
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  padding: $unit3 $unit4 $unit6;
+  padding: $unit6 $unit4;
 }
 
+// one comfortable reading column, centred in whatever room the main area has
 .stories {
-  max-width: $unit14;
+  max-width: $unit15;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: $unit4;
 }
 
 .stories-placeholder {
+  max-width: $unit15;
+  margin: 0 auto;
   color: var(--lighter);
   font-size: $text1;
   line-height: 1.4;
 }
 
+// a hairline is enough to separate stories; the spacing does the rest
+.story + .story {
+  padding-top: $unit4;
+  border-top: 1px solid var(--borderColor);
+}
+
 .story-storyline {
   margin-bottom: $unit0;
   font-size: $text0;
-  font-weight: 500;
-  color: var(--lighter);
+  font-weight: 600;
+  color: var(--color-accent);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .story-title {
   margin: 0 0 $unit2;
-  font-size: $text5;
+  font-size: $text4;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.25;
   color: var(--color-text);
+  text-wrap: balance;
 }
 
 .story-articles {
   display: flex;
   flex-direction: column;
-  gap: $unit0;
-  // aligns the articles under the headline as a group hanging off it
-  padding-left: $unit2;
-  border-left: 2px solid var(--borderColor);
 }
 
 .story-article {
   display: block;
-  font-size: $text2;
-  line-height: 1.35;
+  position: relative;
+  // the marker sits in its own gutter so wrapped lines stay flush
+  padding: $unit1 $unit1 $unit1 $unit3;
+  font-size: $text1;
+  line-height: 1.5;
   text-decoration: none;
   color: var(--color-text);
-  transition: color 0.12s ease;
+  border-radius: $unit1;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease;
 
   &:hover {
     color: var(--color-accent);
+    background-color: var(--color-bg-hover);
   }
 
-  // unread: bolder, with the same inline dot the feed uses
+  // only unread articles carry a marker; it sits in the gutter, centred on the
+  // first line of the headline
   &--new {
     font-weight: 600;
 
     &::before {
       content: '';
-      display: inline-block;
-      width: $unit1 - 2px;
-      height: $unit1 - 2px;
-      margin-right: $unit1;
-      vertical-align: middle;
+      position: absolute;
+      top: calc(#{$unit1} + 0.75em - #{($unit0 + 1px) * 0.5});
+      left: $unit1;
+      width: $unit0 + 1px;
+      height: $unit0 + 1px;
       border-radius: 50%;
       background-color: var(--color-article-new-marker);
     }
