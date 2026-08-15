@@ -17,9 +17,10 @@ export type RunAgentPayload = {
   model?: string;
   /** How far back to look for uncategorized articles. */
   days?: number;
-  /** Optional cap on the batch; by default the whole window goes in. */
-  limit?: number;
 };
+
+/** Fixed here, not a caller's choice: one prompt can only hold so much. */
+const BATCH_LIMIT = 50;
 
 /**
  * Runs one agent session in the worker. The runner persists every turn as it
@@ -27,7 +28,7 @@ export type RunAgentPayload = {
  * still running — the job result only carries the summary.
  */
 export const runAgentHandler: JobHandler = async (payload, { log }) => {
-  const { kind, model, days, limit, dashboardId } = payload as RunAgentPayload;
+  const { kind, model, days, dashboardId } = payload as RunAgentPayload;
   if (!kind || !dashboardId) {
     throw new Error("run_agent requires a kind and a dashboardId");
   }
@@ -36,7 +37,7 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
   const window = days ?? DEFAULT_WINDOW_DAYS;
   const articles = await uncategorizedArticles(dashboardId, {
     days: window,
-    limit,
+    limit: BATCH_LIMIT,
   });
   if (articles.length === 0) {
     throw new Error(

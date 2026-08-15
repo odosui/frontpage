@@ -26,17 +26,8 @@ export default {
   listAgentSessions: (dashboardId: string, limit = 30) =>
     api('get', `/dashboards/${dashboardId}/agents/sessions`, { limit }),
   getAgentSession: (id: number) => api('get', `/agents/sessions/${id}`),
-  runAgent: (
-    dashboardId: string,
-    kind: string,
-    model?: string,
-    limit?: number,
-  ) =>
-    apiJson('post', `/dashboards/${dashboardId}/agents/run`, {
-      kind,
-      model,
-      limit,
-    }),
+  runAgent: (dashboardId: string, kind: string, model?: string) =>
+    apiJson('post', `/dashboards/${dashboardId}/agents/run`, { kind, model }),
 
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),

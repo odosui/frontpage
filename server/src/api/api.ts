@@ -210,7 +210,7 @@ export const createApi = async () => {
      */
     runAgent: async (
       dashboardId: string,
-      body: { kind?: string; model?: string; days?: number; limit?: number },
+      body: { kind?: string; model?: string; days?: number },
     ) => {
       const id = dashboards.resolveId(dashboardId);
       const kind = body?.kind || "";
@@ -227,7 +227,6 @@ export const createApi = async () => {
           dashboardId: id,
           model: body.model,
           days: body.days,
-          limit: body.limit,
         },
       });
       return ok({ job });

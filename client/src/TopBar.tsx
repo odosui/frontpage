@@ -4,9 +4,11 @@ import {
   ZapIcon,
   DependabotIcon,
 } from '@primer/octicons-react'
+import { useState } from 'react'
 import { Link, useLocation } from 'slim-react-router'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
+import AgentsModal from './AgentsModal'
 import ChannelsMenu from './ChannelsMenu'
 import DashboardSwitcher from './DashboardSwitcher'
 
@@ -24,6 +26,7 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
   const location = useLocation()
   const { activeCount, stats } = useJobs()
   const { tools } = useToolbar()
+  const [agentsOpen, setAgentsOpen] = useState(false)
 
   return (
     <header className="topbar">
@@ -63,10 +66,20 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
               onAdd={tools.onAddChannel}
               onRefreshAll={tools.onRefreshAll}
             />
-            <Link className="topbar-btn" to={`/db/${tools.current}/agents`}>
+            <button
+              className={`topbar-btn${agentsOpen ? ' active' : ''}`}
+              onClick={() => setAgentsOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={agentsOpen}
+            >
               <DependabotIcon size={16} />
               Agents
-            </Link>
+            </button>
+            <AgentsModal
+              isOpen={agentsOpen}
+              onClose={() => setAgentsOpen(false)}
+              dashboardId={tools.current}
+            />
           </>
         )}
 

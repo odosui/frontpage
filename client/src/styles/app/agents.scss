@@ -1,6 +1,22 @@
 @use '../vars' as *;
 
-// Session list on the left, live transcript on the right
+// Session list on the left, live transcript on the right, framed as a modal.
+
+// the panes run edge to edge inside the modal and scroll on their own, so the
+// generic padding has to go
+.generic-modal-overlay .generic-modal:has(.agents-modal) {
+  padding: 0;
+  overflow: hidden;
+}
+
+// the selector matches the depth of the generic modal's own rule to beat its
+// $unit14 width cap
+.generic-modal-overlay .generic-modal .generic-modal-content.agents-modal {
+  display: flex;
+  max-width: none;
+  width: min(#{$unit17 + $unit13}, 92vw);
+  height: min(#{$unit15}, 85vh);
+}
 
 .agents {
   display: flex;
@@ -14,8 +30,8 @@
   flex-direction: column;
   width: $unit11;
   flex-shrink: 0;
+  background-color: var(--bgGray);
   border-right: 1px solid var(--borderColor);
-  overflow-y: auto;
 }
 
 .agents-launch {
@@ -23,28 +39,28 @@
   border-bottom: 1px solid var(--borderColor);
 }
 
-.agents-back {
-  display: block;
-  margin-bottom: $unit1;
-  font-size: $text0;
-  color: var(--color-text);
-  opacity: 0.7;
-  text-decoration: none;
-
-  &:hover {
-    opacity: 1;
-  }
-}
-
 .agents-run-btn {
+  display: block;
   width: 100%;
   padding: $unit1 $unit2;
   font-size: $text1;
+  font-weight: 500;
   color: #fff;
   background-color: var(--color-accent);
   border: none;
-  border-radius: $unit0;
+  border-radius: $unit1;
   cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease;
+
+  & + & {
+    margin-top: $unit1;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
 
   &:disabled {
     opacity: 0.6;
@@ -55,7 +71,10 @@
 .agents-sessions {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: $unit1 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .agents-session {
@@ -69,16 +88,16 @@
   color: var(--color-text);
   background: none;
   border: none;
-  border-bottom: 1px solid var(--borderColor);
+  border-left: $unit0 solid transparent;
   cursor: pointer;
 
   &:hover {
-    background-color: var(--color-hover-bg);
+    background-color: var(--color-bg-hover);
   }
 
   &.is-active {
-    background-color: var(--color-hover-bg);
-    box-shadow: inset $unit0 0 0 var(--color-accent);
+    background-color: var(--color-note-area-bg);
+    border-left-color: var(--color-accent);
   }
 }
 
@@ -94,7 +113,7 @@
 
 .agents-session-time,
 .agents-session-model {
-  opacity: 0.65;
+  color: var(--lighter);
 }
 
 .agents-session-model {
@@ -109,7 +128,7 @@
   height: $unit1;
   flex-shrink: 0;
   border-radius: 50%;
-  background-color: var(--color-text);
+  background-color: var(--lighter);
 
   &.is-running {
     background-color: $green;
@@ -136,14 +155,18 @@
 }
 
 .agents-transcript {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
-  padding: $unit3;
-  overflow-y: auto;
+  background-color: var(--color-note-area-bg);
 }
 
+// stays put while the conversation scrolls under it; the right padding keeps
+// clear of the modal's close button
 .agents-head {
-  margin-bottom: $unit3;
+  padding: $unit3 $unit6 $unit2 $unit4;
+  border-bottom: 1px solid var(--borderColor);
 }
 
 .agents-title {
@@ -155,45 +178,57 @@
 }
 
 .agents-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $unit0 $unit1;
   font-size: $text0;
-  opacity: 0.7;
+  color: var(--lighter);
+}
+
+.agents-meta-item {
+  padding: 0 $unit1;
+  line-height: $unit4;
+  background-color: var(--bgGray);
+  border: 1px solid var(--borderColor);
+  border-radius: $unit3;
+  white-space: nowrap;
 }
 
 .agents-messages {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: $unit3 $unit4 $unit6;
   display: flex;
   flex-direction: column;
   gap: $unit2;
-  max-width: $unit16;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .agents-msg {
+  flex: none; // cards keep their natural height; the list scrolls instead
   border: 1px solid var(--borderColor);
+  border-left: $unit0 solid var(--borderColor);
   border-radius: $unit1;
   overflow: hidden;
 
   // the two that matter while watching: what the agent said, what came back
   &.is-assistant {
-    border-color: var(--color-accent);
+    border-left-color: var(--color-accent);
   }
 
   &.is-tool {
-    background-color: var(--color-hover-bg);
-  }
-
-  // context, folded away visually so the conversation reads first
-  &.is-system,
-  &.is-user {
-    opacity: 0.55;
+    border-left-color: $green;
+    background-color: var(--bgGray);
   }
 }
 
 .agents-msg-head {
   display: flex;
-  justify-content: space-between;
-  gap: $unit2;
+  align-items: center;
+  gap: $unit1;
+  min-height: $unit4;
   padding: $unit1 $unit2;
   font-size: $text0;
   border-bottom: 1px solid var(--borderColor);
@@ -201,19 +236,21 @@
 
 .agents-msg-role {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .agents-msg-tokens {
-  opacity: 0.6;
+  flex-shrink: 0;
+  margin-left: auto; // the only item that hugs the right edge
+  color: var(--lighter);
+  font-variant-numeric: tabular-nums;
 }
 
 .agents-msg-body {
   margin: 0;
   padding: $unit2;
-  max-height: $unit12;
-  overflow: auto;
   font-size: $text0;
-  line-height: 1.5;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -225,14 +262,16 @@
 
 .agents-thinking {
   font-size: $text0;
-  opacity: 0.7;
+  color: var(--lighter);
   animation: agents-pulse 1.2s ease-in-out infinite;
 }
 
 .agents-empty {
-  padding: $unit2;
-  font-size: $text0;
-  opacity: 0.6;
+  margin: auto; // centers the "nothing here yet" line in the empty pane
+  padding: $unit4;
+  font-size: $text1;
+  color: var(--lighter);
+  text-align: center;
 }
 
 .agents-error {

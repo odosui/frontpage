@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'slim-react-router'
 import api, {
   type AgentInfo,
   type AgentMessage,
@@ -18,9 +17,8 @@ const ROLE_LABEL: Record<AgentMessage['role'], string> = {
   tool: 'Function',
 }
 
-const Agents: React.FC = () => {
-  const { id: routeId } = useParams<{ id: string }>()
-  const dashboardId = routeId || 'default'
+/** The agents view: session list on the left, live transcript on the right. */
+const Agents: React.FC<{ dashboardId: string }> = ({ dashboardId }) => {
   const { refresh: refreshJobs } = useJobs()
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [sessions, setSessions] = useState<AgentSession[]>([])
@@ -104,9 +102,6 @@ const Agents: React.FC = () => {
     <div className="agents">
       <aside className="agents-sidebar">
         <div className="agents-launch">
-          <Link className="agents-back" to={`/db/${dashboardId}`}>
-            ← {dashboardId}
-          </Link>
           {agents.map((agent) => (
             <button
               key={agent.kind}
@@ -159,7 +154,7 @@ const Transcript: React.FC<{
   session: AgentSession
   messages: AgentMessage[]
 }> = ({ session, messages }) => {
-  const bottom = useRef<HTMLDivElement>(null)
+  const bottom = useRef<HTMLLIElement>(null)
   const live = session.status === 'running'
 
   // follow the conversation as turns arrive, but only while it is still going
@@ -179,39 +174,51 @@ const Transcript: React.FC<{
           <span className={`agents-dot is-${session.status}`} />
           Session #{session.id}
         </h2>
-        <span className="agents-meta">
-          {session.kind} · {session.model} · {messages.length} turns ·{' '}
-          {tokens.toLocaleString()} tokens
-        </span>
+        <div className="agents-meta">
+          <span className="agents-meta-item">{session.kind}</span>
+          <span className="agents-meta-item">{session.model}</span>
+          <span className="agents-meta-item">{messages.length} turns</span>
+          <span className="agents-meta-item">
+            {tokens.toLocaleString()} tokens
+          </span>
+        </div>
         {session.error && <p className="agents-error">{session.error}</p>}
       </header>
 
       <ol className="agents-messages">
         {messages.map((message) => (
-          <li key={message.id} className={`agents-msg is-${message.role}`}>
-            <header className="agents-msg-head">
-              <span className="agents-msg-role">
-                {message.role === 'tool' && message.toolName
-                  ? `${message.toolName} ${(message.toolArgs ?? []).join(' ')}`
-                  : ROLE_LABEL[message.role]}
-              </span>
-              {message.completionTokens !== null && (
-                <span className="agents-msg-tokens">
-                  {message.promptTokens}→{message.completionTokens}
-                </span>
-              )}
-            </header>
-            <pre className="agents-msg-body">{message.content}</pre>
-          </li>
+          <Message key={message.id} message={message} />
         ))}
         {live && (
           <li className="agents-msg is-pending">
             <span className="agents-thinking">thinking…</span>
           </li>
         )}
+        <li ref={bottom} />
       </ol>
-      <div ref={bottom} />
     </>
+  )
+}
+
+/** One turn: who spoke, what it cost, and the whole of what was said. */
+const Message: React.FC<{ message: AgentMessage }> = ({ message }) => {
+  const label =
+    message.role === 'tool' && message.toolName
+      ? `${message.toolName} ${(message.toolArgs ?? []).join(' ')}`
+      : ROLE_LABEL[message.role]
+
+  return (
+    <li className={`agents-msg is-${message.role}`}>
+      <header className="agents-msg-head">
+        <span className="agents-msg-role">{label}</span>
+        {message.completionTokens !== null && (
+          <span className="agents-msg-tokens">
+            {message.promptTokens}→{message.completionTokens}
+          </span>
+        )}
+      </header>
+      <pre className="agents-msg-body">{message.content}</pre>
+    </li>
   )
 }
 
