@@ -14,6 +14,9 @@ type Props = {
   label?: string
 }
 
+/** A call the agent wrote, `<|DONE|>` aside — that one ends a turn, not starts a lookup. */
+const CALL_RE = /<\|\s*(?!DONE\s*\|)[A-Z][A-Z0-9_]*[^|]*\|>/
+
 /**
  * One turn: who spoke, what it cost, and the whole of what was said.
  *
@@ -22,11 +25,16 @@ type Props = {
  * time — so the header opens it and the preview says what is in there.
  */
 const AgentMessage = ({ message, label }: Props) => {
-  const foldable = message.role === 'tool'
+  // An assistant turn that calls something is the agent going to look, not the
+  // agent answering. Models sometimes write a guess at the result underneath
+  // the call; folding it keeps that guess from reading as the answer, which
+  // arrives in a later message once the results are actually in.
+  const working = message.role === 'assistant' && CALL_RE.test(message.content)
+  const foldable = message.role === 'tool' || working
   const [open, setOpen] = useState(false)
 
   const heading =
-    label ??
+    (working ? `${label ?? ROLE_LABEL.assistant} · looking things up` : label) ??
     (message.role === 'tool' && message.toolName
       ? `${message.toolName} ${(message.toolArgs ?? []).join(' ')}`
       : ROLE_LABEL[message.role])

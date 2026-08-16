@@ -106,11 +106,12 @@ export async function runAgent(
         results.push(`${call.raw}\n${output}`);
       }
 
-      // results go back as a user turn: the text protocol has no separate tool
-      // role on the wire, and every model understands a user message
-      const reply = results.join("\n\n");
-      conversation.push({ role: "user", content: reply });
-      await sessions.append(session.id, { role: "user", content: reply });
+      // Results go back as a user turn: the text protocol has no separate tool
+      // role on the wire, and every model understands a user message. Only the
+      // tool rows are persisted, though — storing this turn as well would put
+      // every result in the transcript twice, the second time labelled as the
+      // task the run was given.
+      conversation.push({ role: "user", content: results.join("\n\n") });
     }
 
     await sessions.finish(session.id);
