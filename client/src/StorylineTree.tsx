@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'slim-react-router'
 import { type StoryFeedEntry } from './api'
 
 /** What the tree has selected; null means "show everything". */
@@ -8,6 +9,8 @@ export type Selection =
   | null
 
 type Props = {
+  /** Only for building storyline links, which are per-dashboard urls. */
+  dashboardId: string
   stories: StoryFeedEntry[]
   selection: Selection
   onSelect: (selection: Selection) => void
@@ -17,6 +20,8 @@ type Branch = {
   /** The storyline's id, or null for the stories that belong to no arc. */
   id: number | null
   title: string
+  /** How the arc is addressed on its own page; empty for the standalone group. */
+  slug: string
   stories: StoryFeedEntry[]
 }
 
@@ -28,7 +33,12 @@ const keyOf = (branch: Branch) => `${branch.id ?? 'standalone'}`
  * the same storyline can head several entries; this regroups it so each arc
  * appears once, with everything filed under it.
  */
-const StorylineTree = ({ stories, selection, onSelect }: Props) => {
+const StorylineTree = ({
+  dashboardId,
+  stories,
+  selection,
+  onSelect,
+}: Props) => {
   // arcs the reader has folded away, by key. Everything starts open, so the
   // tree looks the same as before until someone collapses something.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
@@ -92,6 +102,18 @@ const StorylineTree = ({ stories, selection, onSelect }: Props) => {
                   {branch.title}
                   <span className="tree-count">{branch.stories.length}</span>
                 </button>
+
+                {/* the arc's own page, where the tree only filters this list */}
+                {branch.id !== null && (
+                  <Link
+                    className="tree-open"
+                    to={`/db/${dashboardId}/storylines/${branch.slug}`}
+                    title={`Open ${branch.title}`}
+                    aria-label={`Open ${branch.title}`}
+                  >
+                    →
+                  </Link>
+                )}
               </div>
 
               {isOpen && (
@@ -134,6 +156,7 @@ function group(stories: StoryFeedEntry[]): Branch[] {
       branches.set(id, {
         id,
         title: story.storyline?.title ?? 'Standalone',
+        slug: story.storyline?.slug ?? '',
         stories: [story],
       })
     }

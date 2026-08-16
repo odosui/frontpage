@@ -350,6 +350,7 @@ const Dashboard: React.FC = () => {
       <main className="dashboard-main">
         <div className="dashboard-tree">
           <StorylineTree
+            dashboardId={dashboardId}
             stories={stories}
             selection={selection}
             onSelect={setSelection}

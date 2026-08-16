@@ -1,0 +1,205 @@
+@use '../vars' as *;
+
+// one arc across three columns: its stories, the story itself, and the agent.
+// Each scrolls on its own, so reading one never moves the others.
+.storyline {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+
+// the dashboard's story list, at half the width: the cards inside are the same
+// component and the same styles, just in a narrower column
+.storyline-stories {
+  flex: 0 0 50%;
+  min-width: 0;
+  overflow-y: auto;
+  padding: $unit3 $unit2 $unit6;
+  border-right: 1px solid var(--borderColor);
+}
+
+// deliberately empty for now — the story goes here. Takes whatever the list
+// and the chat leave, so only those two carry a width.
+.storyline-detail {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  padding: $unit6 $unit4;
+}
+
+.storyline-chat {
+  flex: 0 0 25%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid var(--borderColor);
+}
+
+.storyline-head {
+  margin-bottom: $unit3;
+  padding: 0 $unit1;
+}
+
+.storyline-back {
+  display: inline-block;
+  margin-bottom: $unit1;
+  font-size: $text0;
+  text-decoration: none;
+  color: var(--lighter);
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+}
+
+.storyline-title {
+  margin: 0;
+  font-size: $text4;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+.storyline-placeholder,
+.storyline-error {
+  padding: $unit2;
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--lighter);
+}
+
+.storyline-error {
+  display: flex;
+  flex-direction: column;
+  gap: $unit1;
+  align-items: flex-start;
+  margin: $unit6 auto;
+}
+
+// the agent column. Nothing is wired up yet, but the shape is the real one:
+// a fixed header and composer with the transcript scrolling between them
+.chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-head {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $unit1;
+  padding: $unit3 $unit3 $unit2;
+}
+
+.chat-heading {
+  margin: 0;
+  font-size: $text0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lighter);
+}
+
+// which model is answering, quietly — it is the one thing about the session
+// worth knowing mid-conversation
+.chat-model {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.chat-transcript {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  // the transcript is the agents view's list, in a narrower column: it brings
+  // its own scrolling, so only the padding needs taking down
+  .agents-messages {
+    padding: 0 $unit3 $unit3;
+  }
+}
+
+.chat-placeholder {
+  margin: 0;
+  padding: 0 $unit3;
+  font-size: $text1;
+  line-height: 1.45;
+  color: var(--lighter);
+}
+
+.chat-error {
+  padding: 0 $unit3;
+}
+
+.chat-composer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: $unit1;
+  padding: $unit2 $unit3 $unit3;
+  border-top: 1px solid var(--borderColor);
+}
+
+.chat-input {
+  width: 100%;
+  padding: $unit1 $unit2;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background-color: transparent;
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--color-text);
+  resize: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.chat-send {
+  align-self: flex-end;
+  padding: $unit0 $unit3;
+  border: none;
+  border-radius: $unit1;
+  font-size: $text1;
+  font-weight: 500;
+  color: #fff;
+  background-color: var(--color-accent);
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}

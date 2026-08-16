@@ -133,7 +133,7 @@ export async function runAgent(
  * Unknown names and failing functions are reported back to the model rather
  * than thrown: a typo should cost one turn, not the whole session.
  */
-async function execute(
+export async function execute(
   agent: AgentDefinition,
   call: ToolCall,
   ctx: AgentContext,

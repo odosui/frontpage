@@ -1,21 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import api, {
   type AgentInfo,
   type AgentMessage,
   type AgentSession,
 } from './api'
 import { useJobs } from './contexts/JobsContext'
+import AgentTranscript from './ui/agent/AgentTranscript'
 
 /** While a session is running its transcript grows every few seconds. */
 const LIVE_POLL_MS = 1000
 const IDLE_POLL_MS = 6000
-
-const ROLE_LABEL: Record<AgentMessage['role'], string> = {
-  system: 'Instructions',
-  user: 'Task',
-  assistant: 'Agent',
-  tool: 'Function',
-}
 
 /** The agents view: session list on the left, live transcript on the right. */
 const Agents: React.FC<{ dashboardId: string }> = ({ dashboardId }) => {
@@ -154,13 +148,7 @@ const Transcript: React.FC<{
   session: AgentSession
   messages: AgentMessage[]
 }> = ({ session, messages }) => {
-  const bottom = useRef<HTMLLIElement>(null)
   const live = session.status === 'running'
-
-  // follow the conversation as turns arrive, but only while it is still going
-  useEffect(() => {
-    if (live) bottom.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length, live])
 
   const tokens = messages.reduce(
     (sum, m) => sum + (m.promptTokens ?? 0) + (m.completionTokens ?? 0),
@@ -185,40 +173,8 @@ const Transcript: React.FC<{
         {session.error && <p className="agents-error">{session.error}</p>}
       </header>
 
-      <ol className="agents-messages">
-        {messages.map((message) => (
-          <Message key={message.id} message={message} />
-        ))}
-        {live && (
-          <li className="agents-msg is-pending">
-            <span className="agents-thinking">thinking…</span>
-          </li>
-        )}
-        <li ref={bottom} />
-      </ol>
+      <AgentTranscript messages={messages} thinking={live} />
     </>
-  )
-}
-
-/** One turn: who spoke, what it cost, and the whole of what was said. */
-const Message: React.FC<{ message: AgentMessage }> = ({ message }) => {
-  const label =
-    message.role === 'tool' && message.toolName
-      ? `${message.toolName} ${(message.toolArgs ?? []).join(' ')}`
-      : ROLE_LABEL[message.role]
-
-  return (
-    <li className={`agents-msg is-${message.role}`}>
-      <header className="agents-msg-head">
-        <span className="agents-msg-role">{label}</span>
-        {message.completionTokens !== null && (
-          <span className="agents-msg-tokens">
-            {message.promptTokens}→{message.completionTokens}
-          </span>
-        )}
-      </header>
-      <pre className="agents-msg-body">{message.content}</pre>
-    </li>
   )
 }
 

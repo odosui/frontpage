@@ -3,6 +3,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/registry";
+import { startChat } from "../components/agents/chat";
+import { BIG_MODEL } from "../components/ai/models";
 import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
 import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
@@ -11,7 +13,7 @@ import * as dashboards from "../models/dashboards";
 import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
-import { CHANNEL_KINDS, Channel, ChannelKind } from "./types";
+import { CHANNEL_KINDS, Channel, ChannelKind, StoryFeedEntry } from "./types";
 
 dayjs.extend(relativeTime);
 
@@ -89,6 +91,16 @@ export const createApi = async () => {
     getStories: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
       return ok({ stories: await stories.feed(id, MAX_STORIES) });
+    },
+
+    /** One arc and everything filed under it — what the storyline page reads. */
+    getStoryline: async (dashboardId: string, slug: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      if (!slug) return error(400, "storyline slug is required");
+
+      const found = await stories.feedForStoryline(id, slug, MAX_STORIES);
+      if (!found) return error(404, "storyline not found");
+      return ok(found);
     },
 
     /**
@@ -299,6 +311,68 @@ export const createApi = async () => {
       return ok({ job });
     },
 
+    /**
+     * Opens a conversation with an agent. Only the system message is written
+     * here — nothing is asked until the first message arrives, so opening a
+     * chat and never using it costs no model call.
+     */
+    startChat: async (
+      dashboardId: string,
+      body: { kind?: string; storyline?: string },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const kind = body?.kind || "";
+      if (!AGENT_KINDS.includes(kind)) {
+        return error(400, `kind must be one of ${AGENT_KINDS.join(", ")}`);
+      }
+      if (!(await dashboards.exists(id))) {
+        return error(404, "dashboard not found");
+      }
+
+      // The arc the chat was opened from, written into the system message: the
+      // first question is nearly always about something already on the screen,
+      // and a turn spent looking up what is in front of the reader is a turn
+      // they wait through for nothing.
+      const context = body?.storyline
+        ? storylineContext(
+            await stories.feedForStoryline(id, body.storyline, MAX_STORIES),
+          )
+        : undefined;
+
+      const { sessionId } = await startChat(getAgent(kind), {
+        model: BIG_MODEL,
+        dashboardId: id,
+        ...(context ? { context } : {}),
+      });
+      return ok({ session: await agentSessions.get(sessionId) });
+    },
+
+    /**
+     * Asks the agent something. The turn itself runs in the worker, so this
+     * answers as soon as the question is queued and the ui watches the
+     * transcript for the reply.
+     */
+    sendChatMessage: async (id: string, body: { content?: string }) => {
+      const sessionId = Number(id);
+      if (!Number.isFinite(sessionId)) {
+        return error(400, "session id must be a number");
+      }
+      const content = (body?.content ?? "").trim();
+      if (!content) return error(400, "content is required");
+
+      const session = await agentSessions.get(sessionId);
+      if (!session) return error(404, "session not found");
+
+      const job = await queue.enqueue({
+        type: "agent_reply",
+        payload: { sessionId, question: content },
+        // a question nobody can answer twice: a retried turn would ask the
+        // model the same thing again and append a second reply
+        maxAttempts: 1,
+      });
+      return ok({ job });
+    },
+
     // Settings
 
     databaseStats: async () => ok({ stats: await stats.collect() }),
@@ -306,3 +380,31 @@ export const createApi = async () => {
 };
 
 export type Api = Awaited<ReturnType<typeof createApi>>;
+
+/**
+ * The arc as the reader has it on screen, for the agent's system message: the
+ * title, then every story under it with how much has been filed and how recent
+ * it is. Titles only — the articles are a tool call away, and putting them all
+ * here would cost more than it is worth on a chat that asks about one of them.
+ */
+function storylineContext(
+  found: { storyline: { title: string }; stories: StoryFeedEntry[] } | null,
+): string | undefined {
+  if (!found) return undefined;
+
+  const lines = found.stories.map((story) => {
+    const when = dayjs(story.updatedAt).fromNow();
+    return `- ${story.title} (${story.articles.length} articles, newest ${when})`;
+  });
+
+  return [
+    `The reader has the storyline "${found.storyline.title}" open, and the`,
+    `questions are most likely about it. The stories filed under it, newest`,
+    `first:`,
+    "",
+    lines.length > 0 ? lines.join("\n") : "(nothing filed under it yet)",
+    "",
+    `Those titles are exact — pass one to GET_STORY to read the articles under`,
+    `it. The arc may also have older stories not listed here.`,
+  ].join("\n");
+}

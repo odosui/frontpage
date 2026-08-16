@@ -56,6 +56,12 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.getStories(pathParams.dashboardId ?? ""),
   },
   {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/storylines/:slug",
+    handler: async ({ pathParams }) =>
+      api.getStoryline(pathParams.dashboardId ?? "", pathParams.slug ?? ""),
+  },
+  {
     method: "post",
     path: "/api/dashboards/:dashboardId/articles/:id/content",
     handler: async ({ pathParams }) =>
@@ -120,6 +126,18 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     path: "/api/dashboards/:dashboardId/agents/run",
     handler: async ({ pathParams, body }) =>
       api.runAgent(pathParams.dashboardId ?? "", body),
+  },
+  {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/agents/chats",
+    handler: async ({ pathParams, body }) =>
+      api.startChat(pathParams.dashboardId ?? "", body),
+  },
+  {
+    method: "post",
+    path: "/api/agents/sessions/:id/messages",
+    handler: async ({ pathParams, body }) =>
+      api.sendChatMessage(pathParams.id ?? "", body),
   },
 
   // Settings

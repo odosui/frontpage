@@ -1,4 +1,5 @@
 import { JobHandler } from "../types";
+import { agentReplyHandler } from "./agentReply";
 import { extractArticlesHandler } from "./extractArticles";
 import { extractContentHandler } from "./extractContent";
 import { fetchFeedHandler } from "./fetchFeed";
@@ -11,6 +12,7 @@ export const handlers: Record<string, JobHandler> = {
   extract_articles: extractArticlesHandler,
   extract_content: extractContentHandler,
   run_agent: runAgentHandler,
+  agent_reply: agentReplyHandler,
 };
 
 export const JOB_TYPES = Object.keys(handlers);

@@ -176,6 +176,21 @@ export async function finish(sessionId: number): Promise<void> {
   );
 }
 
+/**
+ * Puts a session back to work. A chat is finished between turns — that is what
+ * makes `running` mean "someone is waiting on it" — and asking the next
+ * question reopens the one that is already there.
+ */
+export async function resume(sessionId: number): Promise<void> {
+  await query(
+    `update agent_sessions
+     set status = 'running', error = null, finished_at = null,
+         updated_at = now()
+     where id = $1`,
+    [sessionId],
+  );
+}
+
 export async function fail(sessionId: number, error: string): Promise<void> {
   await query(
     `update agent_sessions

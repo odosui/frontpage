@@ -1,5 +1,4 @@
-import { fetchArticlePage } from "../../components/articles/download";
-import { extractReadable } from "../../components/articles/readable";
+import { fetchAndStore } from "../../components/articles/store";
 import * as articles from "../../models/articles";
 import { JobHandler } from "../types";
 
@@ -27,33 +26,22 @@ export const extractContentHandler: JobHandler = async (payload, { log }) => {
     throw new Error(`article ${dashboardId}/${articleId} no longer exists`);
   }
 
-  const html = await fetchArticlePage(article.url);
-  const readable = extractReadable(html, article.url);
-
-  const saved = await articles.saveContent(
-    dashboardId,
-    article.id,
-    readable.text,
-    readable.images,
-  );
-  if (!saved) {
-    throw new Error(`article ${article.id} vanished while it was being read`);
-  }
+  const stored = await fetchAndStore(dashboardId, article.id);
 
   log(
-    `read ${readable.text.length} characters and ${readable.images.length} ` +
+    `read ${stored.chars} characters and ${stored.images} ` +
       `images from ${article.url}` +
-      (readable.byline ? ` by ${readable.byline}` : ""),
+      (stored.byline ? ` by ${stored.byline}` : ""),
   );
 
   return {
     result: {
       articleId: article.id,
       url: article.url,
-      chars: readable.text.length,
-      images: readable.images.length,
-      byline: readable.byline,
-      publishedAt: readable.publishedAt,
+      chars: stored.chars,
+      images: stored.images,
+      byline: stored.byline,
+      publishedAt: stored.publishedAt,
     },
   };
 };

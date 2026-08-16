@@ -135,6 +135,31 @@ $feed-width: $unit12;
   letter-spacing: 0.08em;
 }
 
+// only shows on hover: the arc's page is a deliberate move, not something to
+// hit by accident while filtering
+.tree-open {
+  flex: none;
+  padding: 0 $unit0;
+  font-size: $text1;
+  line-height: 1;
+  text-decoration: none;
+  color: var(--lighter);
+  opacity: 0;
+  transition:
+    opacity 0.12s ease,
+    color 0.12s ease;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    color: var(--color-accent);
+  }
+
+  .tree-branch:hover & {
+    opacity: 1;
+  }
+}
+
 // how much is folded away, and how big the arc is when it isn't
 .tree-count {
   margin-left: $unit1;
@@ -302,10 +327,12 @@ $feed-width: $unit12;
  * red for the things that change the world. The exact number is the tooltip.
  */
 .story-article-dot {
-  flex: none;
-  // a circle has no baseline of its own; this lifts it onto the text's
-  position: relative;
-  top: -0.15em;
+  // sits in the gutter the row's left padding holds open, lined up with the
+  // middle of the first line — an inline span would ignore width and height
+  // and collapse to nothing
+  position: absolute;
+  top: calc(#{$unit0} + 0.75em - #{($unit0 + 1px) * 0.5});
+  left: $unit1;
   width: $unit0 + 1px;
   height: $unit0 + 1px;
   border-radius: 50%;

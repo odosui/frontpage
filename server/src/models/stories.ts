@@ -3,6 +3,9 @@ import * as articles from "./articles";
 import { StoryFeedEntry } from "../api/types";
 import { slugify } from "../utils/slug";
 
+/** The arc as a story carries it: the label, not the row. */
+type Storyline = NonNullable<StoryFeedEntry["storyline"]>;
+
 type StoryRow = {
   id: string;
   title: string;
@@ -42,19 +45,65 @@ export async function feed(
   limit: number,
 ): Promise<StoryFeedEntry[]> {
   const { rows } = await query<StoryRow>(
-    `select s.id, s.title, s.slug,
-            sl.id as storyline_id, sl.title as storyline_title,
-            sl.slug as storyline_slug,
-            max(a.sorted_at) as updated_at
-     from stories s
-     join articles a on a.story_id = s.id
-     left join storylines sl on sl.id = s.storyline_id
+    `${FEED_SELECT}
      where s.dashboard_id = $1
      group by s.id, sl.id
      order by max(a.sorted_at) desc, s.id desc
      limit $2`,
     [dashboardId, limit],
   );
+  return withArticles(rows);
+}
+
+/**
+ * The same feed, narrowed to one arc and addressed by slug — the storyline
+ * page is a url someone can keep, so it is not keyed on a database id.
+ * Null when no such arc exists, which the route turns into a 404; an arc that
+ * exists but has nothing filed under it is an empty list, not a miss.
+ */
+export async function feedForStoryline(
+  dashboardId: string,
+  slug: string,
+  limit: number,
+): Promise<{ storyline: Storyline; stories: StoryFeedEntry[] } | null> {
+  const { rows: found } = await query<{
+    id: string;
+    title: string;
+    slug: string;
+  }>(
+    `select id, title, slug from storylines
+      where dashboard_id = $1 and slug = $2
+      limit 1`,
+    [dashboardId, slug],
+  );
+  const arc = found[0];
+  if (!arc) return null;
+
+  const { rows } = await query<StoryRow>(
+    `${FEED_SELECT}
+     where s.dashboard_id = $1 and s.storyline_id = $2
+     group by s.id, sl.id
+     order by max(a.sorted_at) desc, s.id desc
+     limit $3`,
+    [dashboardId, arc.id, limit],
+  );
+
+  return {
+    storyline: { id: Number(arc.id), title: arc.title, slug: arc.slug },
+    stories: await withArticles(rows),
+  };
+}
+
+const FEED_SELECT = `select s.id, s.title, s.slug,
+                            sl.id as storyline_id, sl.title as storyline_title,
+                            sl.slug as storyline_slug,
+                            max(a.sorted_at) as updated_at
+                     from stories s
+                     join articles a on a.story_id = s.id
+                     left join storylines sl on sl.id = s.storyline_id`;
+
+/** Hangs each story's articles, with their tags, off the rows just selected. */
+async function withArticles(rows: StoryRow[]): Promise<StoryFeedEntry[]> {
   if (rows.length === 0) return [];
 
   const entries = rows.map<StoryFeedEntry>((r) => ({
@@ -102,6 +151,40 @@ export async function feed(
   }
 
   return entries;
+}
+
+/**
+ * One story with its articles, found the way an agent refers to it: by title.
+ * Exact match first, then a substring, so the title an agent read out of
+ * GET_STORIES resolves even when it retypes it loosely.
+ */
+export async function detail(
+  dashboardId: string,
+  title: string,
+  articleLimit: number,
+): Promise<{ story: StoryFeedEntry; totalArticles: number } | null> {
+  const { rows } = await query<StoryRow>(
+    `${FEED_SELECT}
+     where s.dashboard_id = $1
+       and (lower(s.title) = lower($2) or s.title ilike '%' || $2 || '%')
+     group by s.id, sl.id
+     order by (lower(s.title) = lower($2)) desc, max(a.sorted_at) desc
+     limit 1`,
+    [dashboardId, title],
+  );
+  const found = await withArticles(rows);
+  const story = found[0];
+  if (!story) return null;
+
+  // Trimmed here rather than in the query: `withArticles` loads a story's
+  // articles in one pass for the feed, and they come back newest first, so the
+  // ones kept are the recent ones. The total goes with them — an agent that
+  // only sees 50 should know whether that was all of them.
+  const totalArticles = story.articles.length;
+  return {
+    story: { ...story, articles: story.articles.slice(0, articleLimit) },
+    totalArticles,
+  };
 }
 
 export type StoryMatch = {

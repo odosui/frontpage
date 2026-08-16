@@ -234,9 +234,57 @@
   border-bottom: 1px solid var(--borderColor);
 }
 
+// a folded result is a control, so the whole header is the target
+.agents-msg-toggle {
+  width: 100%;
+  border: none;
+  // the rule divides the header from the body; folded, there is no body under
+  // it to divide from
+  border-bottom: 1px solid var(--borderColor);
+  background: none;
+  font: inherit;
+  font-size: $text0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  &.is-collapsed {
+    border-bottom-color: transparent;
+  }
+}
+
+// the same border-drawn triangle the storyline tree uses
+.agents-msg-caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-top: $unit0 solid transparent;
+  border-bottom: $unit0 solid transparent;
+  border-left: $unit0 solid var(--lighter);
+  transition: transform 0.12s ease;
+
+  &.is-open {
+    transform: rotate(90deg);
+  }
+}
+
 .agents-msg-role {
   font-weight: 600;
   white-space: nowrap;
+}
+
+// what is inside, without opening it: one line, cut where the room runs out
+.agents-msg-preview {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--lighter);
+  font-weight: 400;
 }
 
 .agents-msg-tokens {

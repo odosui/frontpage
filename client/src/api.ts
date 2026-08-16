@@ -13,6 +13,8 @@ export default {
     api('get', `/dashboards/${dashboardId}/feed`),
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${dashboardId}/stories`),
+  getStoryline: (dashboardId: string, slug: string) =>
+    api('get', `/dashboards/${dashboardId}/storylines/${slug}`),
   addChannel: (dashboardId: string, channel: Channel) =>
     apiJson('post', `/dashboards/${dashboardId}/channels`, { channel }),
   deleteChannel: (dashboardId: string, id: string) =>
@@ -36,6 +38,16 @@ export default {
   getAgentSession: (id: number) => api('get', `/agents/sessions/${id}`),
   runAgent: (dashboardId: string, kind: string) =>
     apiJson('post', `/dashboards/${dashboardId}/agents/run`, { kind }),
+
+  // Chat: a session that stays open, one queued turn per message
+  /** `storyline` is a slug; the server turns it into the agent's context. */
+  startChat: (dashboardId: string, kind: string, storyline?: string) =>
+    apiJson('post', `/dashboards/${dashboardId}/agents/chats`, {
+      kind,
+      storyline,
+    }),
+  sendChatMessage: (sessionId: number, content: string) =>
+    apiJson('post', `/agents/sessions/${sessionId}/messages`, { content }),
 
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),
