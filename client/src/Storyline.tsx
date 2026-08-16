@@ -154,15 +154,8 @@ const Storyline: React.FC = () => {
         )}
       </aside>
 
-      <section className="storyline-predictions">
-        <StorylinePredictions
-          dashboardId={dashboardId}
-          storyline={storyline.slug}
-          predictions={loaded.predictions ?? []}
-          onChanged={load}
-        />
-      </section>
-
+      {/* facts before predictions, the way they are derived: what the arc has
+          established, then what that implies about what happens next */}
       <aside className="storyline-facts">
         <StorylineFacts
           dashboardId={dashboardId}
@@ -171,6 +164,15 @@ const Storyline: React.FC = () => {
           onChanged={load}
         />
       </aside>
+
+      <section className="storyline-predictions">
+        <StorylinePredictions
+          dashboardId={dashboardId}
+          storyline={storyline.slug}
+          predictions={loaded.predictions ?? []}
+          onChanged={load}
+        />
+      </section>
 
       <aside className="storyline-chat">
         <StorylineChat

@@ -5,6 +5,7 @@ import {
   type FactPatch,
 } from '../../api'
 import InlineBold from '../InlineBold'
+import MarkdownTextarea from '../MarkdownTextarea'
 import EditIcon from '../../icons/EditIcon'
 import ExternalLinkIcon from '../../icons/ExternalLinkIcon'
 import ConfidencePicker from './ConfidencePicker'
@@ -57,12 +58,11 @@ const FactRow = ({ fact, onSave, onDelete }: Props) => {
   if (editing) {
     return (
       <li className="fact is-editing">
-        <textarea
+        <MarkdownTextarea
           className="fact-input"
-          rows={3}
           value={content}
           disabled={busy}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
         />
         <ConfidencePicker
           value={confidence}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import api, { type Prediction } from './api'
+import MarkdownTextarea from './ui/MarkdownTextarea'
 import PredictionRow from './ui/predictions/PredictionRow'
 
 type Props = {
@@ -75,14 +76,13 @@ const StorylinePredictions = ({
       <div className="facts-body">
         {adding && (
           <div className="prediction is-editing">
-            <textarea
+            <MarkdownTextarea
               className="prediction-input"
-              rows={3}
               autoFocus
               placeholder="What might happen? The analyst puts the odds on it."
               value={content}
               disabled={busy}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={setContent}
             />
             <div className="prediction-actions">
               <button

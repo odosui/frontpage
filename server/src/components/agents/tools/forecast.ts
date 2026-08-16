@@ -17,7 +17,8 @@ export const forecast: AgentTool = {
   description:
     "Sets the probability on a prediction: its id, a number from 0 to 100, and why you moved it. All three are required — a probability with no reasoning is refused. " +
     "The ids and current probabilities are in the list you were given at the top. " +
-    "Move a number when the coverage has actually changed what you believe, and say what changed: which reporting, and why it points the way it does. Leave it alone when nothing has moved — an unchanged estimate restated is noise in the record. " +
+    "A probability is a function of the facts, so record what the coverage established before you set one, and name in the reasoning the facts it turns on. " +
+    "A prediction marked 'not yet forecast' should be priced from the facts as they already stand, whether or not anything changed today. One that already has a number only moves when the facts move. " +
     "Every move is kept with its reasoning, so the reader can read back how your thinking developed.",
   run: async (args, ctx) => {
     const id = Number(args[0]);

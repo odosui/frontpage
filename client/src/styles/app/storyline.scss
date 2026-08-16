@@ -16,8 +16,8 @@
 // every column is a quarter, and none of them may push the others out: without
 // min-width a long headline or url would widen its own column past its share
 .storyline-stories,
-.storyline-predictions,
 .storyline-facts,
+.storyline-predictions,
 .storyline-chat {
   flex: 0 0 25%;
   min-width: 0;
@@ -33,8 +33,8 @@
 
 // the three panes to the right of the stories are each a fixed header over
 // their own scroll, so their headings stay put while their contents move
-.storyline-predictions,
 .storyline-facts,
+.storyline-predictions,
 .storyline-chat {
   display: flex;
   flex-direction: column;
@@ -86,10 +86,10 @@
   margin: $unit6 auto;
 }
 
-// predictions, facts and chat are the same kind of column — a heading that stays put over a
+// facts, predictions and chat are the same kind of column — a heading that stays put over a
 // pane that scrolls — so they share the shape and differ only in contents
-.predictions,
 .facts,
+.predictions,
 .chat {
   flex: 1;
   min-height: 0;

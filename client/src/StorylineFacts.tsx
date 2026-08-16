@@ -4,6 +4,7 @@ import api, {
   type Fact,
   type FactPatch,
 } from './api'
+import MarkdownTextarea from './ui/MarkdownTextarea'
 import ConfidencePicker from './ui/facts/ConfidencePicker'
 import FactRow from './ui/facts/FactRow'
 
@@ -88,14 +89,13 @@ const StorylineFacts = ({
       <div className="facts-body">
         {adding && (
           <div className="fact is-editing">
-            <textarea
+            <MarkdownTextarea
               className="fact-input"
-              rows={3}
               autoFocus
               placeholder="What does this storyline establish?"
               value={content}
               disabled={busy}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={setContent}
             />
             <ConfidencePicker
               value={confidence}

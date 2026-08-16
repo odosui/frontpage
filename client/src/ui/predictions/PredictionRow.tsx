@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { type Prediction } from '../../api'
 import InlineBold from '../InlineBold'
+import MarkdownTextarea from '../MarkdownTextarea'
 import { formatWhen, timeAgo } from '../../utils/dates'
 
 type Props = {
@@ -51,12 +52,11 @@ const PredictionRow = ({ prediction, onSave, onDelete }: Props) => {
   if (editing) {
     return (
       <li className="prediction is-editing">
-        <textarea
+        <MarkdownTextarea
           className="prediction-input"
-          rows={3}
           value={content}
           disabled={busy}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
         />
         <div className="prediction-actions">
           <button
