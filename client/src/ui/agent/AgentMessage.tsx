@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { type AgentMessage as Message } from '../../api'
+import Markdown from '../Markdown'
 
 export const ROLE_LABEL: Record<Message['role'], string> = {
   system: 'Instructions',
@@ -71,9 +72,17 @@ const AgentMessage = ({ message, label }: Props) => {
         <header className="agents-msg-head">{head}</header>
       )}
 
-      {(!foldable || open) && (
-        <pre className="agents-msg-body">{message.content}</pre>
-      )}
+      {(!foldable || open) &&
+        // Tool output is laid out with its own alignment and indentation, so
+        // it stays preformatted. What a person or the analyst wrote is prose,
+        // and prose gets rendered.
+        (message.role === 'tool' ? (
+          <pre className="agents-msg-body">{message.content}</pre>
+        ) : (
+          <div className="agents-msg-body">
+            <Markdown text={message.content} />
+          </div>
+        ))}
     </li>
   )
 }

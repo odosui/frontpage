@@ -299,8 +299,68 @@
   padding: $unit2;
   font-size: $text0;
   line-height: 1.6;
-  white-space: pre-wrap;
   word-break: break-word;
+}
+
+// only tool output keeps its own line breaks and alignment; rendered prose
+// carries its structure in elements instead
+pre.agents-msg-body {
+  white-space: pre-wrap;
+}
+
+// the analyst's prose: paragraphs and lists, tight enough for a narrow column
+.markdown-p {
+  margin: 0;
+
+  & + & {
+    margin-top: $unit1;
+  }
+}
+
+.markdown-list {
+  margin: $unit1 0 0;
+  padding-left: $unit2;
+  list-style-position: outside;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+ul.markdown-list {
+  list-style-type: disc;
+}
+
+ol.markdown-list {
+  list-style-type: decimal;
+}
+
+// a list right after the line introducing it belongs to it, so it does not get
+// the full paragraph gap
+.markdown-p + .markdown-list {
+  margin-top: $unit0;
+}
+
+.markdown-list + .markdown-p {
+  margin-top: $unit1;
+}
+
+.markdown-item {
+  margin: 0;
+
+  // nesting is drawn with indentation rather than nested lists, which keeps
+  // the parser to one pass over the lines
+  &.is-depth-1 {
+    margin-left: $unit2;
+  }
+
+  &.is-depth-2 {
+    margin-left: $unit4;
+  }
+
+  &.is-depth-3 {
+    margin-left: $unit5;
+  }
 }
 
 .agents-msg.is-pending {
