@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'slim-react-router'
 import api, {
   type Fact,
+  type Prediction,
   type Storyline as Arc,
   type StoryFeedEntry,
 } from './api'
@@ -10,12 +11,14 @@ import ArticleContentModal from './ArticleContentModal'
 import Stories from './Stories'
 import StorylineChat from './StorylineChat'
 import StorylineFacts from './StorylineFacts'
+import StorylinePredictions from './StorylinePredictions'
 import { useJobs } from './contexts/JobsContext'
 
 type Loaded = {
   storyline: Arc
   stories: StoryFeedEntry[]
   facts: Fact[]
+  predictions: Prediction[]
 }
 
 /** How often a page left open re-reads itself, for changes made elsewhere. */
@@ -151,8 +154,14 @@ const Storyline: React.FC = () => {
         )}
       </aside>
 
-      {/* the story itself goes here — left blank on purpose for now */}
-      <section className="storyline-detail" />
+      <section className="storyline-predictions">
+        <StorylinePredictions
+          dashboardId={dashboardId}
+          storyline={storyline.slug}
+          predictions={loaded.predictions ?? []}
+          onChanged={load}
+        />
+      </section>
 
       <aside className="storyline-facts">
         <StorylineFacts

@@ -23,6 +23,18 @@ export default {
     apiJson('patch', `/dashboards/${dashboardId}/facts/${id}`, patch),
   deleteFact: (dashboardId: string, id: number) =>
     api('delete', `/dashboards/${dashboardId}/facts/${id}`),
+
+  // Predictions: the reader writes the claim, the analyst puts odds on it
+  createPrediction: (dashboardId: string, slug: string, content: string) =>
+    apiJson('post', `/dashboards/${dashboardId}/storylines/${slug}/predictions`, {
+      content,
+    }),
+  updatePrediction: (dashboardId: string, id: number, content: string) =>
+    apiJson('patch', `/dashboards/${dashboardId}/predictions/${id}`, {
+      content,
+    }),
+  deletePrediction: (dashboardId: string, id: number) =>
+    api('delete', `/dashboards/${dashboardId}/predictions/${id}`),
   addChannel: (dashboardId: string, channel: Channel) =>
     apiJson('post', `/dashboards/${dashboardId}/channels`, { channel }),
   deleteChannel: (dashboardId: string, id: string) =>
@@ -321,6 +333,33 @@ export type FactPatch = {
   content?: string
   confidence?: number
   articleId?: number | null
+}
+
+/** One estimate of a prediction's odds, and why it was made. */
+export type Forecast = {
+  id: number
+  probability: number
+  /** What it was before; null for the first forecast. */
+  previous: number | null
+  reasoning: string
+  author: 'analyst' | 'reader'
+  createdAt: string
+}
+
+/**
+ * A claim about what happens next. The reader writes it; the analyst puts the
+ * probability on it, and every move it makes is kept with its reasoning.
+ */
+export type Prediction = {
+  id: number
+  storylineId: number
+  content: string
+  /** 0-100, or null until it has been forecast. */
+  probability: number | null
+  /** Newest first. */
+  forecasts: Forecast[]
+  createdAt: string
+  updatedAt: string
 }
 
 /**

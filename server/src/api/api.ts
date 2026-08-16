@@ -11,6 +11,7 @@ import * as articles from "../models/articles";
 import * as channels from "../models/channels";
 import * as dashboards from "../models/dashboards";
 import * as facts from "../models/facts";
+import * as predictions from "../models/predictions";
 import * as proposals from "../models/proposals";
 import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
@@ -102,10 +103,62 @@ export const createApi = async () => {
 
       const found = await stories.feedForStoryline(id, slug, MAX_STORIES);
       if (!found) return error(404, "storyline not found");
+      const [known, claims] = await Promise.all([
+        facts.forStoryline(id, found.storyline.id),
+        predictions.forStoryline(id, found.storyline.id),
+      ]);
+      return ok({ ...found, facts: known, predictions: claims });
+    },
+
+    /**
+     * The reader writes the claim; the probability is left alone. Putting a
+     * number on it is the analyst's job, through FORECAST.
+     */
+    createPrediction: async (
+      dashboardId: string,
+      slug: string,
+      body: { content?: string },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const content = (body?.content ?? "").trim();
+      if (!content) return error(400, "content is required");
+
+      const found = await stories.feedForStoryline(id, slug, 1);
+      if (!found) return error(404, "storyline not found");
+
       return ok({
-        ...found,
-        facts: await facts.forStoryline(id, found.storyline.id),
+        prediction: await predictions.create(id, found.storyline.id, content),
       });
+    },
+
+    updatePrediction: async (
+      dashboardId: string,
+      predictionId: string,
+      body: { content?: string },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(predictionId);
+      if (!Number.isFinite(numeric)) {
+        return error(400, "prediction id must be a number");
+      }
+      const content = (body?.content ?? "").trim();
+      if (!content) return error(400, "content is required");
+
+      const updated = await predictions.updateContent(id, numeric, content);
+      if (!updated) return error(404, "prediction not found");
+      return ok({ prediction: updated });
+    },
+
+    deletePrediction: async (dashboardId: string, predictionId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(predictionId);
+      if (!Number.isFinite(numeric)) {
+        return error(400, "prediction id must be a number");
+      }
+
+      const removed = await predictions.remove(id, numeric);
+      if (!removed) return error(404, "prediction not found");
+      return ok({ success: true });
     },
 
     createFact: async (
@@ -457,6 +510,7 @@ export const createApi = async () => {
         ? storylineContext(
             found,
             await facts.forStoryline(id, found.storyline.id),
+            await predictions.forStoryline(id, found.storyline.id),
           )
         : undefined;
 
@@ -578,6 +632,7 @@ async function carryOut(
 function storylineContext(
   found: { storyline: { title: string }; stories: StoryFeedEntry[] },
   known: facts.Fact[],
+  claims: predictions.Prediction[],
 ): string {
   const lines = found.stories.map((story) => {
     const when = dayjs(story.updatedAt).fromNow();
@@ -585,6 +640,10 @@ function storylineContext(
   });
 
   return [
+    // Everything below is dated relative to this, and a model's own sense of
+    // the date is whenever it was trained.
+    `Today is ${dayjs().format("dddd, D MMMM YYYY")}.`,
+    "",
     `The reader has the storyline "${found.storyline.title}" open, and the`,
     `questions are most likely about it. The stories filed under it, newest`,
     `first:`,
@@ -595,6 +654,36 @@ function storylineContext(
     `it. The arc may also have older stories not listed here.`,
     "",
     factsContext(known),
+    "",
+    predictionsContext(claims),
+  ].join("\n");
+}
+
+/**
+ * The open claims and where the odds stand. Only the current number and the
+ * last reasoning: the whole history is on the reader's screen, and what the
+ * analyst needs is what it thought last time, not every time.
+ */
+function predictionsContext(claims: predictions.Prediction[]): string {
+  if (claims.length === 0) {
+    return `The reader has made no predictions on this storyline yet.`;
+  }
+
+  const lines = claims.map((claim) => {
+    const odds =
+      claim.probability === null
+        ? "not yet forecast"
+        : `${claim.probability}%`;
+    const last = claim.forecasts[0];
+    const because = last ? `\n  last moved because: ${last.reasoning}` : "";
+    return `- #${claim.id} [${odds}] ${claim.content}${because}`;
+  });
+
+  return [
+    `The reader's predictions for this storyline, with where you last put the`,
+    `odds. The ids are what FORECAST takes.`,
+    "",
+    lines.join("\n"),
   ].join("\n");
 }
 

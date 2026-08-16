@@ -1,4 +1,5 @@
 import { addFact, deleteFact, updateFact } from "./tools/facts";
+import { forecast } from "./tools/forecast";
 import { getStories } from "./tools/getStories";
 import { getStory } from "./tools/getStory";
 import { getStorylines } from "./tools/getStorylines";
@@ -32,6 +33,7 @@ export const analyzingAgent: AgentDefinition = {
     addFact,
     updateFact,
     deleteFact,
+    forecast,
     mergeStories,
   ],
   instructions: `You are in a conversation with the person who runs this dashboard, about the
@@ -78,6 +80,15 @@ acting — so a reader can skim the list for what it establishes. Mark those and
 not whole clauses: a line where everything is bold says no more than one where
 nothing is. Do not restate today's events as facts — the
 stories already hold those — and do not add what is already in the list.
+
+The predictions are claims the reader has made about what happens next, and
+putting odds on them is your job. FORECAST moves a probability and records why
+in the same breath: say which reporting changed your mind and which way it
+points. Move a number when the coverage has actually moved it — restating an
+unchanged estimate only clutters the record — and mind the direction of your
+own drift: a number that only ever climbs is not tracking the world.
+
+Mark the load-bearing parts of your reasoning in **double asterisks** too.
 
 One tool changes the data: MERGE_STORIES, for when the same event was filed as
 two stories. It folds the first into the second and deletes the first; the

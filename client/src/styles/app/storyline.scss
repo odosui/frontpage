@@ -16,7 +16,7 @@
 // every column is a quarter, and none of them may push the others out: without
 // min-width a long headline or url would widen its own column past its share
 .storyline-stories,
-.storyline-detail,
+.storyline-predictions,
 .storyline-facts,
 .storyline-chat {
   flex: 0 0 25%;
@@ -31,14 +31,9 @@
   border-right: 1px solid var(--borderColor);
 }
 
-// deliberately empty for now — the story goes here
-.storyline-detail {
-  overflow-y: auto;
-  padding: $unit6 $unit4;
-}
-
-// the two panes on the right are each a fixed header over their own scroll,
-// so their headings stay put while their contents move
+// the three panes to the right of the stories are each a fixed header over
+// their own scroll, so their headings stay put while their contents move
+.storyline-predictions,
 .storyline-facts,
 .storyline-chat {
   display: flex;
@@ -91,8 +86,9 @@
   margin: $unit6 auto;
 }
 
-// facts and chat are the same kind of column — a heading that stays put over a
+// predictions, facts and chat are the same kind of column — a heading that stays put over a
 // pane that scrolls — so they share the shape and differ only in contents
+.predictions,
 .facts,
 .chat {
   flex: 1;
@@ -374,6 +370,162 @@
   margin: 0 0 $unit1;
   font-size: $text0;
   color: $red;
+}
+
+// what the storyline points to and has not settled
+
+.predictions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+}
+
+.prediction {
+  padding: $unit1 0;
+  border-radius: $unit1;
+
+  &.is-editing {
+    padding: $unit1;
+    background-color: var(--color-bg-hover);
+  }
+}
+
+// the claim and its odds: one target, because opening the history is what a
+// reader wants from it and there is nothing else to click
+.prediction-body {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  width: 100%;
+  padding: $unit0;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+}
+
+// long odds read differently from even ones, so the number carries its own key
+.prediction-odds {
+  flex: none;
+  min-width: $unit5;
+  font-size: $text1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+
+  &.is-none {
+    color: var(--subtle);
+  }
+
+  &.is-unlikely {
+    color: var(--lighter);
+  }
+
+  &.is-doubtful {
+    color: var(--color-text);
+  }
+
+  &.is-even {
+    color: $bleackOrange;
+  }
+
+  &.is-leaning {
+    color: var(--color-accent);
+  }
+
+  &.is-likely {
+    color: $green;
+  }
+}
+
+.prediction-content {
+  min-width: 0;
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+// folded away until asked for: the current number answers most questions, and
+// the history answers the one it cannot
+.prediction-history {
+  margin: $unit1 0 0 $unit1;
+  padding-left: $unit2;
+  border-left: 2px solid var(--borderColor);
+}
+
+.prediction-moves {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $unit2;
+}
+
+.prediction-move-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $unit1;
+}
+
+.prediction-move-odds {
+  font-size: $text0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.prediction-move-when {
+  flex: none;
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.prediction-move-why {
+  margin: $unit0 0 0;
+  font-size: $text0;
+  line-height: 1.5;
+  color: var(--lighter);
+}
+
+.prediction-empty {
+  margin: 0;
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.prediction-input {
+  width: 100%;
+  padding: $unit1;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background-color: var(--surface-bg);
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--color-text);
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+}
+
+.prediction-actions {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  margin-top: $unit1;
 }
 
 // which model is answering, quietly — it is the one thing about the session
