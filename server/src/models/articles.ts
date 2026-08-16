@@ -1,16 +1,20 @@
 import { query, withTransaction } from "../db/pool";
+import { ArticleImage } from "../components/articles/images";
 import { Article, FeedArticle } from "../api/types";
 
 /**
  * Every article on the dashboard, newest first, whichever channel it came from.
- * Articles stored in the same refresh share a `created_at`, so `position` — the
- * order the source listed them in — breaks the tie.
+ * "Newest" is `sorted_at`: when the publisher says it went out, or when we
+ * first saw it for the channels that never tell us. Articles sharing a
+ * timestamp — a whole scraped page lands on one `created_at` — fall back to
+ * `position`, the order the source listed them in.
  */
 export async function feed(
   dashboardId: string,
   limit: number,
 ): Promise<FeedArticle[]> {
   const { rows } = await query<{
+    id: string;
     title: string;
     url: string;
     image: string;
@@ -19,17 +23,20 @@ export async function feed(
     created_at: Date;
     published_at: Date | null;
     importance: number | null;
+    has_content: boolean;
   }>(
-    `select title, url, image, is_new as new, channel_id, created_at,
-            published_at, importance
+    `select id, title, url, image, is_new as new, channel_id, created_at,
+            published_at, importance, content is not null as has_content
      from articles
      where dashboard_id = $1
-     order by created_at desc, position, id
+     order by sorted_at desc, position, id
      limit $2`,
     [dashboardId, limit],
   );
 
   return rows.map((r) => ({
+    id: Number(r.id),
+    hasContent: r.has_content,
     title: r.title,
     url: r.url,
     image: r.image,
@@ -41,6 +48,90 @@ export async function feed(
     // the narrow latest column does not render tags; the story feed fills them
     tags: [],
   }));
+}
+
+export type ArticleRow = {
+  id: number;
+  channelId: string;
+  title: string;
+  url: string;
+};
+
+/** One article, for a job that was handed nothing but its id. */
+export async function byId(
+  dashboardId: string,
+  id: number,
+): Promise<ArticleRow | null> {
+  const { rows } = await query<{
+    id: string;
+    channel_id: string;
+    title: string;
+    url: string;
+  }>(
+    `select id, channel_id, title, url from articles
+      where dashboard_id = $1 and id = $2`,
+    [dashboardId, id],
+  );
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    id: Number(row.id),
+    channelId: row.channel_id,
+    title: row.title,
+    url: row.url,
+  };
+}
+
+/**
+ * The article's own text, for the modal that shows it. Kept out of every other
+ * query — it is the one column big enough that selecting it by accident would
+ * cost something.
+ */
+export async function contentOf(
+  dashboardId: string,
+  id: number,
+): Promise<{
+  content: string;
+  contentAt: string;
+  images: ArticleImage[];
+} | null> {
+  const { rows } = await query<{
+    content: string | null;
+    content_at: Date | null;
+    content_images: ArticleImage[] | null;
+  }>(
+    `select content, content_at, content_images from articles
+      where dashboard_id = $1 and id = $2`,
+    [dashboardId, id],
+  );
+  const row = rows[0];
+  if (!row?.content || !row.content_at) return null;
+
+  return {
+    content: row.content,
+    contentAt: row.content_at.toISOString(),
+    images: row.content_images ?? [],
+  };
+}
+
+/**
+ * Stores extracted text and the urls of its pictures, stamping when it was
+ * read. Re-reading overwrites — the page may have been corrected since.
+ */
+export async function saveContent(
+  dashboardId: string,
+  id: number,
+  content: string,
+  images: ArticleImage[],
+): Promise<boolean> {
+  const { rowCount } = await query(
+    `update articles
+        set content = $3, content_images = $4::jsonb, content_at = now()
+      where dashboard_id = $1 and id = $2`,
+    [dashboardId, id, content, JSON.stringify(images)],
+  );
+  return (rowCount ?? 0) > 0;
 }
 
 /**

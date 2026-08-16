@@ -83,12 +83,64 @@ $feed-width: $unit12;
   color: var(--color-text);
 }
 
+// the caret sits outside the label, so clicking the arc name still filters —
+// folding it away is a separate, smaller target
+.tree-branch {
+  display: flex;
+  align-items: baseline;
+  gap: $unit0;
+}
+
+.tree-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit2;
+  height: $unit2;
+  padding: 0;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  cursor: pointer;
+
+  &:hover .tree-caret {
+    border-left-color: var(--color-text);
+  }
+}
+
+// a triangle drawn from borders, so it needs no icon and rotates cleanly
+.tree-caret {
+  width: 0;
+  height: 0;
+  border-top: $unit0 solid transparent;
+  border-bottom: $unit0 solid transparent;
+  border-left: $unit0 solid var(--lighter);
+  transition: transform 0.12s ease;
+
+  &.is-open {
+    transform: rotate(90deg);
+  }
+}
+
 .tree-storyline {
+  // width: 100% from the shared rule would ignore the caret beside it
+  flex: 1;
+  width: auto;
+  min-width: 0;
   font-size: $text0;
   font-weight: 600;
   color: var(--lighter);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+// how much is folded away, and how big the arc is when it isn't
+.tree-count {
+  margin-left: $unit1;
+  font-weight: 400;
+  letter-spacing: 0;
+  opacity: 0.6;
 }
 
 // stepped in, so the stories read as sitting under their storyline
@@ -162,23 +214,81 @@ $feed-width: $unit12;
   flex-direction: column;
 }
 
-.story-article {
-  display: block;
+// headline, tags, meta and action all run as one wrapping line; the action
+// only shows on hover, so a column of buttons doesn't compete with the
+// headlines for attention
+.story-article-row {
   position: relative;
   // the marker sits in its own gutter so wrapped lines stay flush
   padding: $unit0 $unit1 $unit0 $unit3;
   font-size: $text2;
   line-height: 1.45;
-  text-decoration: none;
-  color: var(--color-text);
   border-radius: $unit1;
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:hover .story-article-action,
+  .story-article-action:focus-visible,
+  .story-article-action.has-content,
+  .story-article-action.is-busy {
+    opacity: 1;
+  }
+}
+
+// sits on the meta's line, just after it
+.story-article-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: $unit1;
+  width: $unit3;
+  height: $unit3;
+  padding: 0;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  color: var(--lighter);
+  cursor: pointer;
+  opacity: 0;
   transition:
+    opacity 0.12s ease,
     color 0.12s ease,
     background-color 0.12s ease;
 
   &:hover {
     color: var(--color-accent);
     background-color: var(--color-bg-hover);
+  }
+
+  // already read: a quiet standing mark rather than a call to action
+  &.has-content {
+    color: var(--color-article-new-marker);
+  }
+
+  &.is-busy {
+    cursor: default;
+    animation: story-article-spin 1.2s linear infinite;
+  }
+}
+
+@keyframes story-article-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.story-article {
+  display: inline;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color 0.12s ease;
+
+  .story-article-row:hover & {
+    color: var(--color-accent);
   }
 
   // unread is carried by weight alone — the gutter dot now reads importance
@@ -192,9 +302,10 @@ $feed-width: $unit12;
  * red for the things that change the world. The exact number is the tooltip.
  */
 .story-article-dot {
-  position: absolute;
-  top: calc(#{$unit0} + 0.75em - #{($unit0 + 1px) * 0.5});
-  left: $unit1;
+  flex: none;
+  // a circle has no baseline of its own; this lifts it onto the text's
+  position: relative;
+  top: -0.15em;
   width: $unit0 + 1px;
   height: $unit0 + 1px;
   border-radius: 50%;
@@ -596,5 +707,77 @@ $feed-width: $unit12;
     &:hover {
       background-color: var(--color-bg-hover);
     }
+  }
+}
+
+// the article's own text in a modal: one reading column, generous leading —
+// this is the only place in the app meant to be read rather than scanned
+.article-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.article-content-title {
+  margin: 0 $unit4 $unit0 0;
+  font-size: $text4;
+  line-height: 1.3;
+
+  a {
+    color: var(--color-text);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.article-content-meta {
+  margin: 0 0 $unit4;
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.article-content-p {
+  margin: 0 0 $unit2;
+  font-size: $text2;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.article-content-error {
+  margin: 0;
+  font-size: $text1;
+  color: var(--lighter);
+}
+
+// the article's pictures, hosted wherever the publisher keeps them. They sit
+// after the text rather than inside it: the stored body is plain text, so
+// where each one belonged in the prose is not something we know
+.article-content-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax($unit11, 1fr));
+  gap: $unit3;
+  margin-top: $unit4;
+  padding-top: $unit3;
+  border-top: 1px solid var(--borderColor);
+}
+
+.article-content-figure {
+  margin: 0;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: $unit1;
+    background-color: var(--color-bg-hover);
+  }
+
+  figcaption {
+    margin-top: $unit0;
+    font-size: $text0;
+    line-height: 1.4;
+    color: var(--lighter);
   }
 }

@@ -19,8 +19,7 @@ export type RunAgentPayload = {
   days?: number;
 };
 
-/** Fixed here, not a caller's choice: one prompt can only hold so much. */
-const BATCH_LIMIT = 50;
+const BATCH_LIMIT = 75;
 
 /**
  * Runs one agent session in the worker. The runner persists every turn as it

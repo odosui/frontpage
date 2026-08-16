@@ -32,9 +32,11 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
+    "@mozilla/readability": "^0.6.0",
     "body-parser": "^2.2.0",
     "dayjs": "^1.11.11",
     "express": "^5.1.0",
+    "linkedom": "^0.18.13",
     "pg": "^8.23.0"
   }
 }

@@ -5,6 +5,7 @@ import api, { type Channel, type FeedArticle, type StoryFeedEntry } from './api'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AddChannelModal from './AddChannelModal'
+import ArticleContentModal from './ArticleContentModal'
 import Feed from './Feed'
 import Stories from './Stories'
 import StorylineTree, { type Selection } from './StorylineTree'
@@ -29,6 +30,8 @@ const Dashboard: React.FC = () => {
   const [selection, setSelection] = useState<Selection>(null)
   const [loaded, setLoaded] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  // the article whose stored text is on screen, if any
+  const [openArticle, setOpenArticle] = useState<number | null>(null)
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
   const { jobs, refresh: refreshJobs, onJobFinished } = useJobs()
   const { setTools } = useToolbar()
@@ -43,6 +46,19 @@ const Dashboard: React.FC = () => {
           job.payload.channelId,
       )
       .map((job) => job.payload.channelId as string),
+  )
+
+  // an article is "extracting" while its content job is in flight
+  const extracting = new Set(
+    jobs
+      .filter(
+        (job) =>
+          job.type === 'extract_content' &&
+          (job.status === 'queued' || job.status === 'running') &&
+          job.payload.dashboardId === dashboardId &&
+          job.payload.articleId,
+      )
+      .map((job) => job.payload.articleId as number),
   )
 
   const loadDashboards = useCallback(() => {
@@ -147,6 +163,16 @@ const Dashboard: React.FC = () => {
         return
       }
 
+      // the text itself is fetched by the modal; the feed only needs to know
+      // the article now has some, which is what flips the row's button
+      if (job.type === 'extract_content') {
+        if (job.status === 'succeeded') {
+          reloadStories()
+          reloadFeed()
+        }
+        return
+      }
+
       if (!channelId) return
 
       if (job.status === 'failed') {
@@ -161,6 +187,17 @@ const Dashboard: React.FC = () => {
       reloadFeed()
     })
   }, [dashboardId, onJobFinished, reloadFeed, reloadStories, clearError])
+
+  /** Queues a read of one article's page; the jobs poll reports it back. */
+  const extractContent = useCallback(
+    (articleId: number) => {
+      api
+        .extractArticleContent(dashboardId, articleId)
+        .then(() => refreshJobs())
+        .catch(() => undefined)
+    },
+    [dashboardId, refreshJobs],
+  )
 
   const refreshAll = useCallback(() => {
     channels.forEach((channel) => refreshChannel(channel.id))
@@ -319,7 +356,13 @@ const Dashboard: React.FC = () => {
           />
         </div>
         <div className="dashboard-stories">
-          <Stories stories={visibleStories} hasArticles={feed.length > 0} />
+          <Stories
+            stories={visibleStories}
+            hasArticles={feed.length > 0}
+            extracting={extracting}
+            onExtract={extractContent}
+            onOpenContent={setOpenArticle}
+          />
         </div>
       </main>
       <aside className="dashboard-feed">
@@ -335,6 +378,11 @@ const Dashboard: React.FC = () => {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={addChannel}
+      />
+      <ArticleContentModal
+        dashboardId={dashboardId}
+        articleId={openArticle}
+        onClose={() => setOpenArticle(null)}
       />
     </div>
   )

@@ -56,6 +56,21 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.getStories(pathParams.dashboardId ?? ""),
   },
   {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/articles/:id/content",
+    handler: async ({ pathParams }) =>
+      api.extractArticleContent(
+        pathParams.dashboardId ?? "",
+        pathParams.id ?? "",
+      ),
+  },
+  {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/articles/:id/content",
+    handler: async ({ pathParams }) =>
+      api.getArticleContent(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+  },
+  {
     method: "get",
     path: "/api/dashboards/:dashboardId/channels",
     handler: async ({ pathParams }) =>

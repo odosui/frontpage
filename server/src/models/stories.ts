@@ -24,12 +24,15 @@ type StoryArticleRow = {
   created_at: Date;
   published_at: Date | null;
   importance: number | null;
+  has_content: boolean;
 };
 
 /**
  * The dashboard's stories, each with its articles. Ordered by the story's
  * newest article rather than by storyline, so a fresh headline pulls its story
- * to the top even when an older story from the same arc sits above it.
+ * to the top even when an older story from the same arc sits above it. Newest
+ * by `sorted_at` — the publisher's date where there is one, ours otherwise —
+ * so a feed handing us its back catalogue does not shove week-old events up.
  *
  * Stories nobody has filed an article under are left out — there is nothing to
  * render for them.
@@ -42,13 +45,13 @@ export async function feed(
     `select s.id, s.title, s.slug,
             sl.id as storyline_id, sl.title as storyline_title,
             sl.slug as storyline_slug,
-            max(a.created_at) as updated_at
+            max(a.sorted_at) as updated_at
      from stories s
      join articles a on a.story_id = s.id
      left join storylines sl on sl.id = s.storyline_id
      where s.dashboard_id = $1
      group by s.id, sl.id
-     order by max(a.created_at) desc, s.id desc
+     order by max(a.sorted_at) desc, s.id desc
      limit $2`,
     [dashboardId, limit],
   );
@@ -72,10 +75,11 @@ export async function feed(
   const byId = new Map(entries.map((e) => [e.id, e]));
   const { rows: articleRows } = await query<StoryArticleRow>(
     `select id, story_id, title, url, image, is_new as new, channel_id,
-            created_at, published_at, importance
+            created_at, published_at, importance,
+            content is not null as has_content
      from articles
      where story_id = any($1::bigint[])
-     order by created_at desc, position, id`,
+     order by sorted_at desc, position, id`,
     [[...byId.keys()]],
   );
 
@@ -83,6 +87,8 @@ export async function feed(
 
   for (const row of articleRows) {
     byId.get(Number(row.story_id))?.articles.push({
+      id: Number(row.id),
+      hasContent: row.has_content,
       title: row.title,
       url: row.url,
       image: row.image,
@@ -126,7 +132,7 @@ export async function search(
        left join articles a on a.story_id = s.id
       where s.dashboard_id = $1 and s.title ilike '%' || $2 || '%'
       group by s.id, sl.title
-      order by max(a.created_at) desc nulls last, s.id desc
+      order by max(a.sorted_at) desc nulls last, s.id desc
       limit $3`,
     [dashboardId, term, limit],
   );
@@ -168,7 +174,7 @@ export async function underStoryline(
        left join articles a on a.story_id = s.id
       where s.dashboard_id = $1 and s.storyline_id = $2
       group by s.id
-      order by max(a.created_at) desc nulls last, s.id desc
+      order by max(a.sorted_at) desc nulls last, s.id desc
       limit $3`,
     [dashboardId, arc.id, limit],
   );

@@ -1,5 +1,6 @@
 import { JobHandler } from "../types";
 import { extractArticlesHandler } from "./extractArticles";
+import { extractContentHandler } from "./extractContent";
 import { fetchFeedHandler } from "./fetchFeed";
 import { fetchPageHandler } from "./fetchPage";
 import { runAgentHandler } from "./runAgent";
@@ -8,6 +9,7 @@ export const handlers: Record<string, JobHandler> = {
   fetch_page: fetchPageHandler,
   fetch_feed: fetchFeedHandler,
   extract_articles: extractArticlesHandler,
+  extract_content: extractContentHandler,
   run_agent: runAgentHandler,
 };
 

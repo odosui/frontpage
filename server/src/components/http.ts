@@ -7,7 +7,13 @@
 /** Stop reading a response past this much decompressed body. */
 const MAX_DOWNLOAD_BYTES = 3_000_000;
 
-const USER_AGENT = "Frontpage-Bot/1.0 (+https://github.com/odosui/frontpage)";
+/**
+ * Hyphenated, and without the repo path, on purpose: stock WAF rulesets carry a
+ * signature for the old Microsoft FrontPage authoring client, so any UA holding
+ * the literal "frontpage" is a 403 at Gizmodo and friends — the repo url alone
+ * was enough to trip it.
+ */
+const USER_AGENT = "Front-Page-Bot/1.0 (+https://github.com/odosui)";
 
 /** HTTP validators, so the next fetch can ask for a 304 instead of a body. */
 export type FetchValidators = {

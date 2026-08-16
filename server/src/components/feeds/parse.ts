@@ -1,4 +1,5 @@
 import { Article } from "../../api/types";
+import { decodeEntities } from "../../utils/html";
 
 /**
  * A feed already says what a front page only implies: these are the articles,
@@ -26,7 +27,7 @@ export function parseFeed(xml: string, feedUrl: string): Article[] {
   while ((match = ITEM_RE.exec(xml)) !== null) {
     const item = match[2] ?? "";
 
-    const title = decode(tag(item, "title"));
+    const title = decodeEntities(tag(item, "title"));
     const url = absolute(link(item), feedUrl);
     if (!title || !url || seen.has(url)) continue;
     seen.add(url);
@@ -83,7 +84,7 @@ function description(item: string): string {
     tag(item, "content");
   if (!raw) return "";
 
-  const text = decode(
+  const text = decodeEntities(
     raw
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -124,7 +125,7 @@ function attr(item: string, tagName: string, name: string): string | null {
     const value = new RegExp(`\\b${name}\\s*=\\s*["']([^"']*)["']`, "i").exec(
       attrs,
     )?.[1];
-    if (value) return decode(value.trim());
+    if (value) return decodeEntities(value.trim());
   }
   return null;
 }
@@ -135,7 +136,7 @@ function attr(item: string, tagName: string, name: string): string | null {
  * `isPermaLink` defaults to true when the tag is absent.
  */
 function link(item: string): string {
-  const text = decode(tag(item, "link"));
+  const text = decodeEntities(tag(item, "link"));
   if (text) return text;
 
   const href = attr(item, "link", "href");
@@ -152,7 +153,7 @@ function image(item: string): string | null {
   const enclosure = /<enclosure\s([^>]*)>/i.exec(item)?.[1];
   if (enclosure && /type\s*=\s*["']image\//i.test(enclosure)) {
     const url = /\burl\s*=\s*["']([^"']*)["']/i.exec(enclosure)?.[1];
-    if (url) return decode(url);
+    if (url) return decodeEntities(url);
   }
 
   return (
@@ -172,29 +173,3 @@ function absolute(url: string, base: string): string {
   }
 }
 
-const ENTITIES: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-};
-
-/**
- * Titles arrive entity-encoded, sometimes twice over (`&amp;#39;`), and a feed
- * title is displayed verbatim — so decode rather than pass the escapes through.
- */
-function decode(text: string): string {
-  return text.replace(/&(#x?[0-9a-f]+|\w+);/gi, (whole, body: string) => {
-    if (body.startsWith("#")) {
-      const code = body.startsWith("#x")
-        ? parseInt(body.slice(2), 16)
-        : parseInt(body.slice(1), 10);
-      return Number.isFinite(code) && code > 0 && code <= 0x10ffff
-        ? String.fromCodePoint(code)
-        : whole;
-    }
-    return ENTITIES[body.toLowerCase()] ?? whole;
-  });
-}

@@ -91,6 +91,60 @@ export const createApi = async () => {
       return ok({ stories: await stories.feed(id, MAX_STORIES) });
     },
 
+    /**
+     * Queues a read of one article's page. Queued rather than done inline so a
+     * slow site cannot hold the request open, and so the ui follows it through
+     * the same jobs poll as everything else.
+     */
+    extractArticleContent: async (dashboardId: string, articleId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(articleId);
+      if (!Number.isInteger(numeric) || numeric <= 0) {
+        return error(400, "a numeric article id is required");
+      }
+
+      const article = await articles.byId(id, numeric);
+      if (!article) {
+        return error(404, "article not found");
+      }
+
+      // deliberately no channelId: the dashboard reads that as "this channel
+      // is refreshing" and would spin the whole channel for one article
+      const job = await queue.enqueue({
+        type: "extract_content",
+        payload: { dashboardId: id, articleId: numeric, url: article.url },
+      });
+      console.log(`[content] ${id}/${numeric} queued as job ${job.id}`);
+
+      return ok({ job });
+    },
+
+    /** The stored text, or a 404 if nothing has read this article yet. */
+    getArticleContent: async (dashboardId: string, articleId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(articleId);
+      if (!Number.isInteger(numeric) || numeric <= 0) {
+        return error(400, "a numeric article id is required");
+      }
+
+      const article = await articles.byId(id, numeric);
+      if (!article) {
+        return error(404, "article not found");
+      }
+
+      const stored = await articles.contentOf(id, numeric);
+      if (!stored) {
+        return error(404, "this article has not been read yet");
+      }
+
+      return ok({
+        title: article.title,
+        url: article.url,
+        channelId: article.channelId,
+        ...stored,
+      });
+    },
+
     listChannels: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
       return ok({ channels: await channels.list(id) });

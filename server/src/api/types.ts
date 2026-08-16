@@ -20,8 +20,12 @@ export type Channel = {
 
 /** An article as the feed shows it: with the channel it came from. */
 export type FeedArticle = Article & {
+  /** The database id — what an extract_content job is queued against. */
+  id: number;
   channelId: string;
   createdAt: string;
+  /** Whether its text has been pulled from the page yet. */
+  hasContent: boolean;
   /** 1-10, as scored by the categorizing agent; null until it has run. */
   importance: number | null;
   /** Broadest first; empty until the article has been categorized. */

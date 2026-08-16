@@ -20,6 +20,12 @@ export default {
   refreshChannel: (dashboardId: string, id: string) =>
     api('post', `/dashboards/${dashboardId}/channels/${id}/refresh`),
 
+  // One article's own text, read off its page by the extract_content job
+  extractArticleContent: (dashboardId: string, articleId: number) =>
+    api('post', `/dashboards/${dashboardId}/articles/${articleId}/content`),
+  getArticleContent: (dashboardId: string, articleId: number) =>
+    api('get', `/dashboards/${dashboardId}/articles/${articleId}/content`),
+
   // Jobs
   listJobs: (limit = 50) => api('get', '/jobs', { limit }),
 
@@ -103,7 +109,12 @@ export type Job = {
   id: string
   type: string
   status: JobStatus
-  payload: { dashboardId?: string; channelId?: string; url?: string }
+  payload: {
+    dashboardId?: string
+    channelId?: string
+    articleId?: number
+    url?: string
+  }
   result: Record<string, unknown> | null
   error: string | null
   attempts: number
@@ -179,12 +190,36 @@ export type Channel = {
 
 /** An article as the feed shows it: with the channel it came from. */
 export type FeedArticle = Article & {
+  /** The database id — what an extract_content job is queued against. */
+  id: number
   channelId: string
   createdAt: string
+  /** Whether its text has been pulled from the page yet. */
+  hasContent: boolean
   /** 1-10, as scored by the categorizing agent; null until it has run. */
   importance: number | null
   /** Broadest first; empty until the article has been categorized. */
   tags: string[]
+}
+
+/**
+ * A picture inside an article. Only ever a url — the image itself stays on the
+ * publisher's server and the browser loads it from there.
+ */
+export type ArticleImage = {
+  url: string
+  alt: string | null
+  caption: string | null
+}
+
+/** One article's stored text, as the modal shows it. */
+export type ArticleContent = {
+  title: string
+  url: string
+  channelId: string
+  content: string
+  contentAt: string
+  images: ArticleImage[]
 }
 
 export type Storyline = {

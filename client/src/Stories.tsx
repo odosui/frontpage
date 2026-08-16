@@ -1,9 +1,14 @@
+import { BookIcon, DownloadIcon, SyncIcon } from '@primer/octicons-react'
 import { type StoryFeedEntry } from './api'
 import ArticleTime from './ui/ArticleTime'
 
 type Props = {
   stories: StoryFeedEntry[]
   hasArticles: boolean
+  /** Articles with an extract_content job in flight right now. */
+  extracting: Set<number>
+  onExtract: (articleId: number) => void
+  onOpenContent: (articleId: number) => void
 }
 
 /**
@@ -11,7 +16,13 @@ type Props = {
  * that make it up. Ordered by newest article, so the same storyline can head
  * several entries at different places in the list — it's a label, not a group.
  */
-const Stories = ({ stories, hasArticles }: Props) => {
+const Stories = ({
+  stories,
+  hasArticles,
+  extracting,
+  onExtract,
+  onOpenContent,
+}: Props) => {
   if (stories.length === 0) {
     return (
       <p className="stories-placeholder">
@@ -34,7 +45,18 @@ const Stories = ({ stories, hasArticles }: Props) => {
           </h2>
           <div className="story-articles">
             {story.articles.map((article) => (
-              <div key={`${article.channelId}:${article.url}`}>
+              <div
+                key={`${article.channelId}:${article.url}`}
+                className="story-article-row"
+              >
+                <span
+                  className={`story-article-dot is-${band(article.importance)}`}
+                  title={
+                    article.importance === null
+                      ? 'Not scored yet'
+                      : `Importance ${article.importance}/10`
+                  }
+                />
                 <a
                   href={article.url}
                   target="_blank"
@@ -44,30 +66,77 @@ const Stories = ({ stories, hasArticles }: Props) => {
                   }`}
                   title={article.title}
                 >
-                  <span
-                    className={`story-article-dot is-${band(article.importance)}`}
-                    title={
-                      article.importance === null
-                        ? 'Not scored yet'
-                        : `Importance ${article.importance}/10`
-                    }
-                  />
                   {article.title}
-                  {article.tags.map((tag) => (
-                    <span key={tag} className="story-tag">
-                      {tag}
-                    </span>
-                  ))}
-                  <span className="story-article-meta">
-                    {article.channelId} · <ArticleTime article={article} />
-                  </span>
                 </a>
+                {article.tags.map((tag) => (
+                  <span key={tag} className="story-tag">
+                    {tag}
+                  </span>
+                ))}
+                <span className="story-article-meta">
+                  {article.channelId} · <ArticleTime article={article} />
+                </span>
+                <ContentButton
+                  article={article}
+                  busy={extracting.has(article.id)}
+                  onExtract={onExtract}
+                  onOpen={onOpenContent}
+                />
               </div>
             ))}
           </div>
         </article>
       ))}
     </div>
+  )
+}
+
+/**
+ * One button with three states: fetch the article's text, wait while a job
+ * does it, or open what was stored. It keeps the same size throughout, so the
+ * meta line does not reflow when the text arrives.
+ */
+const ContentButton = ({
+  article,
+  busy,
+  onExtract,
+  onOpen,
+}: {
+  article: StoryFeedEntry['articles'][number]
+  busy: boolean
+  onExtract: (articleId: number) => void
+  onOpen: (articleId: number) => void
+}) => {
+  if (busy) {
+    return (
+      <span className="story-article-action is-busy" title="Reading the page…">
+        <SyncIcon size={14} />
+      </span>
+    )
+  }
+
+  if (article.hasContent) {
+    return (
+      <button
+        className="story-article-action has-content"
+        onClick={() => onOpen(article.id)}
+        title="Read the stored text"
+        aria-label={`Read the stored text of ${article.title}`}
+      >
+        <BookIcon size={14} />
+      </button>
+    )
+  }
+
+  return (
+    <button
+      className="story-article-action"
+      onClick={() => onExtract(article.id)}
+      title="Fetch this article's text"
+      aria-label={`Fetch the text of ${article.title}`}
+    >
+      <DownloadIcon size={14} />
+    </button>
   )
 }
 

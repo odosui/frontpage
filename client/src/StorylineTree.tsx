@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { type StoryFeedEntry } from './api'
 
 /** What the tree has selected; null means "show everything". */
@@ -19,12 +20,26 @@ type Branch = {
   stories: StoryFeedEntry[]
 }
 
+/** Stable across reloads, unlike the ids, and safe as a dom id. */
+const keyOf = (branch: Branch) => `${branch.id ?? 'standalone'}`
+
 /**
  * Storyline → story, as a tree. The feed is a flat list ordered by recency and
  * the same storyline can head several entries; this regroups it so each arc
  * appears once, with everything filed under it.
  */
 const StorylineTree = ({ stories, selection, onSelect }: Props) => {
+  // arcs the reader has folded away, by key. Everything starts open, so the
+  // tree looks the same as before until someone collapses something.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+
+  const toggle = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
+
   const branches = group(stories)
   if (branches.length === 0) return null
 
@@ -38,42 +53,69 @@ const StorylineTree = ({ stories, selection, onSelect }: Props) => {
       </button>
 
       <ul className="tree-list">
-        {branches.map((branch) => (
-          <li key={branch.id ?? 'standalone'}>
-            <button
-              className={`tree-storyline${
-                selection?.kind === 'storyline' && selection.id === branch.id
-                  ? ' is-active'
-                  : ''
-              }`}
-              onClick={() =>
-                onSelect(
-                  branch.id === null ? null : { kind: 'storyline', id: branch.id },
-                )
-              }
-            >
-              {branch.title}
-            </button>
+        {branches.map((branch) => {
+          const key = keyOf(branch)
+          // a folded arc still opens itself around the story being shown,
+          // otherwise the selection would have nowhere visible to live
+          const holdsSelection =
+            selection?.kind === 'story' &&
+            branch.stories.some((s) => s.id === selection.id)
+          const isOpen = !collapsed.has(key) || holdsSelection
 
-            <ul className="tree-stories">
-              {branch.stories.map((story) => (
-                <li key={story.id}>
-                  <button
-                    className={`tree-story${
-                      selection?.kind === 'story' && selection.id === story.id
-                        ? ' is-active'
-                        : ''
-                    }`}
-                    onClick={() => onSelect({ kind: 'story', id: story.id })}
-                    title={story.title}
-                  >
-                    {story.title}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
+          return (
+            <li key={key}>
+              <div className="tree-branch">
+                <button
+                  className="tree-toggle"
+                  onClick={() => toggle(key)}
+                  aria-expanded={isOpen}
+                  aria-controls={`tree-stories-${key}`}
+                  aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${branch.title}`}
+                >
+                  <span className={`tree-caret${isOpen ? ' is-open' : ''}`} />
+                </button>
+
+                <button
+                  className={`tree-storyline${
+                    selection?.kind === 'storyline' && selection.id === branch.id
+                      ? ' is-active'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    onSelect(
+                      branch.id === null
+                        ? null
+                        : { kind: 'storyline', id: branch.id },
+                    )
+                  }
+                >
+                  {branch.title}
+                  <span className="tree-count">{branch.stories.length}</span>
+                </button>
+              </div>
+
+              {isOpen && (
+                <ul className="tree-stories" id={`tree-stories-${key}`}>
+                  {branch.stories.map((story) => (
+                    <li key={story.id}>
+                      <button
+                        className={`tree-story${
+                          selection?.kind === 'story' && selection.id === story.id
+                            ? ' is-active'
+                            : ''
+                        }`}
+                        onClick={() => onSelect({ kind: 'story', id: story.id })}
+                        title={story.title}
+                      >
+                        {story.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )
