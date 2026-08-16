@@ -1,4 +1,5 @@
 import { query } from "../db/pool";
+import { slugify } from "../utils/slug";
 
 export type Storyline = {
   id: number;
@@ -49,6 +50,48 @@ export async function latest(
     [dashboardId, limit],
   );
   return rows.map(toStoryline);
+}
+
+/**
+ * Every arc in the dashboard, for a menu that has to offer all of them —
+ * including the ones nothing is filed under yet.
+ */
+export async function all(dashboardId: string): Promise<Storyline[]> {
+  const { rows } = await query<Row>(
+    `${SELECT}
+     where s.dashboard_id = $1
+     group by s.id
+     order by s.title`,
+    [dashboardId],
+  );
+  return rows.map(toStoryline);
+}
+
+/**
+ * The arc under this title, made if it is not there yet. Matched by slug, so
+ * "US election" lands on the existing "U.S. Elections" rather than starting a
+ * second one beside it.
+ */
+export async function ensure(
+  dashboardId: string,
+  title: string,
+): Promise<Storyline> {
+  const trimmed = title.trim();
+  if (!trimmed) throw new Error("a storyline needs a title");
+
+  const { rows } = await query<{ id: string }>(
+    `insert into storylines (dashboard_id, title, slug)
+     values ($1, $2, $3)
+     on conflict (dashboard_id, slug) do update set title = storylines.title
+     returning id`,
+    [dashboardId, trimmed, slugify(trimmed)],
+  );
+
+  const { rows: found } = await query<Row>(
+    `${SELECT} where s.id = $1 group by s.id`,
+    [rows[0]!.id],
+  );
+  return toStoryline(found[0]!);
 }
 
 /** Case-insensitive substring match on the title. */

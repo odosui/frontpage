@@ -187,6 +187,23 @@ export async function detail(
   };
 }
 
+/**
+ * Refiles one story under a different arc, or under none. Only the story moves
+ * — its articles go with it because they hang off the story, not the arc.
+ */
+export async function moveToStoryline(
+  dashboardId: string,
+  storyId: number,
+  storylineId: number | null,
+): Promise<boolean> {
+  const { rowCount } = await query(
+    `update stories set storyline_id = $3
+      where dashboard_id = $1 and id = $2`,
+    [dashboardId, storyId, storylineId],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 export type MergeResult = {
   /** The story that survived, with everything now under it. */
   storyId: number;

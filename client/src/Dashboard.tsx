@@ -1,7 +1,12 @@
 import * as React from 'react'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'slim-react-router'
-import api, { type Channel, type FeedArticle, type StoryFeedEntry } from './api'
+import api, {
+  type Channel,
+  type FeedArticle,
+  type StoryFeedEntry,
+  type Storyline,
+} from './api'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AddChannelModal from './AddChannelModal'
@@ -26,6 +31,7 @@ const Dashboard: React.FC = () => {
   const [channels, setChannels] = useState<Channel[]>([])
   const [feed, setFeed] = useState<FeedArticle[]>([])
   const [stories, setStories] = useState<StoryFeedEntry[]>([])
+  const [storylines, setStorylines] = useState<Storyline[]>([])
   const [uncategorized, setUncategorized] = useState(0)
   const [selection, setSelection] = useState<Selection>(null)
   const [loaded, setLoaded] = useState(false)
@@ -80,11 +86,13 @@ const Dashboard: React.FC = () => {
           channels: Channel[]
           feed: FeedArticle[]
           stories: StoryFeedEntry[]
+          storylines: Storyline[]
           uncategorized: number
         }) => {
           setChannels(data.channels || [])
           setFeed(data.feed || [])
           setStories(data.stories || [])
+          setStorylines(data.storylines || [])
           setUncategorized(data.uncategorized || 0)
           setLoaded(true)
         },
@@ -104,11 +112,33 @@ const Dashboard: React.FC = () => {
   const reloadStories = useCallback(() => {
     api
       .getStories(dashboardId)
-      .then((data: { stories: StoryFeedEntry[] }) =>
-        setStories(data.stories || []),
-      )
+      .then((data: { stories: StoryFeedEntry[]; storylines: Storyline[] }) => {
+        setStories(data.stories || [])
+        setStorylines(data.storylines || [])
+      })
       .catch(() => undefined)
   }, [dashboardId])
+
+  /**
+   * Refiles a story under another arc. The server hands back the whole list
+   * rather than the one row: a move can empty an arc or make a new one, so the
+   * tree beside it changes too.
+   */
+  const moveStory = useCallback(
+    (
+      storyId: number,
+      to: { storylineId?: number | null; storylineTitle?: string },
+    ) => {
+      api
+        .moveStory(dashboardId, storyId, to)
+        .then((data: { stories: StoryFeedEntry[]; storylines: Storyline[] }) => {
+          setStories(data.stories || [])
+          setStorylines(data.storylines || [])
+        })
+        .catch(() => undefined)
+    },
+    [dashboardId],
+  )
 
   const clearError = useCallback((id: string) => {
     setErrors((prev) => {
@@ -363,6 +393,8 @@ const Dashboard: React.FC = () => {
             extracting={extracting}
             onExtract={extractContent}
             onOpenContent={setOpenArticle}
+            storylines={storylines}
+            onMove={moveStory}
           />
         </div>
       </main>

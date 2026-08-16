@@ -1,6 +1,7 @@
 import { BookIcon, DownloadIcon, SyncIcon } from '@primer/octicons-react'
-import { type StoryFeedEntry } from './api'
+import { type StoryFeedEntry, type Storyline } from './api'
 import ArticleTime from './ui/ArticleTime'
+import StoryMenu from './ui/StoryMenu'
 
 type Props = {
   stories: StoryFeedEntry[]
@@ -9,6 +10,13 @@ type Props = {
   extracting: Set<number>
   onExtract: (articleId: number) => void
   onOpenContent: (articleId: number) => void
+  /** Every arc a story can be moved to; empty where moving is not offered. */
+  storylines?: Storyline[]
+  /** Left out on the storyline page, where every story is already in place. */
+  onMove?: (
+    storyId: number,
+    to: { storylineId?: number | null; storylineTitle?: string },
+  ) => void
 }
 
 /**
@@ -22,6 +30,8 @@ const Stories = ({
   extracting,
   onExtract,
   onOpenContent,
+  storylines = [],
+  onMove,
 }: Props) => {
   if (stories.length === 0) {
     return (
@@ -42,6 +52,16 @@ const Stories = ({
               <span className="story-storyline">{story.storyline.title}</span>
             )}
             <span className="story-title-text">{story.title}</span>
+            {onMove && (
+              <StoryMenu
+                current={story.storyline}
+                storylines={storylines}
+                onMove={(storylineId) => onMove(story.id, { storylineId })}
+                onCreate={(storylineTitle) =>
+                  onMove(story.id, { storylineTitle })
+                }
+              />
+            )}
           </h2>
           <div className="story-articles">
             {story.articles.map((article) => (

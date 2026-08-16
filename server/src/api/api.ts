@@ -14,6 +14,7 @@ import * as facts from "../models/facts";
 import * as predictions from "../models/predictions";
 import * as proposals from "../models/proposals";
 import * as stories from "../models/stories";
+import * as storylines from "../models/storylines";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
 import { CHANNEL_KINDS, Channel, ChannelKind, StoryFeedEntry } from "./types";
@@ -72,13 +73,20 @@ export const createApi = async () => {
     /** Channels plus the merged article feed — everything the page renders. */
     getDashboard: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      const [list, feed, storyFeed, uncategorized] = await Promise.all([
+      const [list, feed, storyFeed, arcs, uncategorized] = await Promise.all([
         channels.list(id),
         articles.feed(id, MAX_ITEMS),
         stories.feed(id, MAX_STORIES),
+        storylines.all(id),
         articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
       ]);
-      return ok({ channels: list, feed, stories: storyFeed, uncategorized });
+      return ok({
+        channels: list,
+        feed,
+        stories: storyFeed,
+        storylines: arcs,
+        uncategorized,
+      });
     },
 
     getFeed: async (dashboardId: string) => {
@@ -93,7 +101,44 @@ export const createApi = async () => {
     /** The categorized view: stories with their articles, newest story first. */
     getStories: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      return ok({ stories: await stories.feed(id, MAX_STORIES) });
+      const [feed, arcs] = await Promise.all([
+        stories.feed(id, MAX_STORIES),
+        storylines.all(id),
+      ]);
+      return ok({ stories: feed, storylines: arcs });
+    },
+
+    /**
+     * Refiles a story under another arc. `storylineTitle` makes the arc if it
+     * is not there yet, so the reader can move a story somewhere that does not
+     * exist without a second round trip; a null `storylineId` leaves it
+     * standalone.
+     */
+    moveStory: async (
+      dashboardId: string,
+      storyId: string,
+      body: { storylineId?: number | null; storylineTitle?: string },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(storyId);
+      if (!Number.isFinite(numeric)) {
+        return error(400, "story id must be a number");
+      }
+
+      let storylineId = body?.storylineId ?? null;
+      if (body?.storylineTitle) {
+        const title = String(body.storylineTitle).trim();
+        if (!title) return error(400, "a storyline needs a title");
+        storylineId = (await storylines.ensure(id, title)).id;
+      }
+
+      const moved = await stories.moveToStoryline(id, numeric, storylineId);
+      if (!moved) return error(404, "story not found");
+
+      return ok({
+        stories: await stories.feed(id, MAX_STORIES),
+        storylines: await storylines.all(id),
+      });
     },
 
     /** One arc and everything filed under it — what the storyline page reads. */

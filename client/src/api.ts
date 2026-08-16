@@ -13,6 +13,13 @@ export default {
     api('get', `/dashboards/${dashboardId}/feed`),
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${dashboardId}/stories`),
+  /** Refiles a story: an existing arc by id, a new one by title, or neither. */
+  moveStory: (
+    dashboardId: string,
+    storyId: number,
+    to: { storylineId?: number | null; storylineTitle?: string },
+  ) => apiJson('patch', `/dashboards/${dashboardId}/stories/${storyId}/storyline`, to),
+
   getStoryline: (dashboardId: string, slug: string) =>
     api('get', `/dashboards/${dashboardId}/storylines/${slug}`),
 
@@ -289,6 +296,8 @@ export type Storyline = {
   id: number
   title: string
   slug: string
+  /** How many stories hang off it; only the full list carries this. */
+  storyCount?: number
 }
 
 /** 1 someone said it, 5 established beyond doubt. */
@@ -384,7 +393,13 @@ async function apiJson(method: string, url: string, data: any) {
 
 async function api(method: string, url: string, data?: Record<string, any>) {
   const attrs: FetchParams = {
-    method,
+    /**
+     * Uppercased on the way out. `fetch` normalizes the standard verbs itself,
+     * but PATCH is not one of them — a lowercase `patch` is sent as written,
+     * and the preflight then asks for a method the server's
+     * Access-Control-Allow-Methods list does not contain.
+     */
+    method: method.toUpperCase(),
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -392,7 +407,7 @@ async function api(method: string, url: string, data?: Record<string, any>) {
   }
 
   if (data) {
-    if (method === 'get') {
+    if (method.toLowerCase() === 'get') {
       url = `${url}?${toQuery(data)}`
     } else {
       attrs.body = JSON.stringify(data)

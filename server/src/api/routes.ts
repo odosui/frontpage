@@ -62,6 +62,12 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.getStoryline(pathParams.dashboardId ?? "", pathParams.slug ?? ""),
   },
   {
+    method: "patch",
+    path: "/api/dashboards/:dashboardId/stories/:id/storyline",
+    handler: async ({ pathParams, body }) =>
+      api.moveStory(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
+  },
+  {
     method: "post",
     path: "/api/dashboards/:dashboardId/storylines/:slug/facts",
     handler: async ({ pathParams, body }) =>

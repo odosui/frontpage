@@ -1,0 +1,17 @@
+@use '../vars' as *;
+
+/**
+ * The floating panel behind `<DropdownMenu>`. It positions itself against the
+ * nearest positioned ancestor, so whatever opens one has to be `relative` —
+ * the toggle and its menu belong to the same little block.
+ */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + #{$unit0});
+  left: 0;
+  z-index: 30;
+  padding: $unit0;
+  background-color: var(--surface-bg);
+  border-radius: $unit1;
+  box-shadow: var(--surface-shadow-hover);
+}
