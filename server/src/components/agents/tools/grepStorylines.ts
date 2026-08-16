@@ -1,10 +1,10 @@
 import * as storylines from "../../../models/storylines";
 import { AgentTool } from "../types";
-import { count } from "./args";
+import { count } from "./utils/args";
 
 export const grepStorylines: AgentTool = {
   name: "GREP_STORYLINES",
-  usage: '<|GREP_STORYLINES "iran" 10|>',
+  usage: '<|GREP_STORYLINES "iran" 200|>',
   description:
     "Storylines whose title contains the given text. Use it to check whether an arc already exists before starting one.",
   run: async (args, ctx) => {
@@ -13,11 +13,9 @@ export const grepStorylines: AgentTool = {
     const rows = await storylines.search(
       ctx.dashboardId,
       term,
-      count(args.slice(1), 10),
+      count(args.slice(1), 200),
     );
     if (rows.length === 0) return `(no storyline matching "${term}")`;
-    return rows
-      .map((s) => `${s.title} — ${s.storyCount} stories`)
-      .join("\n");
+    return rows.map((s) => `${s.title} — ${s.storyCount} stories`).join("\n");
   },
 };

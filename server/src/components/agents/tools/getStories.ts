@@ -1,13 +1,7 @@
 import * as stories from "../../../models/stories";
 import { AgentTool } from "../types";
-import { count } from "./args";
+import { count } from "./utils/args";
 
-/**
- * GREP_STORIES only finds an event when the run happens to guess the wording an
- * earlier run used. Once the arc is known, listing what already hangs off it is
- * the reliable check: the run sees the events in that arc and files under one of
- * them instead of opening a near-duplicate beside it.
- */
 export const getStories: AgentTool = {
   name: "GET_STORIES",
   usage: '<|GET_STORIES "Russian-Ukrainian war" 20|>',
@@ -20,7 +14,7 @@ export const getStories: AgentTool = {
     const found = await stories.underStoryline(
       ctx.dashboardId,
       term,
-      count(args.slice(1), 20),
+      count(args.slice(1), 200),
     );
     if (!found) return `(no storyline matching "${term}")`;
     if (found.stories.length === 0) {

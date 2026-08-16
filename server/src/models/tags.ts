@@ -36,17 +36,13 @@ function toTag(row: Row): Tag {
  * Most-used tags first. An agent picking tags should see the established
  * vocabulary before it invents a near-duplicate of one.
  */
-export async function popular(
-  dashboardId: string,
-  limit: number,
-): Promise<Tag[]> {
+export async function popular(dashboardId: string): Promise<Tag[]> {
   const { rows } = await query<Row>(
     `${SELECT}
      where t.dashboard_id = $1
      group by t.id
-     order by article_count desc, t.name
-     limit $2`,
-    [dashboardId, limit],
+     order by article_count desc, t.name`,
+    [dashboardId],
   );
   return rows.map(toTag);
 }

@@ -3,21 +3,13 @@ import { getStorylines } from "./tools/getStorylines";
 import { getTags } from "./tools/getTags";
 import { grepStories } from "./tools/grepStories";
 import { grepStorylines } from "./tools/grepStorylines";
-import { grepTags } from "./tools/grepTags";
 import { AgentDefinition } from "./types";
 
 export const categorizingAgent: AgentDefinition = {
   kind: "categorizing_agent",
   name: "CategorizingAgent",
   maxSteps: 12,
-  tools: [
-    getStorylines,
-    grepStorylines,
-    getStories,
-    grepStories,
-    getTags,
-    grepTags,
-  ],
+  tools: [getStorylines, grepStorylines, getStories, grepStories, getTags],
   instructions: `You are given a batch of fresh headlines — some carrying the outlet's own
 summary, some not — and you group them into stories, place those stories under
 storylines, and tag every article.

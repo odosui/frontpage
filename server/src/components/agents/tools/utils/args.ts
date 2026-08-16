@@ -1,4 +1,4 @@
-/** Keeps a runaway `<|GET_TAGS 100000|>` from dumping the whole table. */
+/** Keeps a runaway `<|GET_STORIES 100000|>` from dumping the whole table. */
 export const MAX_ROWS = 100;
 
 /**
