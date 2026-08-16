@@ -3,13 +3,21 @@ import { getStorylines } from "./tools/getStorylines";
 import { getTags } from "./tools/getTags";
 import { grepStories } from "./tools/grepStories";
 import { grepStorylines } from "./tools/grepStorylines";
+import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
 
 export const categorizingAgent: AgentDefinition = {
   kind: "categorizing_agent",
   name: "CategorizingAgent",
   maxSteps: 12,
-  tools: [getStorylines, grepStorylines, getStories, grepStories, getTags],
+  tools: [
+    getStorylines,
+    grepStorylines,
+    getStories,
+    grepStories,
+    getTags,
+    webSearch,
+  ],
   instructions: `You are given a batch of fresh headlines — some carrying the outlet's own
 summary, some not — and you group them into stories, place those stories under
 storylines, and tag every article.
@@ -37,6 +45,11 @@ vocabulary, not to start a parallel one:
   reliable check, because an earlier run may have worded the event differently
   than you would search for it. If the event is there, reuse that story's exact
   title so this article joins it instead of starting a near duplicate beside it.
+
+The database is the authority on what we already file, but not on the world. A
+headline that assumes context you do not have — an unfamiliar name, a place, an
+event referred to as though you had been following it — is worth one web search
+before you guess, with the freshness argument set when the event is a live one.
 
 Look things up as often as you need to. When you have enough context, answer.`,
 };
