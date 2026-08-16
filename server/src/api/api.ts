@@ -10,6 +10,7 @@ import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as channels from "../models/channels";
 import * as dashboards from "../models/dashboards";
+import * as proposals from "../models/proposals";
 import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
@@ -282,10 +283,62 @@ export const createApi = async () => {
       }
       const session = await agentSessions.get(sessionId);
       if (!session) return error(404, "session not found");
-      return ok({
-        session,
-        messages: await agentSessions.messages(sessionId),
-      });
+      const [messages, pending] = await Promise.all([
+        agentSessions.messages(sessionId),
+        proposals.forSession(sessionId),
+      ]);
+      return ok({ session, messages, proposals: pending });
+    },
+
+    /**
+     * Carries out something the agent asked for. This is where an agent's
+     * write actually happens — on the reader's click, against the ids the
+     * proposal was written with, never on the agent's own say-so.
+     */
+    decideProposal: async (id: string, body: { approve?: boolean }) => {
+      const proposalId = Number(id);
+      if (!Number.isFinite(proposalId)) {
+        return error(400, "proposal id must be a number");
+      }
+
+      const existing = await proposals.get(proposalId);
+      if (!existing) return error(404, "proposal not found");
+      if (existing.status !== "pending") {
+        return error(409, `this proposal was already ${existing.status}`);
+      }
+
+      if (!body?.approve) {
+        const rejected = await proposals.reject(proposalId);
+        await tellTheAgent(
+          existing,
+          `Proposal #${proposalId} was declined by the reader. Nothing was ` +
+            `changed. Do not propose it again unless they ask.`,
+        );
+        return ok({ proposal: rejected });
+      }
+
+      // Claimed first: the click that wins is the one that does the work, so a
+      // double click cannot merge twice.
+      const claimed = await proposals.claim(proposalId);
+      if (!claimed) return error(409, "this proposal was already decided");
+
+      try {
+        const result = await carryOut(claimed);
+        await tellTheAgent(
+          claimed,
+          `Proposal #${proposalId} was approved by the reader and has been ` +
+            `carried out: ${describe(claimed, result)}`,
+        );
+        return ok({ proposal: await proposals.succeeded(proposalId, result) });
+      } catch (e) {
+        const message = (e as Error).message;
+        await tellTheAgent(
+          claimed,
+          `Proposal #${proposalId} was approved but could not be carried ` +
+            `out: ${message}. Nothing was changed.`,
+        );
+        return ok({ proposal: await proposals.failed(proposalId, message) });
+      }
     },
 
     /**
@@ -380,6 +433,73 @@ export const createApi = async () => {
 };
 
 export type Api = Awaited<ReturnType<typeof createApi>>;
+
+/**
+ * Writes the outcome into the conversation that asked for it.
+ *
+ * Without this the agent never learns what the reader decided: it proposed
+ * something, was told to wait, and then sees the world silently change under
+ * it — so it re-proposes a merge that already happened and spends turns
+ * working out why the story it named has vanished.
+ *
+ * Filed as a tool row, which is what it is: something the system did, reported
+ * back. The transcript renders it folded, and `replay` hands it to the model
+ * with the other results.
+ */
+async function tellTheAgent(
+  proposal: proposals.Proposal,
+  outcome: string,
+): Promise<void> {
+  await agentSessions.append(proposal.sessionId, {
+    role: "tool",
+    content: outcome,
+    toolName: "PROPOSAL",
+    toolArgs: [String(proposal.id)],
+  });
+}
+
+/** The outcome in a line, for the agent and for the record. */
+function describe(
+  proposal: proposals.Proposal,
+  result: Record<string, unknown>,
+): string {
+  if (proposal.kind === "merge_stories") {
+    const { title, merged, moved, articles } = result as {
+      title?: string;
+      merged?: { title?: string };
+      moved?: number;
+      articles?: number;
+    };
+    return (
+      `"${merged?.title}" no longer exists; its ${moved} articles moved to ` +
+      `"${title}", which now holds ${articles}.`
+    );
+  }
+  return "done.";
+}
+
+/**
+ * An approved proposal, done. Each kind reads its own payload back — written
+ * when the reader was shown it, so approving does what was on screen.
+ */
+async function carryOut(
+  proposal: proposals.Proposal,
+): Promise<Record<string, unknown>> {
+  if (proposal.kind === "merge_stories") {
+    const { sourceId, targetId } = proposal.payload as {
+      sourceId?: number;
+      targetId?: number;
+    };
+    if (!sourceId || !targetId) {
+      throw new Error("this merge proposal is missing one of its stories");
+    }
+    return {
+      ...(await stories.merge(proposal.dashboardId, sourceId, targetId)),
+    };
+  }
+
+  throw new Error(`nothing knows how to carry out a ${proposal.kind} proposal`);
+}
 
 /**
  * The arc as the reader has it on screen, for the agent's system message: the

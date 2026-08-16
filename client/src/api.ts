@@ -48,6 +48,9 @@ export default {
     }),
   sendChatMessage: (sessionId: number, content: string) =>
     apiJson('post', `/agents/sessions/${sessionId}/messages`, { content }),
+  /** Approving is what actually performs the change the agent asked for. */
+  decideProposal: (id: number, approve: boolean) =>
+    apiJson('post', `/agents/proposals/${id}/decide`, { approve }),
 
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),
@@ -169,6 +172,34 @@ export type AgentMessage = {
   promptTokens: number | null
   completionTokens: number | null
   createdAt: string
+}
+
+export const PROPOSAL_STATUSES = [
+  'pending',
+  'approved',
+  'rejected',
+  'failed',
+] as const
+
+export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
+
+/**
+ * A change the agent wants to make, waiting on the reader. Nothing has happened
+ * to the data until this is approved.
+ */
+export type Proposal = {
+  id: number
+  sessionId: number
+  dashboardId: string
+  kind: string
+  payload: Record<string, unknown>
+  /** What the agent proposed, in its own words — what the buttons act on. */
+  summary: string
+  status: ProposalStatus
+  result: Record<string, unknown> | null
+  error: string | null
+  createdAt: string
+  decidedAt: string | null
 }
 
 export type AgentInfo = {

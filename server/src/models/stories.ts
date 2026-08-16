@@ -187,6 +187,84 @@ export async function detail(
   };
 }
 
+export type MergeResult = {
+  /** The story that survived, with everything now under it. */
+  storyId: number;
+  title: string;
+  /** How many articles moved across. */
+  moved: number;
+  /** How many the surviving story holds now. */
+  articles: number;
+  /** The story that was folded in and no longer exists. */
+  merged: { id: number; title: string };
+};
+
+/**
+ * Folds one story into another: every article under `sourceId` moves to
+ * `targetId`, then the source is deleted. Nothing new is created, and the
+ * target keeps its own title and storyline — a merge says these articles were
+ * always part of that story, not that a third story should exist.
+ *
+ * All of it in one transaction — half a merge would leave articles orphaned by
+ * `on delete set null`, which is the one outcome worse than not merging.
+ *
+ * Never called by an agent directly. It runs from an approved proposal, with
+ * the ids the reader was shown.
+ */
+export async function merge(
+  dashboardId: string,
+  sourceId: number,
+  targetId: number,
+): Promise<MergeResult> {
+  if (sourceId === targetId) {
+    throw new Error("a story cannot be merged into itself");
+  }
+
+  return withTransaction(async (client) => {
+    // Locked before anything is read, lowest id first: the categorizing agent
+    // files articles into these same rows, and two merges taking their locks
+    // in opposite orders would deadlock.
+    const { rows: found } = await client.query<{ id: string; title: string }>(
+      `select id, title from stories
+        where dashboard_id = $1 and id = any($2::bigint[])
+        order by id
+        for update`,
+      [dashboardId, [sourceId, targetId]],
+    );
+
+    const byId = new Map(found.map((r) => [Number(r.id), r.title]));
+    const missing = [sourceId, targetId].filter((id) => !byId.has(id));
+    if (missing.length > 0) {
+      throw new Error(`no story ${missing.join(", ")} in this dashboard`);
+    }
+
+    const { rowCount: moved } = await client.query(
+      `update articles set story_id = $1
+        where dashboard_id = $2 and story_id = $3`,
+      [targetId, dashboardId, sourceId],
+    );
+
+    await client.query(`delete from stories where dashboard_id = $1 and id = $2`, [
+      dashboardId,
+      sourceId,
+    ]);
+
+    const { rows: counted } = await client.query<{ articles: string }>(
+      `select count(*) as articles from articles
+        where dashboard_id = $1 and story_id = $2`,
+      [dashboardId, targetId],
+    );
+
+    return {
+      storyId: targetId,
+      title: byId.get(targetId)!,
+      moved: moved ?? 0,
+      articles: Number(counted[0]!.articles),
+      merged: { id: sourceId, title: byId.get(sourceId)! },
+    };
+  });
+}
+
 export type StoryMatch = {
   title: string;
   storyline: string | null;

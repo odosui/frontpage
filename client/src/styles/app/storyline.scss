@@ -148,6 +148,106 @@
   padding: 0 $unit3;
 }
 
+// a change the agent wants to make, and the only place it can be allowed.
+// Louder than a message on purpose — it is asking for something, and until it
+// is answered nothing has happened to the data
+.proposals {
+  list-style: none;
+  margin: 0;
+  padding: 0 $unit3 $unit3;
+  display: flex;
+  flex-direction: column;
+  gap: $unit2;
+}
+
+.proposal {
+  border: 1px solid var(--color-accent);
+  border-radius: $unit1;
+  overflow: hidden;
+
+  // decided: it is a record now, not a question
+  &.is-approved,
+  &.is-rejected,
+  &.is-failed {
+    border-color: var(--borderColor);
+    opacity: 0.75;
+  }
+
+  &.is-failed {
+    border-color: $red;
+  }
+}
+
+.proposal-head {
+  padding: $unit1 $unit2;
+  border-bottom: 1px solid var(--borderColor);
+  background-color: var(--bgGray);
+}
+
+.proposal-title {
+  font-size: $text0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lighter);
+}
+
+.proposal-summary {
+  margin: 0;
+  padding: $unit2;
+  font-size: $text0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.proposal-error {
+  margin: 0;
+  padding: 0 $unit2 $unit2;
+  font-size: $text0;
+  color: $red;
+}
+
+.proposal-actions {
+  display: flex;
+  gap: $unit1;
+  padding: 0 $unit2 $unit2;
+}
+
+.proposal-btn {
+  padding: $unit0 $unit2;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background: none;
+  font-size: $text0;
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    filter 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  // the destructive one, so it says what it does rather than "OK"
+  &--approve {
+    border-color: transparent;
+    background-color: var(--color-accent);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background-color: var(--color-accent);
+      filter: brightness(1.08);
+    }
+  }
+}
+
 .chat-composer {
   flex: none;
   display: flex;

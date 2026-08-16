@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import api, { type AgentMessage, type AgentSession, type Job } from '../../api'
+import api, {
+  type AgentMessage,
+  type AgentSession,
+  type Job,
+  type Proposal,
+} from '../../api'
 import { useJobs } from '../../contexts/JobsContext'
+
+type SessionData = {
+  session: AgentSession
+  messages: AgentMessage[]
+  proposals?: Proposal[]
+}
 
 /** While a turn is in flight the transcript grows every few seconds. */
 const LIVE_POLL_MS = 1200
@@ -27,10 +38,18 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
   const [sessionId, setSessionId] = useState<number | null>(null)
   const [session, setSession] = useState<AgentSession | null>(null)
   const [messages, setMessages] = useState<AgentMessage[]>([])
+  const [proposals, setProposals] = useState<Proposal[]>([])
   const [thinking, setThinking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // the reply job we are waiting on, so a turn is only "done" when it is
   const pendingJob = useRef<string | null>(null)
+
+  /** Every read of the session lands the same way. */
+  const absorb = useCallback((data: SessionData) => {
+    setSession(data.session)
+    setMessages(data.messages)
+    setProposals(data.proposals ?? [])
+  }, [])
 
   // a different dashboard or arc is a different conversation
   useEffect(() => {
@@ -50,11 +69,9 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
 
     const tick = async () => {
       try {
-        const data: { session: AgentSession; messages: AgentMessage[] } =
-          await api.getAgentSession(sessionId)
+        const data: SessionData = await api.getAgentSession(sessionId)
         if (cancelled) return
-        setSession(data.session)
-        setMessages(data.messages)
+        absorb(data)
       } catch {
         // keep what is on screen; the next tick retries
       }
@@ -82,10 +99,7 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
       if (sessionId !== null) {
         api
           .getAgentSession(sessionId)
-          .then((data: { session: AgentSession; messages: AgentMessage[] }) => {
-            setSession(data.session)
-            setMessages(data.messages)
-          })
+          .then(absorb)
           .catch(() => undefined)
       }
     })
@@ -119,5 +133,37 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
     [sessionId, dashboardId, kind, storyline, refreshJobs],
   )
 
-  return { session, messages, thinking, error, send }
+  /**
+   * Answers a proposal. Approving is what performs the change, so the caller
+   * is told it landed — the storyline list beside the chat is now stale.
+   */
+  const decide = useCallback(
+    async (id: number, approve: boolean) => {
+      setError(null)
+      try {
+        const done: { proposal: Proposal } = await api.decideProposal(
+          id,
+          approve,
+        )
+        if (done.proposal.status === 'failed') {
+          setError(done.proposal.error || 'the change could not be made')
+        }
+        // re-read rather than patch the one row: deciding also writes the
+        // outcome into the transcript, which is what the reader sees next
+        if (sessionId !== null) {
+          await api
+            .getAgentSession(sessionId)
+            .then(absorb)
+            .catch(() => undefined)
+        }
+        return done.proposal
+      } catch (err) {
+        setError((err as Error).message)
+        return null
+      }
+    },
+    [sessionId, absorb],
+  )
+
+  return { session, messages, proposals, thinking, error, send, decide }
 }

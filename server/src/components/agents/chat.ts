@@ -77,7 +77,7 @@ export async function reply(
     throw new Error(`session ${sessionId} is not attached to a dashboard`);
   }
 
-  const ctx: AgentContext = { dashboardId: session.dashboardId };
+  const ctx: AgentContext = { dashboardId: session.dashboardId, sessionId };
   const conversation = await replay(sessionId);
   conversation.push({ role: "user", content: question });
 
@@ -121,7 +121,7 @@ export async function reply(
 
       const results: string[] = [];
       for (const call of calls) {
-        const output = await execute(agent, call, ctx);
+        const output = await execute(agent, call, ctx, calls.length);
         await sessions.append(sessionId, {
           role: "tool",
           content: output,

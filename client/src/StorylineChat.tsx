@@ -1,12 +1,15 @@
 import { type AgentMessage } from './api'
 import AgentTranscript from './ui/agent/AgentTranscript'
 import ChatComposer from './ui/agent/ChatComposer'
+import ProposalCard from './ui/agent/ProposalCard'
 import { useAgentChat } from './ui/agent/useAgentChat'
 
 type Props = {
   dashboardId: string
   /** The arc the conversation is about, by slug — the server reads it up. */
   storyline: string
+  /** Called when the agent has changed the stories, so the list can reload. */
+  onStoriesChanged?: () => void
 }
 
 /** In a conversation the roles are people, not job descriptions. */
@@ -18,18 +21,34 @@ const CHAT_LABEL: Partial<Record<AgentMessage['role'], string>> = {
 /**
  * The agent you talk to about one storyline. The transcript and its message
  * cards are the same ones the agents view uses; what is added here is the
- * composer and a session that stays open between questions.
+ * composer, a session that stays open between questions, and the proposals it
+ * needs answered before it can change anything.
  */
-const StorylineChat = ({ dashboardId, storyline }: Props) => {
-  const { session, messages, thinking, error, send } = useAgentChat({
-    dashboardId,
-    kind: 'analyzing_agent',
-    storyline,
-  })
+const StorylineChat = ({ dashboardId, storyline, onStoriesChanged }: Props) => {
+  const { session, messages, proposals, thinking, error, send, decide } =
+    useAgentChat({
+      dashboardId,
+      kind: 'analyzing_agent',
+      storyline,
+    })
 
   // the system message is the agent's own instructions, not part of the
   // conversation; a tool result reads as the agent working, so it stays
   const visible = messages.filter((m) => m.role !== 'system')
+
+  // Only what still needs an answer, plus anything that went wrong — once a
+  // proposal is decided the outcome is in the transcript, and leaving the card
+  // there would keep asking a question that has been answered.
+  const asking = proposals.filter(
+    (p) => p.status === 'pending' || p.status === 'failed',
+  )
+  const empty = visible.length === 0 && asking.length === 0 && !thinking
+
+  const onDecide = async (id: number, approve: boolean) => {
+    const decided = await decide(id, approve)
+    // an approved merge rewrote the stories this page is showing
+    if (decided?.status === 'approved') onStoriesChanged?.()
+  }
 
   return (
     <div className="chat">
@@ -39,17 +58,30 @@ const StorylineChat = ({ dashboardId, storyline }: Props) => {
       </header>
 
       <div className="chat-transcript">
-        {visible.length === 0 && !thinking ? (
+        {empty ? (
           <p className="chat-placeholder">
             Ask about this storyline — what changed, what it follows from, who
             someone is. The agent can read the dashboard and search the web.
           </p>
         ) : (
-          <AgentTranscript
-            messages={visible}
-            thinking={thinking}
-            labelFor={(m) => CHAT_LABEL[m.role]}
-          />
+          <>
+            <AgentTranscript
+              messages={visible}
+              thinking={thinking}
+              labelFor={(m) => CHAT_LABEL[m.role]}
+            />
+            {asking.length > 0 && (
+              <ul className="proposals">
+                {asking.map((proposal) => (
+                  <ProposalCard
+                    key={proposal.id}
+                    proposal={proposal}
+                    onDecide={onDecide}
+                  />
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
 

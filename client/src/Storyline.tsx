@@ -124,7 +124,11 @@ const Storyline: React.FC = () => {
       <section className="storyline-detail" />
 
       <aside className="storyline-chat">
-        <StorylineChat dashboardId={dashboardId} storyline={storyline.slug} />
+        <StorylineChat
+          dashboardId={dashboardId}
+          storyline={storyline.slug}
+          onStoriesChanged={load}
+        />
       </aside>
 
       <ArticleContentModal

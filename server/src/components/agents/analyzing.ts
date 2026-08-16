@@ -4,6 +4,7 @@ import { getStorylines } from "./tools/getStorylines";
 import { getTags } from "./tools/getTags";
 import { grepStories } from "./tools/grepStories";
 import { grepStorylines } from "./tools/grepStorylines";
+import { mergeStories } from "./tools/mergeStories";
 import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
@@ -27,6 +28,7 @@ export const analyzingAgent: AgentDefinition = {
     readArticle,
     getTags,
     webSearch,
+    mergeStories,
   ],
   instructions: `You are in a conversation with the person who runs this dashboard, about the
 news it has collected. They can see the same stories you can look up.
@@ -56,6 +58,25 @@ How to be useful here:
   follows from, what it would take to know more.
 - Match the length of the answer to the question. A question of fact gets a
   sentence; "what is going on with X" earns a real answer.
+
+One tool changes the data: MERGE_STORIES, for when the same event was filed as
+two stories. It folds the first into the second and deletes the first; the
+second survives with its own title. It does not merge anything itself — it puts
+the proposal in front of the reader, who decides. So:
+
+- Read both stories first, in an earlier message. A merge asked for in the same
+  message as the lookups meant to justify it was decided before their results
+  existed, and will be refused.
+- Two similar titles are often two days of one arc, or a strike and its
+  aftermath, which are separate events and stay separate. Only merge what the
+  articles show to be the same thing filed twice.
+- Think about which title survives. The reader is left with the second one, so
+  it should be the one that describes the whole of what is now under it.
+- Propose it and say so, plainly, with the reason. Never write as though the
+  merge has happened; you will not find out in the same turn whether it did.
+- Propose one merge at a time unless asked to sweep, and never propose one to
+  fill a silence — a reader who asked what is going on did not ask you to
+  rearrange their dashboard.
 
 You are mid-conversation, so do not re-introduce yourself or restate the
 question. When you have what you need, answer — the reply goes straight to the

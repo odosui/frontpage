@@ -37,7 +37,6 @@ export async function runAgent(
   options: RunOptions,
 ): Promise<AgentRun> {
   const { model, task, dashboardId } = options;
-  const ctx: AgentContext = { dashboardId };
   const log = options.log ?? (() => undefined);
   const started = Date.now();
 
@@ -48,6 +47,8 @@ export async function runAgent(
     describeTools(agent.tools),
   ].join("\n\n");
   const session = await sessions.start(agent.kind, model, dashboardId);
+  // after the session exists: a tool that proposes a change files it here
+  const ctx: AgentContext = { dashboardId, sessionId: session.id };
 
   await sessions.append(session.id, { role: "system", content: system });
   await sessions.append(session.id, { role: "user", content: task });
@@ -96,7 +97,7 @@ export async function runAgent(
 
       const results: string[] = [];
       for (const call of calls) {
-        const output = await execute(agent, call, ctx);
+        const output = await execute(agent, call, ctx, calls.length);
         await sessions.append(session.id, {
           role: "tool",
           content: output,
@@ -138,11 +139,25 @@ export async function execute(
   agent: AgentDefinition,
   call: ToolCall,
   ctx: AgentContext,
+  /** How many calls shared the message this one came from. */
+  batchSize = 1,
 ): Promise<string> {
   const tool = agent.tools.find((t) => t.name === call.name);
   if (!tool) {
     const known = agent.tools.map((t) => t.name).join(", ");
     return `ERROR: no such function ${call.name}. Available: ${known}, DONE.`;
+  }
+
+  // A change asked for in the same breath as the lookups meant to justify it
+  // was decided before their results existed. The reads still run; this one
+  // waits for a message of its own, by which point the agent has read them.
+  if (tool.mutates && batchSize > 1) {
+    return (
+      `ERROR: ${call.name} changes things, so it cannot share a message with ` +
+      `other calls — batched beside them it would run before you had read a ` +
+      `single result. The other calls in that message have run. Read what ` +
+      `they returned, and if you still want this, call ${call.name} on its own.`
+    );
   }
 
   try {

@@ -135,6 +135,12 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   },
   {
     method: "post",
+    path: "/api/agents/proposals/:id/decide",
+    handler: async ({ pathParams, body }) =>
+      api.decideProposal(pathParams.id ?? "", body),
+  },
+  {
+    method: "post",
     path: "/api/agents/sessions/:id/messages",
     handler: async ({ pathParams, body }) =>
       api.sendChatMessage(pathParams.id ?? "", body),
