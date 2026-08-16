@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseFeed } from "./parse";
+import { parseFeed, recentOnly } from "./parse";
+import { Article } from "../../api/types";
 
 const FEED_URL = "https://example.com/feed.xml";
 
@@ -213,5 +214,54 @@ describe("parseFeed", () => {
     expect(parseFeed("<html><body>not a feed</body></html>", FEED_URL)).toEqual(
       [],
     );
+  });
+});
+
+describe("recentOnly", () => {
+  const daysAgo = (days: number): string =>
+    new Date(Date.now() - days * 86_400_000).toISOString();
+
+  const item = (title: string, publishedAt: string | null): Article => ({
+    title,
+    url: `https://example.com/${title}`,
+    image: "",
+    description: "",
+    publishedAt,
+  });
+
+  it("keeps what is inside the window and drops what is not", () => {
+    const items = [
+      item("today", daysAgo(0)),
+      item("four", daysAgo(4)),
+      item("six", daysAgo(6)),
+      item("evergreen", daysAgo(2595)),
+    ];
+
+    expect(recentOnly(items, 5).map((a) => a.title)).toEqual(["today", "four"]);
+  });
+
+  it("keeps undated items, so a feed that dates nothing still lands", () => {
+    const items = [item("no date", null), item("old", daysAgo(30))];
+
+    expect(recentOnly(items, 5).map((a) => a.title)).toEqual(["no date"]);
+  });
+
+  it("keeps an item the publisher dated slightly in the future", () => {
+    const items = [item("ahead", daysAgo(-1))];
+
+    expect(recentOnly(items, 5)).toHaveLength(1);
+  });
+
+  it("leaves the feed's own order alone", () => {
+    const items = [
+      item("second", daysAgo(2)),
+      item("stale", daysAgo(9)),
+      item("first", daysAgo(1)),
+    ];
+
+    expect(recentOnly(items, 5).map((a) => a.title)).toEqual([
+      "second",
+      "first",
+    ]);
   });
 });

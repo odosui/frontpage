@@ -2,7 +2,7 @@ import { createHash } from "crypto";
 import * as articles from "../../models/articles";
 import * as channels from "../../models/channels";
 import { fetchFeed } from "../../components/feeds/download";
-import { parseFeed } from "../../components/feeds/parse";
+import { parseFeed, recentOnly } from "../../components/feeds/parse";
 import { JobHandler } from "../types";
 
 export type FetchFeedPayload = {
@@ -12,6 +12,9 @@ export type FetchFeedPayload = {
 
 /** How many articles a channel keeps. Mirrors extract_articles. */
 const MAX_ITEMS = 100;
+
+/** How far back into a feed is worth storing. See `recentOnly`. */
+const MAX_AGE_DAYS = 5;
 
 /**
  * The rss counterpart of fetch_page + extract_articles, and deliberately one
@@ -69,10 +72,15 @@ export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
     throw new Error(`no items found in feed ${channel.url}`);
   }
 
+  // an empty list here is a quiet week, not a broken channel, so it goes
+  // through prepend as normal — which clears the unread marks and lets the
+  // validators be saved below, where the throw above deliberately does not
+  const fresh = recentOnly(items, MAX_AGE_DAYS);
+
   const stored = await articles.prepend(
     dashboardId,
     channelId,
-    items,
+    fresh,
     MAX_ITEMS,
   );
   const added = stored.filter((a) => a.new).length;
@@ -84,9 +92,13 @@ export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
   });
   await channels.saveContentHash(dashboardId, channelId, contentHash);
 
-  log(`parsed ${items.length} items from ${channel.url}, ${added} new`);
+  const stale = items.length - fresh.length;
+  log(
+    `parsed ${items.length} items from ${channel.url}, ${added} new` +
+      (stale ? `, ${stale} older than ${MAX_AGE_DAYS} days` : ""),
+  );
 
   return {
-    result: { url: channel.url, parsed: items.length, added },
+    result: { url: channel.url, parsed: items.length, stale, added },
   };
 };

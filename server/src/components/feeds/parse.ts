@@ -44,6 +44,13 @@ export function parseFeed(xml: string, feedUrl: string): Article[] {
   return articles;
 }
 
+export function recentOnly(items: Article[], maxAgeDays: number): Article[] {
+  const cutoff = Date.now() - maxAgeDays * 86_400_000;
+  return items.filter(
+    (item) => !item.publishedAt || Date.parse(item.publishedAt) >= cutoff,
+  );
+}
+
 /**
  * When the publisher says it went out. RSS writes RFC 822 in `<pubDate>`, Atom
  * ISO 8601 in `<published>`, and plenty of feeds carry only `<dc:date>` or
@@ -172,4 +179,3 @@ function absolute(url: string, base: string): string {
     return "";
   }
 }
-
