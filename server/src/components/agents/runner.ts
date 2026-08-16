@@ -1,5 +1,6 @@
 import * as sessions from "../../models/agentSessions";
 import { ChatMessage, sendChat } from "../ai/OpenRouter";
+import { GENERAL } from "./general";
 import { describeTools, parseToolCalls } from "./protocol";
 import { AgentContext, AgentDefinition, ToolCall } from "./types";
 
@@ -40,7 +41,12 @@ export async function runAgent(
   const log = options.log ?? (() => undefined);
   const started = Date.now();
 
-  const system = `${agent.instructions}\n\n${describeTools(agent.tools)}`;
+  // who the agent is, then what this one does, then what it can call
+  const system = [
+    GENERAL,
+    agent.instructions.trim(),
+    describeTools(agent.tools),
+  ].join("\n\n");
   const session = await sessions.start(agent.kind, model, dashboardId);
 
   await sessions.append(session.id, { role: "system", content: system });

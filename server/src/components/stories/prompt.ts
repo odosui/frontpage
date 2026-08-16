@@ -3,7 +3,10 @@ export type PromptArticle = {
   title: string;
   source: string;
   publishedAt: string;
+  description?: string;
 };
+
+const DESCRIPTION_LIMIT = 300;
 
 const SCHEMA = `{
   "storylines": [
@@ -34,7 +37,7 @@ const SCHEMA = `{
  * separately: a parallel id-keyed list makes models drop and duplicate ids.
  */
 export const categorizeStoriesPrompt = (articles: PromptArticle[]) =>
-  `You are a news desk editor. Group the headlines below into stories, and tag every article.
+  `Group the headlines below into stories, and tag every article.
 
 THE TWO LEVELS
 
@@ -99,8 +102,8 @@ RULES
 - Write all storyline and story titles in English, sentence case, no final
   period, at most 10 words, no clickbait. Transliterate proper nouns the usual
   English way (Novorossiysk, Zelensky, Yandex).
-- Use only what the headlines say. Do not invent events, and do not add facts or
-  causes that are not there.
+- Use only what the headlines and summaries say. Do not invent events, and do
+  not add facts or causes that are not there.
 - Sort storylines by how many articles they hold, largest first; inside each
   storyline, put the newest story first.
 
@@ -110,6 +113,25 @@ like this:
 ${SCHEMA}
 
 ARTICLES
-${articles
-  .map((a) => `${a.id}. [${a.publishedAt}] (${a.source}) ${a.title}`)
-  .join("\n")}`;
+Some articles carry the outlet's own summary on an indented line below the
+headline. Where it is there, use it — it is the best evidence you have for
+whether two differently-worded headlines are the same event. Where it is
+missing, judge on the headline alone; its absence says nothing about the
+article.
+
+${articles.map(renderArticle).join("\n")}`;
+
+function renderArticle(a: PromptArticle): string {
+  const line = `${a.id}. [${a.publishedAt}] (${a.source}) ${a.title}`;
+  const summary = a.description?.trim();
+  if (!summary) return line;
+
+  // one line per article keeps the list scannable and the ids aligned
+  const flat = summary.replace(/\s+/g, " ");
+  const clipped =
+    flat.length > DESCRIPTION_LIMIT
+      ? `${flat.slice(0, DESCRIPTION_LIMIT).trimEnd()}…`
+      : flat;
+
+  return `${line}\n    ${clipped}`;
+}

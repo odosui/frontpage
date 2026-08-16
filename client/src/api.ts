@@ -159,9 +159,14 @@ export type Article = {
   url: string
   image: string
   new?: boolean
+  /**
+   * When the outlet published it. Only feeds tell us this — a scraped front
+   * page leaves it null, and `createdAt` (when we first saw it) is all there is.
+   */
+  publishedAt?: string | null
 }
 
-/** Sources we know how to pull from. Only `web` is implemented so far. */
+/** Sources we know how to pull from. `web` and `rss` are implemented so far. */
 export const CHANNEL_KINDS = ['web', 'rss', 'telegram', 'twitter'] as const
 
 export type ChannelKind = (typeof CHANNEL_KINDS)[number]

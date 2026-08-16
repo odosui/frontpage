@@ -17,10 +17,11 @@ export async function feed(
     new: boolean;
     channel_id: string;
     created_at: Date;
+    published_at: Date | null;
     importance: number | null;
   }>(
     `select title, url, image, is_new as new, channel_id, created_at,
-            importance
+            published_at, importance
      from articles
      where dashboard_id = $1
      order by created_at desc, position, id
@@ -35,6 +36,7 @@ export async function feed(
     new: r.new,
     channelId: r.channel_id,
     createdAt: new Date(r.created_at).toISOString(),
+    publishedAt: r.published_at ? new Date(r.published_at).toISOString() : null,
     importance: r.importance,
     // the narrow latest column does not render tags; the story feed fills them
     tags: [],
@@ -136,6 +138,10 @@ export type UncategorizedArticle = {
   url: string;
   channelId: string;
   createdAt: string;
+  /** When the source published it, falling back to when we first saw it. */
+  publishedAt: string;
+  /** The feed's own summary, where the channel is one that supplies it. */
+  description: string | null;
 };
 
 /**
@@ -158,8 +164,11 @@ export async function uncategorized(
     url: string;
     channel_id: string;
     created_at: Date;
+    published_at: Date;
+    description: string | null;
   }>(
-    `select id, title, url, channel_id, created_at
+    `select id, title, url, channel_id, created_at, description,
+            coalesce(published_at, created_at) as published_at
      from articles
      where dashboard_id = $1
        and story_id is null
@@ -176,6 +185,8 @@ export async function uncategorized(
     url: r.url,
     channelId: r.channel_id,
     createdAt: r.created_at.toISOString(),
+    publishedAt: r.published_at.toISOString(),
+    description: r.description,
   }));
 }
 
@@ -206,10 +217,13 @@ export function prepend(
     if (items.length > 0) {
       await client.query(
         `insert into articles
-           (dashboard_id, channel_id, position, title, url, image, is_new)
-         select $1, $2, t.i - 1, t.title, t.url, t.image, true
-         from unnest($3::text[], $4::text[], $5::text[])
-           with ordinality as t(title, url, image, i)
+           (dashboard_id, channel_id, position, title, url, image, is_new,
+            published_at, description)
+         select $1, $2, t.i - 1, t.title, t.url, t.image, true,
+                t.published_at, nullif(t.description, '')
+         from unnest($3::text[], $4::text[], $5::text[], $6::timestamptz[],
+                     $7::text[])
+           with ordinality as t(title, url, image, published_at, description, i)
          where not exists (
            select 1 from articles existing
            where existing.dashboard_id = $1
@@ -222,6 +236,8 @@ export function prepend(
           items.map((a) => a.title),
           items.map((a) => a.url),
           items.map((a) => a.image),
+          items.map((a) => a.publishedAt ?? null),
+          items.map((a) => a.description ?? ""),
         ],
       );
     }

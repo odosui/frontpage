@@ -1,6 +1,5 @@
-import * as React from 'react'
 import { type StoryFeedEntry } from './api'
-import { timeAgo } from './utils/dates'
+import ArticleTime from './ui/ArticleTime'
 
 type Props = {
   stories: StoryFeedEntry[]
@@ -60,7 +59,7 @@ const Stories = ({ stories, hasArticles }: Props) => {
                     </span>
                   ))}
                   <span className="story-article-meta">
-                    {article.channelId} · {timeAgo(article.createdAt)}
+                    {article.channelId} · <ArticleTime article={article} />
                   </span>
                 </a>
               </div>

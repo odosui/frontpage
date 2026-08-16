@@ -1,19 +1,14 @@
+import { FetchValidators, readCapped, requestDocument } from "../http";
 import { toAbsoluteUrl } from "./utils";
 
 const HTML_LIMIT = 200_000;
-/** Stop reading a response past this much decompressed html. */
-const MAX_DOWNLOAD_BYTES = 3_000_000;
 
 export type PageSnapshot = {
   html: string;
   hrefs: string[];
 };
 
-/** HTTP validators, so the next fetch can ask for a 304 instead of a body. */
-export type FetchValidators = {
-  etag?: string | null;
-  lastModified?: string | null;
-};
+export type { FetchValidators };
 
 export type FetchPageResult =
   | { notModified: true }
@@ -27,7 +22,11 @@ export async function fetchPage(
   url: string,
   validators?: FetchValidators,
 ): Promise<FetchPageResult> {
-  const res = await requestPage(url, validators);
+  const res = await requestDocument(url, {
+    accept: "text/html,application/xhtml+xml",
+    allowedTypes: /text\/html|application\/xhtml\+xml|text\/plain/i,
+    validators,
+  });
 
   if (res.status === 304) {
     return { notModified: true };
@@ -44,78 +43,6 @@ export async function fetchPage(
     etag: res.headers.get("etag"),
     lastModified: res.headers.get("last-modified"),
   };
-}
-
-async function requestPage(
-  url: string,
-  validators?: FetchValidators,
-): Promise<Response> {
-  const headers: Record<string, string> = {
-    "User-Agent": "Frontpage-Bot/1.0 (+https://github.com/odosui/frontpage)",
-    Accept: "text/html,application/xhtml+xml",
-  };
-  if (validators?.etag) headers["If-None-Match"] = validators.etag;
-  if (validators?.lastModified) {
-    headers["If-Modified-Since"] = validators.lastModified;
-  }
-
-  const res = await fetch(url, {
-    headers,
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (res.status === 304) return res;
-
-  if (!res.ok) {
-    throw new Error(`fetch ${url} returned ${res.status} ${res.statusText}`);
-  }
-
-  const contentType = res.headers.get("content-type") ?? "";
-  if (
-    contentType &&
-    !/text\/html|application\/xhtml\+xml|text\/plain/i.test(contentType)
-  ) {
-    throw new Error(`fetch ${url} returned non-html content (${contentType})`);
-  }
-
-  return res;
-}
-
-/**
- * Read the body but stop at MAX_DOWNLOAD_BYTES — a runaway page shouldn't be
- * able to exhaust memory, and we only ever look at the first slice anyway.
- */
-async function readCapped(res: Response): Promise<string> {
-  const charset =
-    /charset=([\w-]+)/i.exec(res.headers.get("content-type") ?? "")?.[1] ??
-    "utf-8";
-
-  if (!res.body) return res.text();
-
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  while (total < MAX_DOWNLOAD_BYTES) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.length;
-  }
-  await reader.cancel().catch(() => undefined);
-
-  const buffer = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    buffer.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  try {
-    return new TextDecoder(charset).decode(buffer);
-  } catch {
-    return new TextDecoder("utf-8").decode(buffer);
-  }
 }
 
 function cleanHtml(html: string) {

@@ -4,7 +4,7 @@ import GenericModal from './ui/GenericModal'
 import { CHANNEL_KINDS, type Channel, type ChannelKind } from './api'
 
 /** Kinds the backend can actually fetch today; the rest are listed as coming. */
-const IMPLEMENTED: ChannelKind[] = ['web']
+const IMPLEMENTED: ChannelKind[] = ['web', 'rss']
 
 const AddChannelModal: React.FC<{
   isOpen: boolean

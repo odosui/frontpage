@@ -3,9 +3,11 @@ export type Article = {
   url: string;
   image: string;
   new?: boolean;
+  publishedAt?: string | null;
+  description?: string;
 };
 
-/** Sources we know how to pull from. Only `web` is implemented so far. */
+/** Sources we know how to pull from. `web` and `rss` are implemented so far. */
 export const CHANNEL_KINDS = ["web", "rss", "telegram", "twitter"] as const;
 
 export type ChannelKind = (typeof CHANNEL_KINDS)[number];

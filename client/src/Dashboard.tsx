@@ -1,11 +1,7 @@
 import * as React from 'react'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'slim-react-router'
-import api, {
-  type Channel,
-  type FeedArticle,
-  type StoryFeedEntry,
-} from './api'
+import api, { type Channel, type FeedArticle, type StoryFeedEntry } from './api'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AddChannelModal from './AddChannelModal'
@@ -160,7 +156,7 @@ const Dashboard: React.FC = () => {
         return
       }
 
-      if (job.type !== 'extract_articles') return
+      if (job.type !== 'extract_articles' && job.type !== 'fetch_feed') return
       clearError(channelId)
       reloadFeed()
     })

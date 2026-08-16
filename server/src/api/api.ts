@@ -112,12 +112,20 @@ export const createApi = async () => {
       if (!channel.url) {
         return error(400, "channel has no url configured");
       }
-      if (channel.kind !== "web") {
+      // a feed says what its articles are, so rss skips the page-analysis
+      // chain entirely and goes straight to a single parse-and-store job
+      const type =
+        channel.kind === "web"
+          ? "fetch_page"
+          : channel.kind === "rss"
+            ? "fetch_feed"
+            : null;
+      if (!type) {
         return error(400, `${channel.kind} channels cannot be fetched yet`);
       }
 
       const job = await queue.enqueue({
-        type: "fetch_page",
+        type,
         payload: { dashboardId: id, channelId, url: channel.url },
       });
       console.log(`[refresh] ${id}/${channelId} queued as job ${job.id}`);

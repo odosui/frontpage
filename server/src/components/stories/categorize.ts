@@ -1,6 +1,5 @@
-import { Usage, sendMessageWithUsage } from "../ai/OpenRouter";
 import * as articles from "../../models/articles";
-import { PromptArticle, categorizeStoriesPrompt } from "./prompt";
+import { PromptArticle } from "./prompt";
 
 export type RecentArticle = PromptArticle & {
   /** The real articles.id, as opposed to the 1..n id used in the prompt. */
@@ -33,15 +32,6 @@ export type StoryTree = {
   unassigned?: { article_id: number; reason: string }[];
 };
 
-export type CategorizeRun = {
-  model: string;
-  articles: RecentArticle[];
-  tree: StoryTree;
-  raw: string;
-  elapsedMs: number;
-  usage: Usage;
-};
-
 /** How far back a categorizing run looks by default. */
 export const DEFAULT_WINDOW_DAYS = 7;
 
@@ -69,22 +59,13 @@ export async function uncategorizedArticles(
     source: hostname(r.url) || r.channelId,
     dashboardId,
     channelId: r.channelId,
-    publishedAt: r.createdAt.slice(0, 16).replace("T", " "),
+    // the real publish time where the channel gave us one; otherwise when we
+    // first saw it, which is the only date a scraped page has
+    publishedAt: r.publishedAt.slice(0, 16).replace("T", " "),
+    // rss channels carry the outlet's own summary; web channels never do, so
+    // the prompt has to read with it present on some articles and not others
+    ...(r.description ? { description: r.description } : {}),
   }));
-}
-
-export async function categorize(
-  model: string,
-  articles: RecentArticle[],
-): Promise<CategorizeRun> {
-  const started = Date.now();
-  const { content: raw, usage } = await sendMessageWithUsage(
-    model,
-    categorizeStoriesPrompt(articles),
-  );
-  const elapsedMs = Date.now() - started;
-
-  return { model, articles, tree: parseTree(raw), raw, elapsedMs, usage };
 }
 
 /** Models like to wrap JSON in prose or fences; take the outermost object. */

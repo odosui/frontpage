@@ -22,6 +22,7 @@ type StoryArticleRow = {
   new: boolean;
   channel_id: string;
   created_at: Date;
+  published_at: Date | null;
   importance: number | null;
 };
 
@@ -71,7 +72,7 @@ export async function feed(
   const byId = new Map(entries.map((e) => [e.id, e]));
   const { rows: articleRows } = await query<StoryArticleRow>(
     `select id, story_id, title, url, image, is_new as new, channel_id,
-            created_at, importance
+            created_at, published_at, importance
      from articles
      where story_id = any($1::bigint[])
      order by created_at desc, position, id`,
@@ -88,6 +89,7 @@ export async function feed(
       new: row.new,
       channelId: row.channel_id,
       createdAt: row.created_at.toISOString(),
+      publishedAt: row.published_at?.toISOString() ?? null,
       importance: row.importance,
       tags: tags.get(Number(row.id)) ?? [],
     });

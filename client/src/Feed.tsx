@@ -1,11 +1,10 @@
 import { PlayIcon } from '@primer/octicons-react'
 import { type FeedArticle } from './api'
-import { timeAgo } from './utils/dates'
+import ArticleTime from './ui/ArticleTime'
 
 type Props = {
   articles: FeedArticle[]
   hasChannels: boolean
-  /** Articles waiting for the categorizing agent. */
   uncategorized: number
   running: boolean
   onRunAgent: () => void
@@ -60,7 +59,7 @@ const Feed = ({
             >
               {article.title}
               <span className="feed-meta">
-                {article.channelId} · {timeAgo(article.createdAt)}
+                {article.channelId} · <ArticleTime article={article} />
               </span>
             </a>
           ))}

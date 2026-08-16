@@ -6,6 +6,13 @@ export function formatIso(dstr: string): string {
   }-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
 }
 
+export function formatWhen(dateString: string): string {
+  return new Date(dateString).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+}
+
 /** Compact relative time for feed items: "now", "12m", "3h", "2d". */
 export function timeAgo(dateString: string): string {
   const seconds = Math.max(

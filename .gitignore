@@ -28,5 +28,5 @@ test-results
 mt.pid
 docs-static
 
-# scratch output (story categorization runs)
+# scratch output
 tmp/
