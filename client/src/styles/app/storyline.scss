@@ -1,7 +1,8 @@
 @use '../vars' as *;
 
-// one arc across three columns: its stories, the story itself, and the agent.
-// Each scrolls on its own, so reading one never moves the others.
+// one arc across four equal columns: its stories, the story itself, the facts
+// it establishes, and the agent. Each scrolls on its own, so reading one never
+// moves the others.
 .storyline {
   flex: 1;
   min-width: 0;
@@ -12,28 +13,34 @@
   overflow: hidden;
 }
 
-// the dashboard's story list, at half the width: the cards inside are the same
-// component and the same styles, just in a narrower column
-.storyline-stories {
-  flex: 0 0 50%;
+// every column is a quarter, and none of them may push the others out: without
+// min-width a long headline or url would widen its own column past its share
+.storyline-stories,
+.storyline-detail,
+.storyline-facts,
+.storyline-chat {
+  flex: 0 0 25%;
   min-width: 0;
+}
+
+// the dashboard's story list, at a quarter of the width: the cards inside are
+// the same component and the same styles, just in a narrower column
+.storyline-stories {
   overflow-y: auto;
   padding: $unit3 $unit2 $unit6;
   border-right: 1px solid var(--borderColor);
 }
 
-// deliberately empty for now — the story goes here. Takes whatever the list
-// and the chat leave, so only those two carry a width.
+// deliberately empty for now — the story goes here
 .storyline-detail {
-  flex: 1 1 auto;
-  min-width: 0;
   overflow-y: auto;
   padding: $unit6 $unit4;
 }
 
+// the two panes on the right are each a fixed header over their own scroll,
+// so their headings stay put while their contents move
+.storyline-facts,
 .storyline-chat {
-  flex: 0 0 25%;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -84,8 +91,9 @@
   margin: $unit6 auto;
 }
 
-// the agent column. Nothing is wired up yet, but the shape is the real one:
-// a fixed header and composer with the transcript scrolling between them
+// facts and chat are the same kind of column — a heading that stays put over a
+// pane that scrolls — so they share the shape and differ only in contents
+.facts,
 .chat {
   flex: 1;
   min-height: 0;
@@ -93,6 +101,7 @@
   flex-direction: column;
 }
 
+.facts-head,
 .chat-head {
   flex: none;
   display: flex;
@@ -102,6 +111,7 @@
   padding: $unit3 $unit3 $unit2;
 }
 
+.facts-heading,
 .chat-heading {
   margin: 0;
   font-size: $text0;
@@ -109,6 +119,261 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--lighter);
+}
+
+.facts-heading {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+}
+
+.facts-count {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.facts-add {
+  flex: none;
+  width: $unit3;
+  height: $unit3;
+  padding: 0;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  font-size: $text3;
+  line-height: 1;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent);
+  }
+}
+
+.facts-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 $unit3 $unit3;
+}
+
+.facts-placeholder {
+  margin: 0;
+  font-size: $text1;
+  line-height: 1.45;
+  color: var(--lighter);
+}
+
+.facts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+}
+
+.fact {
+  padding: $unit1 0;
+  border-radius: $unit1;
+
+  &.is-editing {
+    background-color: var(--color-bg-hover);
+  }
+}
+
+// the fact reads as prose across the full width; everything about it — how
+// sure, where from, how to change it — sits on one quiet line underneath
+.fact-meta {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+  margin-top: $unit0;
+}
+
+// how far it can be trusted, as a number that colours with certainty: grey for
+// a rumour through to the accent for something settled
+.fact-confidence {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit2 + $unit0;
+  height: $unit2 + $unit0;
+  border-radius: 50%;
+  font-size: $text0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background-color: var(--subtle);
+
+  &.is-1 {
+    background-color: var(--subtle);
+  }
+
+  &.is-2 {
+    background-color: var(--lighter);
+  }
+
+  &.is-3 {
+    background-color: var(--color-article-new-marker);
+  }
+
+  &.is-4 {
+    background-color: $bleackOrange;
+  }
+
+  &.is-5 {
+    background-color: $green;
+  }
+}
+
+.fact-content {
+  margin: 0;
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+// the source link and the pencil: the same small square target, showing what
+// they are on hover rather than spending a word on it
+.fact-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit3;
+  height: $unit3;
+  padding: 0;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent);
+  }
+}
+
+.fact-input {
+  width: 100%;
+  padding: $unit1;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background-color: var(--surface-bg);
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--color-text);
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+}
+
+// the five rungs, filled up to the chosen one so the scale reads at a glance
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: $unit0;
+  margin-top: $unit1;
+}
+
+.confidence-rung {
+  width: $unit3;
+  height: $unit3;
+  padding: 0;
+  border: 1px solid var(--borderColor);
+  border-radius: 50%;
+  background: none;
+  font-size: $text0;
+  font-variant-numeric: tabular-nums;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+
+  &.is-on {
+    border-color: transparent;
+    background-color: var(--color-accent);
+    color: #fff;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.confidence-label {
+  margin-left: $unit0;
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.fact-actions {
+  display: flex;
+  gap: $unit1;
+  margin-top: $unit1;
+}
+
+.fact-btn {
+  padding: $unit0 $unit2;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background: none;
+  font-size: $text0;
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &--primary {
+    border-color: transparent;
+    background-color: var(--color-accent);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+  }
+
+  &--danger {
+    margin-left: auto;
+
+    &:hover:not(:disabled) {
+      color: $red;
+      border-color: $red;
+      background: none;
+    }
+  }
+}
+
+.fact-error {
+  margin: 0 0 $unit1;
+  font-size: $text0;
+  color: $red;
 }
 
 // which model is answering, quietly — it is the one thing about the session

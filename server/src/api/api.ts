@@ -10,6 +10,7 @@ import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as channels from "../models/channels";
 import * as dashboards from "../models/dashboards";
+import * as facts from "../models/facts";
 import * as proposals from "../models/proposals";
 import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
@@ -101,7 +102,70 @@ export const createApi = async () => {
 
       const found = await stories.feedForStoryline(id, slug, MAX_STORIES);
       if (!found) return error(404, "storyline not found");
-      return ok(found);
+      return ok({
+        ...found,
+        facts: await facts.forStoryline(id, found.storyline.id),
+      });
+    },
+
+    createFact: async (
+      dashboardId: string,
+      slug: string,
+      body: { content?: string; confidence?: number; articleId?: number | null },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const content = (body?.content ?? "").trim();
+      if (!content) return error(400, "content is required");
+
+      const found = await stories.feedForStoryline(id, slug, 1);
+      if (!found) return error(404, "storyline not found");
+
+      return ok({
+        fact: await facts.create({
+          dashboardId: id,
+          storylineId: found.storyline.id,
+          content,
+          ...(body.confidence !== undefined
+            ? { confidence: Number(body.confidence) }
+            : {}),
+          ...(body.articleId !== undefined ? { articleId: body.articleId } : {}),
+        }),
+      });
+    },
+
+    updateFact: async (
+      dashboardId: string,
+      factId: string,
+      body: { content?: string; confidence?: number; articleId?: number | null },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(factId);
+      if (!Number.isFinite(numeric)) return error(400, "fact id must be a number");
+
+      const content = body?.content?.trim();
+      if (content !== undefined && !content) {
+        return error(400, "content cannot be emptied");
+      }
+
+      const updated = await facts.update(id, numeric, {
+        ...(content !== undefined ? { content } : {}),
+        ...(body?.confidence !== undefined
+          ? { confidence: Number(body.confidence) }
+          : {}),
+        ...(body?.articleId !== undefined ? { articleId: body.articleId } : {}),
+      });
+      if (!updated) return error(404, "fact not found");
+      return ok({ fact: updated });
+    },
+
+    deleteFact: async (dashboardId: string, factId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(factId);
+      if (!Number.isFinite(numeric)) return error(400, "fact id must be a number");
+
+      const removed = await facts.remove(id, numeric);
+      if (!removed) return error(404, "fact not found");
+      return ok({ success: true });
     },
 
     /**
@@ -386,9 +450,13 @@ export const createApi = async () => {
       // first question is nearly always about something already on the screen,
       // and a turn spent looking up what is in front of the reader is a turn
       // they wait through for nothing.
-      const context = body?.storyline
+      const found = body?.storyline
+        ? await stories.feedForStoryline(id, body.storyline, MAX_STORIES)
+        : null;
+      const context = found
         ? storylineContext(
-            await stories.feedForStoryline(id, body.storyline, MAX_STORIES),
+            found,
+            await facts.forStoryline(id, found.storyline.id),
           )
         : undefined;
 
@@ -508,10 +576,9 @@ async function carryOut(
  * here would cost more than it is worth on a chat that asks about one of them.
  */
 function storylineContext(
-  found: { storyline: { title: string }; stories: StoryFeedEntry[] } | null,
-): string | undefined {
-  if (!found) return undefined;
-
+  found: { storyline: { title: string }; stories: StoryFeedEntry[] },
+  known: facts.Fact[],
+): string {
   const lines = found.stories.map((story) => {
     const when = dayjs(story.updatedAt).fromNow();
     return `- ${story.title} (${story.articles.length} articles, newest ${when})`;
@@ -526,5 +593,32 @@ function storylineContext(
     "",
     `Those titles are exact — pass one to GET_STORY to read the articles under`,
     `it. The arc may also have older stories not listed here.`,
+    "",
+    factsContext(known),
+  ].join("\n");
+}
+
+/**
+ * The standing knowledge, written into the system message rather than left to
+ * a tool call: it is what the agent knows before it looks at anything, and a
+ * question about the arc should not have to be paid for with a lookup first.
+ */
+function factsContext(known: facts.Fact[]): string {
+  if (known.length === 0) {
+    return `Nothing has been established as fact for this storyline yet. Add what you settle.`;
+  }
+
+  const lines = known.map((fact) => {
+    const label = facts.CONFIDENCE_LABELS[fact.confidence] ?? "";
+    const source = fact.articleTitle ? `, from "${fact.articleTitle}"` : "";
+    return `- #${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${source}`;
+  });
+
+  return [
+    `Established facts for this storyline, surest first. The number is how far`,
+    `each can be trusted: 1 rumour, 2 one source, 3 reported, 4 corroborated,`,
+    `5 certain. The ids are what UPDATE_FACT and DELETE_FACT take.`,
+    "",
+    lines.join("\n"),
   ].join("\n");
 }

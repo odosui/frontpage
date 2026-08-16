@@ -1,16 +1,25 @@
 import * as React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'slim-react-router'
-import api, { type Storyline as Arc, type StoryFeedEntry } from './api'
+import api, {
+  type Fact,
+  type Storyline as Arc,
+  type StoryFeedEntry,
+} from './api'
 import ArticleContentModal from './ArticleContentModal'
 import Stories from './Stories'
 import StorylineChat from './StorylineChat'
+import StorylineFacts from './StorylineFacts'
 import { useJobs } from './contexts/JobsContext'
 
 type Loaded = {
   storyline: Arc
   stories: StoryFeedEntry[]
+  facts: Fact[]
 }
+
+/** How often a page left open re-reads itself, for changes made elsewhere. */
+const REFRESH_MS = 20_000
 
 /**
  * One arc, on its own page: the stories it is made of down the left — the same
@@ -40,6 +49,28 @@ const Storyline: React.FC = () => {
     setLoaded(null)
     setError(null)
     load()
+  }, [load])
+
+  /**
+   * A quiet re-read for changes this page did not make: a fact added in another
+   * tab, or an agent run that refiled a story. The chat reports its own turns
+   * the moment they end, so this only has to be slow enough not to matter and
+   * fast enough that a page left open is not wrong for long.
+   *
+   * Paused while the tab is hidden — nobody is looking, and it would keep a
+   * backgrounded tab polling all night.
+   */
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    const timer = setInterval(tick, REFRESH_MS)
+    document.addEventListener('visibilitychange', tick)
+
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', tick)
+    }
   }, [load])
 
   // an article is "extracting" while its content job is in flight
@@ -123,11 +154,20 @@ const Storyline: React.FC = () => {
       {/* the story itself goes here — left blank on purpose for now */}
       <section className="storyline-detail" />
 
+      <aside className="storyline-facts">
+        <StorylineFacts
+          dashboardId={dashboardId}
+          storyline={storyline.slug}
+          facts={loaded.facts ?? []}
+          onChanged={load}
+        />
+      </aside>
+
       <aside className="storyline-chat">
         <StorylineChat
           dashboardId={dashboardId}
           storyline={storyline.slug}
-          onStoriesChanged={load}
+          onChanged={load}
         />
       </aside>
 

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { type AgentMessage } from './api'
 import AgentTranscript from './ui/agent/AgentTranscript'
 import ChatComposer from './ui/agent/ChatComposer'
@@ -8,8 +9,13 @@ type Props = {
   dashboardId: string
   /** The arc the conversation is about, by slug — the server reads it up. */
   storyline: string
-  /** Called when the agent has changed the stories, so the list can reload. */
-  onStoriesChanged?: () => void
+  /**
+   * Called whenever the agent may have changed what the page is showing: after
+   * every finished turn, and after an approved proposal. The agent writes facts
+   * and merges stories through its own tools, so the panes beside it cannot
+   * know they are stale by any other means.
+   */
+  onChanged?: () => void
 }
 
 /** In a conversation the roles are people, not job descriptions. */
@@ -24,13 +30,22 @@ const CHAT_LABEL: Partial<Record<AgentMessage['role'], string>> = {
  * composer, a session that stays open between questions, and the proposals it
  * needs answered before it can change anything.
  */
-const StorylineChat = ({ dashboardId, storyline, onStoriesChanged }: Props) => {
+const StorylineChat = ({ dashboardId, storyline, onChanged }: Props) => {
   const { session, messages, proposals, thinking, error, send, decide } =
     useAgentChat({
       dashboardId,
       kind: 'analyzing_agent',
       storyline,
     })
+
+  // A turn ending is the moment anything it wrote exists. Watching the flag
+  // rather than the transcript: a turn writes several messages, and only its
+  // end means the tools have all run.
+  const wasThinking = useRef(false)
+  useEffect(() => {
+    if (wasThinking.current && !thinking) onChanged?.()
+    wasThinking.current = thinking
+  }, [thinking, onChanged])
 
   // the system message is the agent's own instructions, not part of the
   // conversation; a tool result reads as the agent working, so it stays
@@ -47,7 +62,7 @@ const StorylineChat = ({ dashboardId, storyline, onStoriesChanged }: Props) => {
   const onDecide = async (id: number, approve: boolean) => {
     const decided = await decide(id, approve)
     // an approved merge rewrote the stories this page is showing
-    if (decided?.status === 'approved') onStoriesChanged?.()
+    if (decided?.status === 'approved') onChanged?.()
   }
 
   return (

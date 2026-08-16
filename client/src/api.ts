@@ -15,6 +15,14 @@ export default {
     api('get', `/dashboards/${dashboardId}/stories`),
   getStoryline: (dashboardId: string, slug: string) =>
     api('get', `/dashboards/${dashboardId}/storylines/${slug}`),
+
+  // Facts: what a storyline is taken to have established
+  createFact: (dashboardId: string, slug: string, fact: NewFact) =>
+    apiJson('post', `/dashboards/${dashboardId}/storylines/${slug}/facts`, fact),
+  updateFact: (dashboardId: string, id: number, patch: FactPatch) =>
+    apiJson('patch', `/dashboards/${dashboardId}/facts/${id}`, patch),
+  deleteFact: (dashboardId: string, id: number) =>
+    api('delete', `/dashboards/${dashboardId}/facts/${id}`),
   addChannel: (dashboardId: string, channel: Channel) =>
     apiJson('post', `/dashboards/${dashboardId}/channels`, { channel }),
   deleteChannel: (dashboardId: string, id: string) =>
@@ -269,6 +277,50 @@ export type Storyline = {
   id: number
   title: string
   slug: string
+}
+
+/** 1 someone said it, 5 established beyond doubt. */
+export const CONFIDENCE_LABELS: Record<number, string> = {
+  1: 'rumour',
+  2: 'one source',
+  3: 'reported',
+  4: 'corroborated',
+  5: 'certain',
+}
+
+export const MIN_CONFIDENCE = 1
+export const MAX_CONFIDENCE = 5
+export const DEFAULT_CONFIDENCE = 3
+
+/**
+ * Something the storyline is taken to have established, as opposed to what any
+ * one article claims. Written by the reader or by the analyst.
+ */
+export type Fact = {
+  id: number
+  storylineId: number
+  content: string
+  /** 1-5; see CONFIDENCE_LABELS. */
+  confidence: number
+  /** The article it rests on, when it rests on one we hold. */
+  articleId: number | null
+  articleTitle: string | null
+  articleUrl: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type NewFact = {
+  content: string
+  confidence?: number
+  articleId?: number | null
+}
+
+/** Only what changed; anything left out stays as it was. */
+export type FactPatch = {
+  content?: string
+  confidence?: number
+  articleId?: number | null
 }
 
 /**

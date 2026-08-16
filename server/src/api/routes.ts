@@ -63,6 +63,28 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   },
   {
     method: "post",
+    path: "/api/dashboards/:dashboardId/storylines/:slug/facts",
+    handler: async ({ pathParams, body }) =>
+      api.createFact(
+        pathParams.dashboardId ?? "",
+        pathParams.slug ?? "",
+        body,
+      ),
+  },
+  {
+    method: "patch",
+    path: "/api/dashboards/:dashboardId/facts/:id",
+    handler: async ({ pathParams, body }) =>
+      api.updateFact(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
+  },
+  {
+    method: "delete",
+    path: "/api/dashboards/:dashboardId/facts/:id",
+    handler: async ({ pathParams }) =>
+      api.deleteFact(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+  },
+  {
+    method: "post",
     path: "/api/dashboards/:dashboardId/articles/:id/content",
     handler: async ({ pathParams }) =>
       api.extractArticleContent(

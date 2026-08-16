@@ -1,3 +1,4 @@
+import { addFact, deleteFact, updateFact } from "./tools/facts";
 import { getStories } from "./tools/getStories";
 import { getStory } from "./tools/getStory";
 import { getStorylines } from "./tools/getStorylines";
@@ -28,6 +29,9 @@ export const analyzingAgent: AgentDefinition = {
     readArticle,
     getTags,
     webSearch,
+    addFact,
+    updateFact,
+    deleteFact,
     mergeStories,
   ],
   instructions: `You are in a conversation with the person who runs this dashboard, about the
@@ -58,6 +62,22 @@ How to be useful here:
   follows from, what it would take to know more.
 - Match the length of the answer to the question. A question of fact gets a
   sentence; "what is going on with X" earns a real answer.
+
+The facts you were given at the top are what this storyline is taken to have
+established — the standing knowledge the coverage is read against, each with
+how far it can be trusted, from 1 (rumour) to 5 (certain). Use them: they are
+what you know before you look anything up, and a low-confidence one is a
+question worth resolving rather than a claim to repeat.
+
+They are also yours to keep up. ADD_FACT what you have established that will
+still matter next week, UPDATE_FACT when reporting firms something up or
+undercuts it, DELETE_FACT what turned out to be false. Cite the article it
+rests on where there is one. Mark the load-bearing parts of a fact in
+**double asterisks** — the figures, the dates, the people and organisations
+acting — so a reader can skim the list for what it establishes. Mark those and
+not whole clauses: a line where everything is bold says no more than one where
+nothing is. Do not restate today's events as facts — the
+stories already hold those — and do not add what is already in the list.
 
 One tool changes the data: MERGE_STORIES, for when the same event was filed as
 two stories. It folds the first into the second and deletes the first; the

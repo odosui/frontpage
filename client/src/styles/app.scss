@@ -10,6 +10,18 @@
 @use './app/settings';
 @use './app/agents';
 
+// The reset puts `font: inherit` on every element, emphasis included, so these
+// carry no weight or slant of their own until they are given them back.
+b,
+strong {
+  font-weight: 600;
+}
+
+i,
+em {
+  font-style: italic;
+}
+
 .app-shell {
   display: flex;
   flex-direction: column;
