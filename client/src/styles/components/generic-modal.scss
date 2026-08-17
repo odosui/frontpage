@@ -7,19 +7,33 @@
   right: 0;
   bottom: 0;
   display: flex;
-  align-items: center;
+  // centred by the modal's own auto margins rather than by align-items: a
+  // flex item taller than its container is centred by overflowing at *both*
+  // ends, and the half above the top can never be scrolled back to
+  align-items: flex-start;
   justify-content: center;
-  z-index: 10;
+  overflow-y: auto;
+  padding: $unit4 $unit2;
+  // above everything the app draws, the topbar (300) and the jobs panel (260)
+  // included: a modal the topbar paints over is a modal with its head cut off,
+  // and a backdrop that dims all but one bar is not a backdrop
+  z-index: 1000;
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 
   .generic-modal {
     position: relative;
+    margin: auto;
     background-color: var(--color-note-area-bg);
     padding: $unit5;
     border-radius: $unit3;
-    z-index: 11;
+    z-index: 1001;
+    // nothing may grow past the screen it sits in. Contents that manage their
+    // own scrolling never reach this; the rest scroll the overlay instead,
+    // which is why the top stays reachable either way
+    max-height: calc(100vh - #{$unit6});
+    overflow-y: auto;
     box-shadow:
       0 $unit1 $unit1 (-$unit0) rgb(0 0 0 / 20%),
       0 $unit2 $unit3 0 rgb(0 0 0 / 14%),

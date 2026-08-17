@@ -1,4 +1,5 @@
 @use '../vars' as *;
+@use '../breakpoints' as *;
 
 // one arc across four equal columns: its stories, the story itself, the facts
 // it establishes, and the agent. Each scrolls on its own, so reading one never
@@ -179,31 +180,23 @@
 }
 
 .facts-version {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
   width: 100%;
-  padding: $unit1;
+  padding: $unit0 $unit1;
   border: none;
-  border-radius: $unit1;
+  border-radius: $unit0;
   background: none;
+  font-size: $text0;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.12s ease;
 
   &:hover {
     background-color: var(--color-bg-hover);
   }
-
-  // the one on screen, marked rather than merely remembered
-  &.is-current {
-    background-color: var(--color-bg-hover);
-  }
-}
-
-.facts-version-head {
-  display: flex;
-  align-items: baseline;
-  gap: $unit1;
-  font-size: $text0;
 }
 
 .facts-version-no {
@@ -221,28 +214,179 @@
   color: var(--lighter);
 }
 
-// pushed to the end of the line, so the versions read as a column of dates
-.facts-version-count {
+// what the revision did, in the shorthand a commit list uses, pushed to the
+// end so the column of them lines up
+.facts-version-counts {
+  display: flex;
+  gap: $unit0;
   margin-left: auto;
+  font-variant-numeric: tabular-nums;
 }
 
-.facts-version-why {
-  display: block;
-  margin-top: $unit0;
-  font-size: $text0;
-  line-height: 1.5;
-  color: var(--lighter);
+.facts-version-count {
+  min-width: $unit2;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-// reading an older list: said plainly, because everything below it is out of
-// date and nothing about the facts themselves shows that
-.facts-past {
+// added, dropped, rewritten — the same three colours in the list and in the
+// diff, so the shorthand and the thing it stands for read as one
+.facts-version-counts,
+.facts-diff-counts {
+  .is-added {
+    color: $green;
+  }
+
+  .is-removed {
+    color: $red;
+  }
+
+  .is-rewritten {
+    color: var(--color-marker-amber);
+  }
+}
+
+// the revision in full, in a modal: why it was made beside what it did. The
+// widest thing in the app — two columns of prose, and clipping either of them
+// is what the modal exists to avoid
+.generic-modal-overlay .generic-modal .generic-modal-content.facts-diff {
+  max-width: none;
+  width: min(#{$unit17 + $unit9}, 92vw);
+}
+
+.facts-diff {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  // exactly the room the modal has: its own cap, less the padding inside it,
+  // so the columns scroll rather than the modal scrolling the heading away
+  max-height: calc(100vh - #{$unit6 + $unit5 * 2});
+}
+
+.facts-diff-head {
+  flex: none;
+  margin-bottom: $unit3;
+}
+
+.facts-diff-title {
   display: flex;
   align-items: baseline;
   gap: $unit1;
-  margin: 0 0 $unit2;
+  margin: 0;
+  font-size: $text2;
+}
+
+.facts-diff-counts {
+  margin: $unit0 0 0;
   font-size: $text0;
   color: var(--lighter);
+  font-variant-numeric: tabular-nums;
+}
+
+// the two columns, each scrolling on its own
+.facts-diff-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: $unit4;
+}
+
+// the half that cannot be reconstructed from the facts themselves, so it keeps
+// a column of its own rather than a paragraph the diff pushes off the screen
+.facts-diff-why {
+  flex: 0 0 $unit12;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.facts-diff-why-text {
+  margin: 0;
+  padding: $unit2;
+  border-radius: $unit1;
+  background-color: var(--color-bg-hover);
+  font-size: $text1;
+  line-height: 1.5;
+  color: var(--color-text);
+
+  &.is-empty {
+    color: var(--lighter);
+  }
+}
+
+// side by side needs the width for it; below that the reasoning goes back on
+// top, where it reads first and the diff follows
+@media (max-width: #{$screen-lg-min}) {
+  .facts-diff-body {
+    flex-direction: column;
+    gap: $unit3;
+  }
+
+  .facts-diff-why {
+    flex: none;
+    max-height: 28vh;
+  }
+}
+
+.facts-diff-list {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+}
+
+// a diff line: the marker in its own gutter, then the confidence, then the
+// fact. The tint carries the change; the marker is there for when it cannot
+.facts-diff-row {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  padding: $unit0 $unit1;
+  border-radius: $unit0;
+  font-size: $text1;
+  line-height: 1.45;
+
+  &.is-added {
+    background-color: rgba($green, 0.12);
+  }
+
+  &.is-removed {
+    background-color: rgba($red, 0.1);
+    color: var(--lighter);
+    text-decoration: line-through;
+    text-decoration-color: rgba($red, 0.6);
+  }
+
+  // unchanged facts are the context the changes read against, and nothing more
+  &.is-context {
+    color: var(--lighter);
+  }
+}
+
+.facts-diff-mark {
+  flex: none;
+  width: $unit1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  text-decoration: none;
+
+  .facts-diff-row.is-added & {
+    color: $green;
+  }
+
+  .facts-diff-row.is-removed & {
+    color: $red;
+  }
+}
+
+.facts-diff-text {
+  min-width: 0;
 }
 
 .facts-body {

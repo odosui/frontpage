@@ -13,8 +13,6 @@ import ConfidencePicker from './ConfidencePicker'
 
 type Props = {
   fact: Fact
-  /** An older version on screen: it can be read, but not written back to. */
-  readOnly?: boolean
   onSave: (id: string, patch: FactPatch) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
@@ -24,7 +22,7 @@ type Props = {
  * the common case, so editing is a mode you enter rather than a form standing
  * open beside every row.
  */
-const FactRow = ({ fact, readOnly = false, onSave, onDelete }: Props) => {
+const FactRow = ({ fact, onSave, onDelete }: Props) => {
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(fact.content)
   const [confidence, setConfidence] = useState(fact.confidence)
@@ -131,16 +129,14 @@ const FactRow = ({ fact, readOnly = false, onSave, onDelete }: Props) => {
           </a>
         )}
 
-        {!readOnly && (
-          <button
-            className="fact-icon"
-            onClick={start}
-            title="Edit this fact"
-            aria-label={`Edit: ${fact.content}`}
-          >
-            <EditIcon />
-          </button>
-        )}
+        <button
+          className="fact-icon"
+          onClick={start}
+          title="Edit this fact"
+          aria-label={`Edit: ${fact.content}`}
+        >
+          <EditIcon />
+        </button>
 
         {/* when it was written down, which is not the same as when the thing
             happened — that belongs in the line itself. The list runs newest

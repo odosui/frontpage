@@ -9,6 +9,7 @@ import MarkdownTextarea from './ui/MarkdownTextarea'
 import ConfidencePicker from './ui/facts/ConfidencePicker'
 import FactRow from './ui/facts/FactRow'
 import FactsHistory from './ui/facts/FactsHistory'
+import FactsVersionModal from './ui/facts/FactsVersionModal'
 
 type Props = {
   dashboardId: string
@@ -48,8 +49,8 @@ const StorylineFacts = ({
 
   const [showHistory, setShowHistory] = useState(false)
   const [versions, setVersions] = useState<FactsVersion[]>([])
-  // which version is on screen; the current one unless the reader picked back
-  const [viewing, setViewing] = useState(version)
+  // the revision being read in full, if any
+  const [reading, setReading] = useState<FactsVersion | null>(null)
 
   const loadHistory = useCallback(() => {
     return api
@@ -61,9 +62,8 @@ const StorylineFacts = ({
   }, [dashboardId, storyline])
 
   // a revision — this pane's or the analyst's — lands as a new version prop,
-  // which drops any older one being read and refreshes the list behind it
+  // which refreshes the list behind it
   useEffect(() => {
-    setViewing(version)
     if (showHistory) loadHistory()
   }, [version, showHistory, loadHistory])
 
@@ -100,21 +100,14 @@ const StorylineFacts = ({
   const remove = (id: string) =>
     guard(() => api.deleteFact(dashboardId, storyline, id))
 
-  // reading an older version is reading, not editing: what is shown is that
-  // version's list, and the pane's write actions step out of the way
-  const past = viewing !== version
-  const shown = past
-    ? (versions.find((entry) => entry.version === viewing)?.facts ?? [])
-    : facts
-
   return (
     <div className="facts">
       <header className="facts-head">
         <h2 className="facts-heading">
           Facts
-          {version > 0 && <span className="facts-count">v{viewing}</span>}
-          {shown.length > 0 && (
-            <span className="facts-count">{shown.length}</span>
+          {version > 0 && <span className="facts-count">v{version}</span>}
+          {facts.length > 0 && (
+            <span className="facts-count">{facts.length}</span>
           )}
         </h2>
         <div className="facts-tools">
@@ -124,46 +117,30 @@ const StorylineFacts = ({
               const next = !showHistory
               setShowHistory(next)
               if (next) loadHistory()
-              else setViewing(version)
             }}
             aria-expanded={showHistory}
             title="How this list got here"
           >
             ⟲
           </button>
-          {!past && (
-            <button
-              className="facts-add"
-              onClick={() => setAdding((was) => !was)}
-              title="Write down a fact"
-            >
-              {adding ? '×' : '+'}
-            </button>
-          )}
+          <button
+            className="facts-add"
+            onClick={() => setAdding((was) => !was)}
+            title="Write down a fact"
+          >
+            {adding ? '×' : '+'}
+          </button>
         </div>
       </header>
 
       <div className="facts-body">
         {showHistory && (
           <div className="facts-history">
-            <FactsHistory
-              versions={versions}
-              selected={viewing}
-              onSelect={setViewing}
-            />
+            <FactsHistory versions={versions} onOpen={setReading} />
           </div>
         )}
 
-        {past && (
-          <p className="facts-past">
-            Version {viewing} of {versions.length}, as it stood then.{' '}
-            <button className="fact-btn" onClick={() => setViewing(version)}>
-              Back to current
-            </button>
-          </p>
-        )}
-
-        {adding && !past && (
+        {adding && (
           <div className="fact is-editing">
             <MarkdownTextarea
               className="fact-input"
@@ -199,7 +176,7 @@ const StorylineFacts = ({
 
         {error && <p className="fact-error">{error}</p>}
 
-        {shown.length === 0 && !adding ? (
+        {facts.length === 0 && !adding ? (
           <p className="facts-placeholder">
             Nothing established yet. What holds true across this storyline —
             written by you or by the analyst — lives here, and is what the
@@ -207,11 +184,10 @@ const StorylineFacts = ({
           </p>
         ) : (
           <ul className="facts-list">
-            {shown.map((fact) => (
+            {facts.map((fact) => (
               <FactRow
                 key={fact.id}
                 fact={fact}
-                readOnly={past}
                 onSave={save}
                 onDelete={remove}
               />
@@ -219,6 +195,17 @@ const StorylineFacts = ({
           </ul>
         )}
       </div>
+
+      <FactsVersionModal
+        version={reading}
+        previous={
+          reading
+            ? (versions[versions.findIndex((v) => v.id === reading.id) + 1] ??
+              null)
+            : null
+        }
+        onClose={() => setReading(null)}
+      />
     </div>
   )
 }
