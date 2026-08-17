@@ -16,9 +16,6 @@ export type ExtractArticlesPayload = {
   lastModified?: string | null;
 };
 
-/** How many articles a channel keeps. Mirrors the API's page size. */
-const MAX_ITEMS = 100;
-
 /** Run the model over a fetched page and store whatever articles are new. */
 export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
   const { dashboardId, channelId, snapshotId, contentHash, etag, lastModified } =
@@ -46,13 +43,7 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
     return true;
   });
 
-  const items = await articles.prepend(
-    dashboardId,
-    channelId,
-    unique,
-    MAX_ITEMS,
-  );
-  const added = items.filter((a) => a.new).length;
+  const added = await articles.prepend(dashboardId, channelId, unique);
 
   // only now is it safe to remember this page as "already analyzed" — both the
   // hash and the HTTP validators, so a failed run always re-downloads

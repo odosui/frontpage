@@ -395,7 +395,7 @@ $feed-width: $unit12;
 
   // already read: a quiet standing mark rather than a call to action
   &.has-content {
-    color: var(--color-article-new-marker);
+    color: var(--color-marker-amber);
   }
 
   &.is-busy {
@@ -418,11 +418,6 @@ $feed-width: $unit12;
 
   .story-article-row:hover & {
     color: var(--color-accent);
-  }
-
-  // unread is carried by weight alone — the gutter dot now reads importance
-  &--new {
-    font-weight: 500;
   }
 }
 
@@ -451,7 +446,7 @@ $feed-width: $unit12;
   }
 
   &.is-mid {
-    background-color: var(--color-article-new-marker);
+    background-color: var(--color-marker-amber);
   }
 
   &.is-high {
@@ -581,9 +576,9 @@ $feed-width: $unit12;
     color: var(--color-accent);
   }
 
-  // unread: bolder text plus a dot sitting inline before it, so wrapped
-  // lines start flush left instead of hanging off a gutter
-  &--new {
+  // not filed under a story yet: bolder text plus a dot sitting inline before
+  // it, so wrapped lines start flush left instead of hanging off a gutter
+  &--uncategorized {
     font-weight: 600;
 
     &::before {
@@ -594,7 +589,7 @@ $feed-width: $unit12;
       margin-right: $unit1;
       vertical-align: middle;
       border-radius: 50%;
-      background-color: var(--color-article-new-marker);
+      background-color: var(--color-marker-amber);
     }
   }
 }

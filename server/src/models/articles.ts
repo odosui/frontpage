@@ -18,15 +18,16 @@ export async function feed(
     title: string;
     url: string;
     image: string;
-    new: boolean;
+    uncategorized: boolean;
     channel_id: string;
     created_at: Date;
     published_at: Date | null;
     importance: number | null;
     has_content: boolean;
   }>(
-    `select id, title, url, image, is_new as new, channel_id, created_at,
-            published_at, importance, content is not null as has_content
+    `select id, title, url, image, channel_id, created_at,
+            published_at, importance, content is not null as has_content,
+            story_id is null and skipped_at is null as uncategorized
      from articles
      where dashboard_id = $1
      order by sorted_at desc, position, id
@@ -40,7 +41,7 @@ export async function feed(
     title: r.title,
     url: r.url,
     image: r.image,
-    new: r.new,
+    uncategorized: r.uncategorized,
     channelId: r.channel_id,
     createdAt: new Date(r.created_at).toISOString(),
     publishedAt: r.published_at ? new Date(r.published_at).toISOString() : null,
@@ -162,24 +163,6 @@ export async function markSkipped(
 }
 
 /**
- * Clears the unread marks on a channel. `prepend` does this as part of storing
- * a fetch, but a fetch that finds the page unchanged never gets that far — the
- * articles are still the ones the reader has already seen, so they stop being
- * new either way. Returns how many rows it cleared.
- */
-export async function markRead(
-  dashboardId: string,
-  channelId: string,
-): Promise<number> {
-  const { rowCount } = await query(
-    `update articles set is_new = false
-      where dashboard_id = $1 and channel_id = $2 and is_new`,
-    [dashboardId, channelId],
-  );
-  return rowCount ?? 0;
-}
-
-/**
  * The tags on each of these articles, alphabetically. article_tags is a plain
  * (article_id, tag_id) pair with no ordinal, so the order the agent wrote them
  * in — broadest first — isn't recoverable; alphabetical at least keeps the
@@ -282,17 +265,15 @@ export async function uncategorized(
 }
 
 /**
- * Put `items` at the top of a channel's list, marked as new, demoting whatever
- * was already there. Items whose url is already stored are skipped. Runs under
- * a row lock so concurrent refreshes can't interleave. Returns the resulting
- * list, capped at `limit`.
+ * Put `items` at the top of a channel's list, demoting whatever was already
+ * there. Items whose url is already stored are skipped. Runs under a row lock
+ * so concurrent refreshes can't interleave. Returns how many rows it inserted.
  */
 export function prepend(
   dashboardId: string,
   channelId: string,
   items: Article[],
-  limit: number,
-): Promise<Article[]> {
+): Promise<number> {
   return withTransaction(async (client) => {
     await client.query(
       "select 1 from channels where dashboard_id = $1 and id = $2 for update",
@@ -300,17 +281,18 @@ export function prepend(
     );
 
     await client.query(
-      `update articles set is_new = false, position = position + $3
+      `update articles set position = position + $3
        where dashboard_id = $1 and channel_id = $2`,
       [dashboardId, channelId, items.length],
     );
 
-    if (items.length > 0) {
-      await client.query(
-        `insert into articles
-           (dashboard_id, channel_id, position, title, url, image, is_new,
+    if (items.length === 0) return 0;
+
+    const { rowCount } = await client.query(
+      `insert into articles
+           (dashboard_id, channel_id, position, title, url, image,
             published_at, description)
-         select $1, $2, t.i - 1, t.title, t.url, t.image, true,
+         select $1, $2, t.i - 1, t.title, t.url, t.image,
                 t.published_at, nullif(t.description, '')
          from unnest($3::text[], $4::text[], $5::text[], $6::timestamptz[],
                      $7::text[])
@@ -321,27 +303,17 @@ export function prepend(
              and existing.channel_id = $2
              and existing.url = t.url
          )`,
-        [
-          dashboardId,
-          channelId,
-          items.map((a) => a.title),
-          items.map((a) => a.url),
-          items.map((a) => a.image),
-          items.map((a) => a.publishedAt ?? null),
-          items.map((a) => a.description ?? ""),
-        ],
-      );
-    }
-
-    const { rows } = await client.query<Article>(
-      `select title, url, image, is_new as new
-       from articles
-       where dashboard_id = $1 and channel_id = $2
-       order by position
-       limit $3`,
-      [dashboardId, channelId, limit],
+      [
+        dashboardId,
+        channelId,
+        items.map((a) => a.title),
+        items.map((a) => a.url),
+        items.map((a) => a.image),
+        items.map((a) => a.publishedAt ?? null),
+        items.map((a) => a.description ?? ""),
+      ],
     );
-    return rows;
+    return rowCount ?? 0;
   });
 }
 
@@ -361,17 +333,16 @@ export function replace(
 
     await client.query(
       `insert into articles
-         (dashboard_id, channel_id, position, title, url, image, is_new)
-       select $1, $2, t.i - 1, t.title, t.url, t.image, t.is_new
-       from unnest($3::text[], $4::text[], $5::text[], $6::boolean[])
-         with ordinality as t(title, url, image, is_new, i)`,
+         (dashboard_id, channel_id, position, title, url, image)
+       select $1, $2, t.i - 1, t.title, t.url, t.image
+       from unnest($3::text[], $4::text[], $5::text[])
+         with ordinality as t(title, url, image, i)`,
       [
         dashboardId,
         channelId,
         items.map((a) => a.title),
         items.map((a) => a.url),
         items.map((a) => a.image),
-        items.map((a) => a.new ?? false),
       ],
     );
   });

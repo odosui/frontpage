@@ -1,5 +1,4 @@
 import { createHash } from "crypto";
-import * as articles from "../../models/articles";
 import * as channels from "../../models/channels";
 import { fetchPage } from "../../components/websites/download";
 import { saveSnapshot } from "../../models/snapshots";
@@ -38,22 +37,17 @@ export const fetchPageHandler: JobHandler = async (payload, { log }) => {
 
   const page = await fetchPage(channel.url, validators);
 
-  // nothing new to store, but the reader has seen what is already there
+  // nothing new to store
   if (page.notModified) {
-    const read = await articles.markRead(dashboardId, channelId);
-    log(`${channel.url} unchanged (304), skipping analysis — ${read} marked read`);
-    return { result: { url: channel.url, unchanged: "not-modified", read } };
+    log(`${channel.url} unchanged (304), skipping analysis`);
+    return { result: { url: channel.url, unchanged: "not-modified" } };
   }
 
   const contentHash = createHash("sha256").update(page.html).digest("hex");
 
   if (state?.contentHash === contentHash) {
-    const read = await articles.markRead(dashboardId, channelId);
-    log(
-      `${channel.url} unchanged (same content), skipping analysis — ` +
-        `${read} marked read`,
-    );
-    return { result: { url: channel.url, unchanged: "same-content", read } };
+    log(`${channel.url} unchanged (same content), skipping analysis`);
+    return { result: { url: channel.url, unchanged: "same-content" } };
   }
 
   const snapshotId = await saveSnapshot(channel.url, page);

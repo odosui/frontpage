@@ -151,7 +151,7 @@ const StatsBody: React.FC<{ stats: DatabaseStats }> = ({ stats }) => {
         <Stat
           label="Articles"
           value={num(content.articles)}
-          hint={`${num(content.newArticles)} unseen`}
+          hint={`${num(content.uncategorizedArticles)} uncategorized`}
         />
         <Stat
           label="Page snapshots"

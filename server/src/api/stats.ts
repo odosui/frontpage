@@ -38,7 +38,7 @@ export type DatabaseStats = {
     dashboards: number;
     channels: number;
     articles: number;
-    newArticles: number;
+    uncategorizedArticles: number;
     channelsWithoutUrl: number;
     channelsNeverFetched: number;
     newestArticleAt: string | null;
@@ -215,7 +215,8 @@ async function contentStats() {
     `select (select count(*) from dashboards)                       as dashboards,
             (select count(*) from channels)                          as channels,
             (select count(*) from articles)                          as articles,
-            (select count(*) from articles where is_new)             as new_articles,
+            (select count(*) from articles
+               where story_id is null and skipped_at is null)        as uncategorized_articles,
             (select count(*) from channels where url = '')           as channels_without_url,
             (select count(*) from channels where fetched_at is null) as channels_never_fetched,
             (select max(created_at) from articles)                   as newest_article_at,
@@ -226,7 +227,7 @@ async function contentStats() {
     dashboards: Number(r.dashboards ?? 0),
     channels: Number(r.channels ?? 0),
     articles: Number(r.articles ?? 0),
-    newArticles: Number(r.new_articles ?? 0),
+    uncategorizedArticles: Number(r.uncategorized_articles ?? 0),
     channelsWithoutUrl: Number(r.channels_without_url ?? 0),
     channelsNeverFetched: Number(r.channels_never_fetched ?? 0),
     newestArticleAt: iso(r.newest_article_at),

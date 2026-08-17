@@ -22,7 +22,6 @@ type StoryArticleRow = {
   title: string;
   url: string;
   image: string;
-  new: boolean;
   channel_id: string;
   created_at: Date;
   published_at: Date | null;
@@ -123,7 +122,7 @@ async function withArticles(rows: StoryRow[]): Promise<StoryFeedEntry[]> {
 
   const byId = new Map(entries.map((e) => [e.id, e]));
   const { rows: articleRows } = await query<StoryArticleRow>(
-    `select id, story_id, title, url, image, is_new as new, channel_id,
+    `select id, story_id, title, url, image, channel_id,
             created_at, published_at, importance,
             content is not null as has_content
      from articles
@@ -141,7 +140,8 @@ async function withArticles(rows: StoryRow[]): Promise<StoryFeedEntry[]> {
       title: row.title,
       url: row.url,
       image: row.image,
-      new: row.new,
+      // an article under a story is by definition categorized
+      uncategorized: false,
       channelId: row.channel_id,
       createdAt: row.created_at.toISOString(),
       publishedAt: row.published_at?.toISOString() ?? null,

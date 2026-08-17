@@ -54,7 +54,9 @@ const Feed = ({
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`feed-item${article.new ? ' feed-item--new' : ''}`}
+              className={`feed-item${
+                article.uncategorized ? ' feed-item--uncategorized' : ''
+              }`}
               title={article.title}
             >
               {article.title}

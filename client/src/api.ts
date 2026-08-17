@@ -117,7 +117,7 @@ export type DatabaseStats = {
     dashboards: number
     channels: number
     articles: number
-    newArticles: number
+    uncategorizedArticles: number
     channelsWithoutUrl: number
     channelsNeverFetched: number
     newestArticleAt: string | null
@@ -239,7 +239,6 @@ export type Article = {
   title: string
   url: string
   image: string
-  new?: boolean
   /**
    * When the outlet published it. Only feeds tell us this — a scraped front
    * page leaves it null, and `createdAt` (when we first saw it) is all there is.
@@ -266,6 +265,8 @@ export type FeedArticle = Article & {
   createdAt: string
   /** Whether its text has been pulled from the page yet. */
   hasContent: boolean
+  /** Still waiting for the categorizing agent: no story, and not skipped. */
+  uncategorized: boolean
   /** 1-10, as scored by the categorizing agent; null until it has run. */
   importance: number | null
   /** Broadest first; empty until the article has been categorized. */

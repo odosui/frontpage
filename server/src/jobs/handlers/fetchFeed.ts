@@ -10,9 +10,6 @@ export type FetchFeedPayload = {
   channelId: string;
 };
 
-/** How many articles a channel keeps. Mirrors extract_articles. */
-const MAX_ITEMS = 100;
-
 /** How far back into a feed is worth storing. See `recentOnly`. */
 const MAX_AGE_DAYS = 5;
 
@@ -50,19 +47,17 @@ export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
 
   const feed = await fetchFeed(channel.url, validators);
 
-  // nothing new to store, but the reader has seen what is already there
+  // nothing new to store
   if (feed.notModified) {
-    const read = await articles.markRead(dashboardId, channelId);
-    log(`${channel.url} unchanged (304) — ${read} marked read`);
-    return { result: { url: channel.url, unchanged: "not-modified", read } };
+    log(`${channel.url} unchanged (304)`);
+    return { result: { url: channel.url, unchanged: "not-modified" } };
   }
 
   const contentHash = createHash("sha256").update(feed.xml).digest("hex");
 
   if (state?.contentHash === contentHash) {
-    const read = await articles.markRead(dashboardId, channelId);
-    log(`${channel.url} unchanged (same content) — ${read} marked read`);
-    return { result: { url: channel.url, unchanged: "same-content", read } };
+    log(`${channel.url} unchanged (same content)`);
+    return { result: { url: channel.url, unchanged: "same-content" } };
   }
 
   const items = parseFeed(feed.xml, channel.url);
@@ -73,17 +68,11 @@ export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
   }
 
   // an empty list here is a quiet week, not a broken channel, so it goes
-  // through prepend as normal — which clears the unread marks and lets the
-  // validators be saved below, where the throw above deliberately does not
+  // through prepend as normal — which lets the validators be saved below,
+  // where the throw above deliberately does not
   const fresh = recentOnly(items, MAX_AGE_DAYS);
 
-  const stored = await articles.prepend(
-    dashboardId,
-    channelId,
-    fresh,
-    MAX_ITEMS,
-  );
-  const added = stored.filter((a) => a.new).length;
+  const added = await articles.prepend(dashboardId, channelId, fresh);
 
   // only now is it safe to remember this feed as "already read"
   await channels.saveValidators(dashboardId, channelId, {

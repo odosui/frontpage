@@ -2,7 +2,6 @@ export type Article = {
   title: string;
   url: string;
   image: string;
-  new?: boolean;
   publishedAt?: string | null;
   description?: string;
 };
@@ -26,6 +25,8 @@ export type FeedArticle = Article & {
   createdAt: string;
   /** Whether its text has been pulled from the page yet. */
   hasContent: boolean;
+  /** Still waiting for the categorizing agent: no story, and not skipped. */
+  uncategorized: boolean;
   /** 1-10, as scored by the categorizing agent; null until it has run. */
   importance: number | null;
   /** Broadest first; empty until the article has been categorized. */

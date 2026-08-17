@@ -81,9 +81,7 @@ const Stories = ({
                   href={article.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`story-article${
-                    article.new ? ' story-article--new' : ''
-                  }`}
+                  className="story-article"
                   title={article.title}
                 >
                   {article.title}
