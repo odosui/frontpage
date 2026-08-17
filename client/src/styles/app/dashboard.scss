@@ -328,9 +328,19 @@ $feed-width: $unit12;
 // the storyline reads as plain header text; the colour is spent on the story.
 // both spans need their colour set outright — the global `*` rule would
 // otherwise paint them --color-text instead of letting them inherit
+// capped so a long arc name cannot push the story title — the part that says
+// what happened — off the line; the full title is on the tooltip
 .story-storyline {
+  max-width: $unit11;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--lighter);
   white-space: nowrap;
+  // clipping makes this a scroll container, whose baseline is synthesized from
+  // its bottom edge — it would hang below the title under the header's
+  // baseline alignment. Both spans share a font size and line height, so
+  // aligning their tops puts the baselines back in the same place.
+  align-self: flex-start;
 }
 
 .story-title-text {

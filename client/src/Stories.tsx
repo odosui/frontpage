@@ -49,7 +49,9 @@ const Stories = ({
         <article key={story.id} className="story">
           <h2 className="story-title">
             {story.storyline && (
-              <span className="story-storyline">{story.storyline.title}</span>
+              <span className="story-storyline" title={story.storyline.title}>
+                {story.storyline.title}
+              </span>
             )}
             <span className="story-title-text">{story.title}</span>
             {onMove && (

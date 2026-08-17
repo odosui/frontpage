@@ -104,16 +104,33 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.deletePrediction(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
   {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/storylines/:slug/facts/history",
+    handler: async ({ pathParams }) =>
+      api.getFactsHistory(pathParams.dashboardId ?? "", pathParams.slug ?? ""),
+  },
+  // a fact is identified inside its storyline's set, not globally, so both
+  // halves of the address are needed to reach one
+  {
     method: "patch",
-    path: "/api/dashboards/:dashboardId/facts/:id",
+    path: "/api/dashboards/:dashboardId/storylines/:slug/facts/:id",
     handler: async ({ pathParams, body }) =>
-      api.updateFact(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
+      api.updateFact(
+        pathParams.dashboardId ?? "",
+        pathParams.slug ?? "",
+        pathParams.id ?? "",
+        body,
+      ),
   },
   {
     method: "delete",
-    path: "/api/dashboards/:dashboardId/facts/:id",
+    path: "/api/dashboards/:dashboardId/storylines/:slug/facts/:id",
     handler: async ({ pathParams }) =>
-      api.deleteFact(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+      api.deleteFact(
+        pathParams.dashboardId ?? "",
+        pathParams.slug ?? "",
+        pathParams.id ?? "",
+      ),
   },
   {
     method: "post",

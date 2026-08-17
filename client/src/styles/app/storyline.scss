@@ -144,10 +144,105 @@
     background-color 0.12s ease,
     color 0.12s ease;
 
-  &:hover {
+  &:hover,
+  // the history toggle stays lit while the panel it opened is on screen
+  &.is-on {
     background-color: var(--color-bg-hover);
     color: var(--color-accent);
   }
+}
+
+// the history toggle sits beside the add button, same size and same weight:
+// looking back is as ordinary an act as writing something down
+.facts-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: $unit0;
+}
+
+// the versions themselves: a stack of what the list once was, each one a
+// target rather than a line of text, since reading one back is the point
+.facts-history {
+  margin-bottom: $unit2;
+  padding-bottom: $unit2;
+  border-bottom: 1px solid var(--borderColor);
+}
+
+.facts-versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+}
+
+.facts-version {
+  display: block;
+  width: 100%;
+  padding: $unit1;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  // the one on screen, marked rather than merely remembered
+  &.is-current {
+    background-color: var(--color-bg-hover);
+  }
+}
+
+.facts-version-head {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  font-size: $text0;
+}
+
+.facts-version-no {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.facts-version-author {
+  color: var(--color-accent);
+}
+
+.facts-version-when,
+.facts-version-count {
+  color: var(--lighter);
+}
+
+// pushed to the end of the line, so the versions read as a column of dates
+.facts-version-count {
+  margin-left: auto;
+}
+
+.facts-version-why {
+  display: block;
+  margin-top: $unit0;
+  font-size: $text0;
+  line-height: 1.5;
+  color: var(--lighter);
+}
+
+// reading an older list: said plainly, because everything below it is out of
+// date and nothing about the facts themselves shows that
+.facts-past {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  margin: 0 0 $unit2;
+  font-size: $text0;
+  color: var(--lighter);
 }
 
 .facts-body {
@@ -226,6 +321,14 @@
   &.is-5 {
     background-color: $green;
   }
+}
+
+// pushed to the far end of the meta line: worth having on every fact, not
+// worth reading before the fact itself
+.fact-when {
+  margin-left: auto;
+  font-size: $text0;
+  color: var(--lighter);
 }
 
 .fact-content {

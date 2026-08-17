@@ -5,6 +5,7 @@ import {
   type FactPatch,
 } from '../../api'
 import InlineBold from '../InlineBold'
+import { formatWhen, timeAgo } from '../../utils/dates'
 import MarkdownTextarea from '../MarkdownTextarea'
 import EditIcon from '../../icons/EditIcon'
 import ExternalLinkIcon from '../../icons/ExternalLinkIcon'
@@ -12,8 +13,10 @@ import ConfidencePicker from './ConfidencePicker'
 
 type Props = {
   fact: Fact
-  onSave: (id: number, patch: FactPatch) => Promise<void>
-  onDelete: (id: number) => Promise<void>
+  /** An older version on screen: it can be read, but not written back to. */
+  readOnly?: boolean
+  onSave: (id: string, patch: FactPatch) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }
 
 /**
@@ -21,7 +24,7 @@ type Props = {
  * the common case, so editing is a mode you enter rather than a form standing
  * open beside every row.
  */
-const FactRow = ({ fact, onSave, onDelete }: Props) => {
+const FactRow = ({ fact, readOnly = false, onSave, onDelete }: Props) => {
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(fact.content)
   const [confidence, setConfidence] = useState(fact.confidence)
@@ -128,14 +131,27 @@ const FactRow = ({ fact, onSave, onDelete }: Props) => {
           </a>
         )}
 
-        <button
-          className="fact-icon"
-          onClick={start}
-          title="Edit this fact"
-          aria-label={`Edit: ${fact.content}`}
+        {!readOnly && (
+          <button
+            className="fact-icon"
+            onClick={start}
+            title="Edit this fact"
+            aria-label={`Edit: ${fact.content}`}
+          >
+            <EditIcon />
+          </button>
+        )}
+
+        {/* when it was written down, which is not the same as when the thing
+            happened — that belongs in the line itself. The list runs newest
+            first, so this is what says where the new ones stop */}
+        <time
+          className="fact-when"
+          dateTime={fact.createdAt}
+          title={`Written down ${formatWhen(fact.createdAt)}`}
         >
-          <EditIcon />
-        </button>
+          {timeAgo(fact.createdAt)}
+        </time>
       </div>
     </li>
   )

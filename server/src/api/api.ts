@@ -149,10 +149,17 @@ export const createApi = async () => {
       const found = await stories.feedForStoryline(id, slug, MAX_STORIES);
       if (!found) return error(404, "storyline not found");
       const [known, claims] = await Promise.all([
-        facts.forStoryline(id, found.storyline.id),
+        facts.current(id, found.storyline.id),
         predictions.forStoryline(id, found.storyline.id),
       ]);
-      return ok({ ...found, facts: known, predictions: claims });
+      return ok({
+        ...found,
+        facts: known?.facts ?? [],
+        // which revision the page is looking at, so the history panel can say
+        // so without a second request on every load
+        factsVersion: known?.version ?? 0,
+        predictions: claims,
+      });
     },
 
     /**
@@ -206,64 +213,77 @@ export const createApi = async () => {
       return ok({ success: true });
     },
 
+    /** Every past version of an arc's facts, newest first, with its reasoning. */
+    getFactsHistory: async (dashboardId: string, slug: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      const found = await stories.feedForStoryline(id, slug, 1);
+      if (!found) return error(404, "storyline not found");
+
+      return ok({
+        versions: await facts.history(id, found.storyline.id),
+      });
+    },
+
+    /**
+     * The reader's own edits, one fact at a time as the pane presents them.
+     * Each still writes a whole version — the row is the set, not the line —
+     * so the list is read back, changed, and written on as the next one.
+     */
     createFact: async (
       dashboardId: string,
       slug: string,
       body: { content?: string; confidence?: number; articleId?: number | null },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
       const content = (body?.content ?? "").trim();
       if (!content) return error(400, "content is required");
 
-      const found = await stories.feedForStoryline(id, slug, 1);
-      if (!found) return error(404, "storyline not found");
-
-      return ok({
-        fact: await facts.create({
-          dashboardId: id,
-          storylineId: found.storyline.id,
+      return reviseFacts(dashboardId, slug, (current) => [
+        ...current,
+        {
           content,
           ...(body.confidence !== undefined
             ? { confidence: Number(body.confidence) }
             : {}),
           ...(body.articleId !== undefined ? { articleId: body.articleId } : {}),
-        }),
-      });
+        },
+      ]);
     },
 
     updateFact: async (
       dashboardId: string,
+      slug: string,
       factId: string,
       body: { content?: string; confidence?: number; articleId?: number | null },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
-      const numeric = Number(factId);
-      if (!Number.isFinite(numeric)) return error(400, "fact id must be a number");
-
       const content = body?.content?.trim();
       if (content !== undefined && !content) {
         return error(400, "content cannot be emptied");
       }
 
-      const updated = await facts.update(id, numeric, {
-        ...(content !== undefined ? { content } : {}),
-        ...(body?.confidence !== undefined
-          ? { confidence: Number(body.confidence) }
-          : {}),
-        ...(body?.articleId !== undefined ? { articleId: body.articleId } : {}),
+      return reviseFacts(dashboardId, slug, (current) => {
+        if (!current.some((fact) => fact.id === factId)) return null;
+        return current.map((fact) =>
+          fact.id === factId
+            ? {
+                ...fact,
+                ...(content !== undefined ? { content } : {}),
+                ...(body?.confidence !== undefined
+                  ? { confidence: Number(body.confidence) }
+                  : {}),
+                ...(body?.articleId !== undefined
+                  ? { articleId: body.articleId }
+                  : {}),
+              }
+            : fact,
+        );
       });
-      if (!updated) return error(404, "fact not found");
-      return ok({ fact: updated });
     },
 
-    deleteFact: async (dashboardId: string, factId: string) => {
-      const id = dashboards.resolveId(dashboardId);
-      const numeric = Number(factId);
-      if (!Number.isFinite(numeric)) return error(400, "fact id must be a number");
-
-      const removed = await facts.remove(id, numeric);
-      if (!removed) return error(404, "fact not found");
-      return ok({ success: true });
+    deleteFact: async (dashboardId: string, slug: string, factId: string) => {
+      return reviseFacts(dashboardId, slug, (current) => {
+        if (!current.some((fact) => fact.id === factId)) return null;
+        return current.filter((fact) => fact.id !== factId);
+      });
     },
 
     /**
@@ -669,6 +689,32 @@ async function carryOut(
 }
 
 /**
+ * Read the set, change it, write the next version — the shape every reader
+ * edit takes, since the row is the whole list rather than the line they
+ * touched. A mutation that returns null means the fact it named is not in the
+ * current set: a 404, rather than a version recording that nothing happened.
+ */
+async function reviseFacts(
+  dashboardId: string,
+  slug: string,
+  mutate: (current: facts.FactWithSource[]) => facts.FactDraft[] | null,
+) {
+  const id = dashboards.resolveId(dashboardId);
+  const found = await stories.feedForStoryline(id, slug, 1);
+  if (!found) return error(404, "storyline not found");
+
+  const current = await facts.current(id, found.storyline.id);
+  const next = mutate(current?.facts ?? []);
+  if (!next) return error(404, "fact not found");
+
+  const version = await facts.revise(id, found.storyline.id, {
+    facts: next,
+    author: "reader",
+  });
+  return ok({ facts: version.facts, version: version.version });
+}
+
+/**
  * The arc as the reader has it on screen, for the agent's system message: the
  * title, then every story under it with how much has been filed and how recent
  * it is. Titles only — the articles are a tool call away, and putting them all
@@ -676,7 +722,7 @@ async function carryOut(
  */
 function storylineContext(
   found: { storyline: { title: string }; stories: StoryFeedEntry[] },
-  known: facts.Fact[],
+  known: facts.FactWithSource[],
   claims: predictions.Prediction[],
 ): string {
   const lines = found.stories.map((story) => {
@@ -737,21 +783,22 @@ function predictionsContext(claims: predictions.Prediction[]): string {
  * a tool call: it is what the agent knows before it looks at anything, and a
  * question about the arc should not have to be paid for with a lookup first.
  */
-function factsContext(known: facts.Fact[]): string {
+function factsContext(known: facts.FactWithSource[]): string {
   if (known.length === 0) {
-    return `Nothing has been established as fact for this storyline yet. Add what you settle.`;
+    return `Nothing has been established as fact for this storyline yet. Write down what you settle.`;
   }
 
   const lines = known.map((fact) => {
     const label = facts.CONFIDENCE_LABELS[fact.confidence] ?? "";
     const source = fact.articleTitle ? `, from "${fact.articleTitle}"` : "";
-    return `- #${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${source}`;
+    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${source}`;
   });
 
   return [
-    `Established facts for this storyline, surest first. The number is how far`,
+    `Established facts for this storyline, newest first. The number is how far`,
     `each can be trusted: 1 rumour, 2 one source, 3 reported, 4 corroborated,`,
-    `5 certain. The ids are what UPDATE_FACT and DELETE_FACT take.`,
+    `5 certain. The ids are what REVISE_FACTS takes: carry across the ones you`,
+    `are keeping, with their ids, and leave out only what you mean to drop.`,
     "",
     lines.join("\n"),
   ].join("\n");

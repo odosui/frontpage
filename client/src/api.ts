@@ -23,13 +23,25 @@ export default {
   getStoryline: (dashboardId: string, slug: string) =>
     api('get', `/dashboards/${dashboardId}/storylines/${slug}`),
 
-  // Facts: what a storyline is taken to have established
+  // Facts: what a storyline is taken to have established. Each of these writes
+  // a whole new version of the set — the rows are never edited in place
   createFact: (dashboardId: string, slug: string, fact: NewFact) =>
     apiJson('post', `/dashboards/${dashboardId}/storylines/${slug}/facts`, fact),
-  updateFact: (dashboardId: string, id: number, patch: FactPatch) =>
-    apiJson('patch', `/dashboards/${dashboardId}/facts/${id}`, patch),
-  deleteFact: (dashboardId: string, id: number) =>
-    api('delete', `/dashboards/${dashboardId}/facts/${id}`),
+  updateFact: (
+    dashboardId: string,
+    slug: string,
+    id: string,
+    patch: FactPatch,
+  ) =>
+    apiJson(
+      'patch',
+      `/dashboards/${dashboardId}/storylines/${slug}/facts/${id}`,
+      patch,
+    ),
+  deleteFact: (dashboardId: string, slug: string, id: string) =>
+    api('delete', `/dashboards/${dashboardId}/storylines/${slug}/facts/${id}`),
+  factsHistory: (dashboardId: string, slug: string) =>
+    api('get', `/dashboards/${dashboardId}/storylines/${slug}/facts/history`),
 
   // Predictions: the reader writes the claim, the analyst puts odds on it
   createPrediction: (dashboardId: string, slug: string, content: string) =>
@@ -319,8 +331,8 @@ export const DEFAULT_CONFIDENCE = 3
  * one article claims. Written by the reader or by the analyst.
  */
 export type Fact = {
-  id: number
-  storylineId: number
+  /** Stable within its storyline across versions, e.g. "f3". */
+  id: string
   content: string
   /** 1-5; see CONFIDENCE_LABELS. */
   confidence: number
@@ -328,8 +340,29 @@ export type Fact = {
   articleId: number | null
   articleTitle: string | null
   articleUrl: string | null
+  /**
+   * When it was first written down — not when the version holding it was, so
+   * a fact carried through later revisions keeps its own age. The list comes
+   * back newest first.
+   */
   createdAt: string
-  updatedAt: string
+}
+
+/**
+ * The whole set as it stood at one point, and why it changed. Nothing is
+ * edited in place — every revision, by the reader or the analyst, appends one
+ * of these — so the list of them is the history of what the arc was taken to
+ * know.
+ */
+export type FactsVersion = {
+  id: number
+  storylineId: number
+  version: number
+  facts: Fact[]
+  author: 'reader' | 'analyst'
+  /** Why the set was revised. The analyst always gives one; the reader may not. */
+  reasoning: string | null
+  createdAt: string
 }
 
 export type NewFact = {

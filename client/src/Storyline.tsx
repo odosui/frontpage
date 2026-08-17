@@ -18,6 +18,8 @@ type Loaded = {
   storyline: Arc
   stories: StoryFeedEntry[]
   facts: Fact[]
+  /** Which revision of the facts the page is looking at; 0 when there is none. */
+  factsVersion: number
   predictions: Prediction[]
 }
 
@@ -161,6 +163,7 @@ const Storyline: React.FC = () => {
           dashboardId={dashboardId}
           storyline={storyline.slug}
           facts={loaded.facts ?? []}
+          version={loaded.factsVersion ?? 0}
           onChanged={load}
         />
       </aside>

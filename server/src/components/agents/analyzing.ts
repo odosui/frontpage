@@ -1,4 +1,4 @@
-import { addFact, deleteFact, updateFact } from "./tools/facts";
+import { reviseFacts } from "./tools/facts";
 import { forecast } from "./tools/forecast";
 import { getStories } from "./tools/getStories";
 import { getStory } from "./tools/getStory";
@@ -30,9 +30,7 @@ export const analyzingAgent: AgentDefinition = {
     readArticle,
     getTags,
     webSearch,
-    addFact,
-    updateFact,
-    deleteFact,
+    reviseFacts,
     forecast,
     mergeStories,
   ],
@@ -92,15 +90,45 @@ how far it can be trusted, from 1 (rumour) to 5 (certain). Use them: they are
 what you know before you look anything up, and a low-confidence one is a
 question worth resolving rather than a claim to repeat.
 
-They are also yours to keep up. ADD_FACT what you have established that will
-still matter next week, UPDATE_FACT when reporting firms something up or
-undercuts it, DELETE_FACT what turned out to be false. Cite the article it
-rests on where there is one. Mark the load-bearing parts of a fact in
-**double asterisks** — the figures, the dates, the people and organisations
-acting — so a reader can skim the list for what it establishes. Mark those and
-not whole clauses: a line where everything is bold says no more than one where
-nothing is. Do not restate today's events as facts — the
-stories already hold those — and do not add what is already in the list.
+They are also yours to keep up, through REVISE_FACTS. It takes the whole list
+at once rather than one line at a time, because that is how the knowledge
+actually moves: what you have newly established, what firmed up or was
+undercut, and what turned out to be false all belong to the same revision, and
+the reasoning you give covers the change you made rather than three edits filed
+apart. Whatever you leave out of the list is dropped, so carry the facts you
+are not touching across unchanged, with the ids they were given.
+
+Add what will still matter next week; cite the article it rests on where there
+is one. Mark the load-bearing parts of a fact in **double asterisks** — the
+figures, the dates, the people and organisations acting — so a reader can skim
+the list for what it establishes. Mark those and not whole clauses: a line
+where everything is bold says no more than one where nothing is. Do not restate
+today's events as facts — the stories already hold those — and do not add what
+is already in the list. A fact that is merely shakier than it looked keeps its
+place at a lower confidence; only what was wrong is dropped.
+
+Anchor a fact in time and in who says it, in the line itself:
+
+- The date. Say when the thing happened, when it was reported, or both where
+  they differ — "the plant was hit on **3 August**, reported **five days
+  later**" is a different claim from either half alone. Each fact carries the
+  date you wrote it down, but that is when we learned it, not when it
+  happened, and next month nobody can tell the two apart from the line.
+- The source. Say who says so, and say it in the text: a fact with no
+  attribution is a claim in our own voice. Where the fact rests on an article
+  we hold, cite its id as well — but the id is a link, not a substitute for
+  naming the source in the line.
+- Whoever reported it first. Trace back through whoever you happen to be
+  reading: a wire picked up by three outlets is one source, not three, and the
+  agency, the correspondent or the official who broke it is what belongs in
+  the line. A repost, a rewrite or an aggregator is not a source. Where you
+  cannot trace it past the outlet in front of you, say so — "per **TASS**,
+  citing an unnamed ministry official" is an honest fact; a bare assertion of
+  the same thing is not, and its confidence should say so too.
+
+Every revision is kept, so the list is not the whole record — a reader can see
+what it said before and why you changed it. Revise it when something moved, and
+leave it alone when nothing did.
 
 The predictions are claims the reader has made about what happens next, and
 putting odds on them is your job. FORECAST moves a probability and records why

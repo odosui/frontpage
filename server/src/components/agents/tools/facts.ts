@@ -8,23 +8,35 @@ import { AgentContext, AgentTool } from "../types";
  * concluded, so the next session starts from what was settled rather than
  * working it out again.
  *
- * Unlike a merge these are not gated: a fact is one line, visible in the pane
- * beside the chat, and the reader can edit or delete any of them.
+ * The list is revised whole rather than a line at a time. What an arc
+ * establishes is one document — raising the confidence on one fact usually
+ * happens because of what another now says — and writing it in one call means
+ * one reasoning covers the change the analyst actually made, instead of three
+ * disconnected edits nobody can read back later.
+ *
+ * Nothing is gated: the versions are visible in the pane beside the chat, and
+ * the reader can revise them in turn or read back to what stood before.
  */
-export const addFact: AgentTool = {
-  name: "ADD_FACT",
+export const reviseFacts: AgentTool = {
+  name: "REVISE_FACTS",
   usage:
-    '<|ADD_FACT "Russian-Ukrainian war" "**Wildberries** warehouses supply drone components since **July 2026**, per Ukrainian claims" 2 9241|>',
+    '<|REVISE_FACTS "Russian-Ukrainian war" "Reuters has now put a second source behind the July shipment, so the supply claim stops being a Ukrainian allegation" f3 "**Wildberries** warehouses have supplied drone components since **July 2026**, first reported by **Reuters** on **12 August 2026**" 4 9241 "The **Kaluga** plant reopened on **3 August**, per **Kommersant**" 2|>',
   description:
-    "Writes down something the storyline has established: the arc's exact title, the fact in one line, then how sure it is from 1 to 5 — 1 rumour, 2 one source, 3 reported, 4 corroborated, 5 certain. " +
-    "Optionally the id of the article it rests on, from GET_STORY. " +
-    "Add a fact when you have learned something that will still matter next week and is not already in the list you were given — not a summary of today's news, which the stories already hold. " +
-    "Write it so it stands on its own: someone reading only the fact should know what it claims and how firm it is. " +
-    "Wrap the load-bearing parts in **double asterisks** — the figures, the dates, the people and organisations doing the thing — so the line can be skimmed for what it establishes. Mark those, not whole clauses.",
+    "Rewrites what a storyline has established, as a new version: the arc's exact title, one line saying why the set changed, then the facts. " +
+    "Each fact is its id (as given to you, e.g. f3) if it already exists and nothing if it is new, then the line in quotes, then how sure it is from 1 to 5 — 1 rumour, 2 one source, 3 reported, 4 corroborated, 5 certain — and optionally the id of the article it rests on, from GET_STORY. " +
+    "Pass the WHOLE list every time, including the facts you are not touching, keeping their ids: whatever you leave out is dropped, which is how a fact that turned out to be false is removed. " +
+    "Keep a fact when it is merely shakier than it looked and lower its confidence instead. " +
+    "Write each line so it stands on its own, record what will still matter next week rather than a summary of today's news, and wrap the load-bearing parts — figures, dates, the people and organisations acting — in **double asterisks**. Mark those, not whole clauses. " +
+    "Anchor it in time wherever the claim has a date: when the thing happened, when it was reported, or both when they differ — written into the line itself, not left to the fact's own age. " +
+    "Name who says so in the line too, and name the outlet or person that reported it first rather than whoever you read repeating it. " +
+    "The reasoning is kept with the version, so the reader can read back why the knowledge moved.",
   run: async (args, ctx) => {
-    const [arc, content, confidence, articleId] = args;
-    if (!arc || !content) {
-      return "ERROR: ADD_FACT needs a storyline title and the fact itself.";
+    const [arc, reasoning] = args;
+    if (!arc) {
+      return "ERROR: REVISE_FACTS needs the storyline title first.";
+    }
+    if (!reasoning?.trim()) {
+      return "ERROR: REVISE_FACTS needs the reasoning behind the revision, in quotes, right after the storyline title.";
     }
 
     const storyline = await resolve(ctx, arc);
@@ -32,69 +44,101 @@ export const addFact: AgentTool = {
       return `ERROR: no storyline matching "${arc}" — use the exact title.`;
     }
 
-    const fact = await facts.create({
-      dashboardId: ctx.dashboardId,
-      storylineId: storyline.id,
-      content,
-      confidence: Number(confidence) || facts.DEFAULT_CONFIDENCE,
-      articleId: articleId ? Number(articleId) : null,
+    const before = await facts.forStoryline(ctx.dashboardId, storyline.id);
+    const drafts = parseFacts(args.slice(2));
+    if (drafts.length === 0 && before.length > 0) {
+      return (
+        "ERROR: REVISE_FACTS was given no facts, which would erase all " +
+        `${before.length} of them. Pass the whole list, including the ones you are keeping.`
+      );
+    }
+
+    const version = await facts.revise(ctx.dashboardId, storyline.id, {
+      facts: drafts,
+      author: "analyst",
+      reasoning,
     });
 
-    return `Noted as fact #${fact.id} (${describe(fact.confidence)}): ${fact.content}`;
+    return summarize(before, version);
   },
 };
 
-export const updateFact: AgentTool = {
-  name: "UPDATE_FACT",
-  usage:
-    '<|UPDATE_FACT 12 4 "**Wildberries** warehouses supplied drone components"|>',
-  description:
-    "Changes a fact you were given, by its id: a number from 1 to 5 sets how sure it is, a quoted line replaces its wording, and you can pass either or both in any order. " +
-    "New wording keeps the same **double asterisk** marking as ADD_FACT, around the figures, dates and actors. " +
-    "Use it when new reporting firms something up or undercuts it — a fact that turns out to be wrong should be corrected or deleted, not left standing beside its contradiction.",
-  run: async (args, ctx) => {
-    const id = Number(args[0]);
-    if (!Number.isFinite(id)) {
-      return "ERROR: UPDATE_FACT needs a fact id, as a number.";
+/**
+ * The facts as the model wrote them: `[id] "content" [confidence] [articleId]`,
+ * repeated. They are told apart by shape rather than by position, the way
+ * FORECAST tells a probability from its reasoning — an `fN` is an id, a quoted
+ * line is content, a bare 1-5 is confidence, and a larger number is an article.
+ * Nothing here is confusable with anything else, so the model never has to
+ * remember an order.
+ */
+export function parseFacts(args: string[]): facts.FactDraft[] {
+  const drafts: facts.FactDraft[] = [];
+  let pending: string | undefined;
+
+  for (const arg of args) {
+    const token = arg.trim();
+    if (!token) continue;
+
+    if (/^f\d+$/i.test(token)) {
+      pending = token.toLowerCase();
+      continue;
     }
 
-    // Told apart by shape, so the model needn't remember an argument order for
-    // two things that are never confusable: one is a digit, the other a line.
-    const rest = args.slice(1);
-    const confidence = rest.find((a) => /^[1-5]$/.test(a));
-    const content = rest.find((a) => !/^[1-5]$/.test(a));
-    if (confidence === undefined && content === undefined) {
-      return "ERROR: UPDATE_FACT needs a new confidence (1-5), new wording, or both.";
+    if (/^\d+$/.test(token)) {
+      const value = Number(token);
+      const last = drafts[drafts.length - 1];
+      if (!last) continue;
+      // the scale stops at 5, so anything bigger is the article it cites
+      if (value <= facts.MAX_CONFIDENCE) last.confidence = value;
+      else last.articleId = value;
+      continue;
     }
 
-    const updated = await facts.update(ctx.dashboardId, id, {
-      ...(content !== undefined ? { content } : {}),
-      ...(confidence !== undefined ? { confidence: Number(confidence) } : {}),
+    drafts.push({
+      ...(pending ? { id: pending } : {}),
+      content: token,
     });
-    if (!updated) return `(no fact #${id} in this dashboard)`;
+    pending = undefined;
+  }
 
-    return `Fact #${updated.id} is now (${describe(updated.confidence)}): ${updated.content}`;
-  },
-};
+  return drafts;
+}
 
-export const deleteFact: AgentTool = {
-  name: "DELETE_FACT",
-  usage: "<|DELETE_FACT 12|>",
-  description:
-    "Removes a fact by its id. For one that turned out to be false or that never belonged — if it is merely less certain than it looked, lower its confidence with UPDATE_FACT instead of deleting it.",
-  run: async (args, ctx) => {
-    const id = Number(args[0]);
-    if (!Number.isFinite(id)) {
-      return "ERROR: DELETE_FACT needs a fact id, as a number.";
-    }
+/**
+ * What the revision did, in the terms the analyst wrote it: a list it retyped
+ * from memory can silently lose a line, so dropped facts are named rather than
+ * counted.
+ */
+function summarize(
+  before: facts.Fact[],
+  version: facts.FactsVersion,
+): string {
+  const kept = new Set(version.facts.map((f) => f.id));
+  const dropped = before.filter((f) => !kept.has(f.id));
+  const added = version.facts.filter(
+    (f) => !before.some((b) => b.id === f.id),
+  );
 
-    const existing = await facts.get(ctx.dashboardId, id);
-    if (!existing) return `(no fact #${id} in this dashboard)`;
+  const lines = version.facts.map(
+    (f) => `- ${f.id} [${describe(f.confidence)}] ${f.content}`,
+  );
 
-    await facts.remove(ctx.dashboardId, id);
-    return `Deleted fact #${id}: ${existing.content}`;
-  },
-};
+  const notes = [
+    added.length > 0 ? `${added.length} new` : "",
+    dropped.length > 0
+      ? `dropped ${dropped.map((f) => `${f.id} "${f.content}"`).join(", ")}`
+      : "",
+  ].filter(Boolean);
+
+  return [
+    `Wrote version ${version.version}: ${version.facts.length} facts` +
+      (notes.length > 0 ? ` (${notes.join("; ")})` : ""),
+    "",
+    lines.join("\n"),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 
 /** Exact slug first, then a loose title match — the same way stories resolve. */
 async function resolve(ctx: AgentContext, title: string) {
