@@ -65,6 +65,12 @@ const Stories = ({
                       : `Importance ${article.importance}/10`
                   }
                 />
+                {/* one run of text, not a stack of boxes: the headline, who
+                    ran it and when, and the button, all in a single flow that
+                    wraps where the words do. The meta is kept unbreakable so
+                    "NOVAYA · 6h" travels to the next line together rather than
+                    splitting across it. Tags are still collected and still
+                    filed — just not shown here. */}
                 <a
                   href={article.url}
                   target="_blank"
@@ -73,22 +79,17 @@ const Stories = ({
                   title={article.title}
                 >
                   {article.title}
-                </a>
+                </a>{' '}
+                <span className="story-article-meta">
+                  <ArticleSource article={article} /> ·{' '}
+                  <ArticleTime article={article} />
+                </span>
                 <ContentButton
                   article={article}
                   busy={extracting.has(article.id)}
                   onExtract={onExtract}
                   onOpen={onOpenContent}
                 />
-                {/* source and when it ran, on their own line, so a narrow
-                    column cannot push the time off the card edge. Tags are
-                    still collected and still filed — just not shown here. */}
-                <div className="story-article-foot">
-                  <span className="story-article-meta">
-                    <ArticleSource article={article} /> ·{' '}
-                    <ArticleTime article={article} />
-                  </span>
-                </div>
               </div>
             ))}
           </div>

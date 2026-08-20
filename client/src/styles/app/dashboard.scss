@@ -7,7 +7,10 @@ $feed-width: $unit12;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: $unit1;
+  // the gap does the separating now that the cards are gone, so it has to be
+  // wider than the space between two articles inside one story — otherwise the
+  // list reads as one flat run of headlines with occasional labels in it
+  gap: $unit4;
 }
 
 .stories-placeholder {
@@ -18,13 +21,13 @@ $feed-width: $unit12;
   line-height: 1.4;
 }
 
-// each story is its own surface — the card edge, not a rule, is what the eye
-// uses to find where one story ends and the next begins
+// no card. A surface per story boxed up three or four headlines and charged a
+// wide margin on both sides for the privilege, and with the arc page already
+// split into columns that was the width the headlines wanted. What separates
+// one story from the next is its header and the space above it — the card edge
+// was never the thing being read.
 .story {
-  padding: $unit1 $unit2 $unit1;
-  border-radius: $unit1;
-  background-color: var(--surface-bg);
-  box-shadow: var(--surface-shadow);
+  padding: 0;
 }
 
 // the header line. There is no storyline label above it any more — the
@@ -33,8 +36,9 @@ $feed-width: $unit12;
   // deliberately not a flex row: as a flex item the menu caret became its own
   // line whenever the title wrapped. Inline, it simply follows the last word.
   display: block;
-  // lines the header text up with the article text below it
-  margin: 0 0 $unit0 $unit3;
+  // the same inset the article rows carry, so the header and the dots below it
+  // share one left edge
+  margin: 0 0 $unit0 $unit1;
   font-size: $text0;
   font-weight: 500;
   line-height: 1.4;
@@ -42,7 +46,11 @@ $feed-width: $unit12;
   // small uppercase needs real tracking to stay readable
   letter-spacing: 0.08em;
   color: var(--lighter);
-  text-wrap: balance;
+  // `balance` here evened the two lines against each other, which meant a
+  // wrapping header stopped short of the right edge on both of them and left a
+  // gutter the articles below it did not have. `pretty` fills the line and
+  // only intervenes to stop a lone word ending up on its own.
+  text-wrap: pretty;
 }
 
 // renaming or unfiling a story: the caret keeps out of the way until the card
@@ -143,13 +151,16 @@ $feed-width: $unit12;
   flex-direction: column;
 }
 
-// the headline on its own lines, then a quiet meta line under it. They used to
-// run together as one wrapping line, which put the time past the card's right
-// edge in a column this narrow — and clipped it away entirely.
+// one line of running text — dot, headline, source, time, button — rather than
+// a stack of blocks. Everything after the headline is small and grey and wraps
+// along with it, so the row costs the two lines the headline needed and no
+// more, and the eye reads it as one sentence instead of four aligned boxes.
+//
+// No hanging gutter for the marker: it sits in the flow as the line's first
+// character, and the lines that wrap start at the row's own edge rather than
+// indenting to clear a column the dot only occupies on the first line.
 .story-article-row {
-  position: relative;
-  // the marker sits in its own gutter so wrapped lines stay flush
-  padding: $unit0 $unit1 $unit0 $unit3;
+  padding: $unit0 $unit1;
   font-size: $text1;
   line-height: 1.35;
   border-radius: $unit0;
@@ -167,12 +178,13 @@ $feed-width: $unit12;
   }
 }
 
-// parked at the row's top right, out of the text's way
+// trailing the meta in the same line of text rather than parked in the corner.
+// it holds its box whether or not it is showing, so revealing it on hover does
+// not reflow the sentence it sits in
 .story-article-action {
-  position: absolute;
-  top: $unit0;
-  right: $unit0;
   display: inline-flex;
+  vertical-align: text-bottom;
+  margin-left: $unit1;
   align-items: center;
   justify-content: center;
   width: $unit3;
@@ -212,8 +224,6 @@ $feed-width: $unit12;
 }
 
 .story-article {
-  display: block;
-  padding-right: $unit3;
   text-decoration: none;
   color: var(--color-text);
   transition: color 0.12s ease;
@@ -228,14 +238,14 @@ $feed-width: $unit12;
  * red for the things that change the world. The exact number is the tooltip.
  */
 .story-article-dot {
-  // sits in the gutter the row's left padding holds open, lined up with the
-  // middle of the first line — an inline span would ignore width and height
-  // and collapse to nothing
-  position: absolute;
-  top: calc(#{$unit0} + 0.75em - #{($unit0 + 1px) * 0.5});
-  left: $unit1;
+  // inline-block rather than inline: a bare span ignores width and height and
+  // collapses to nothing. `middle` lands it on the first line's x-height,
+  // which is where a bullet reads as belonging to the words after it
+  display: inline-block;
+  vertical-align: middle;
   width: $unit0 + 1px;
   height: $unit0 + 1px;
+  margin-right: $unit1;
   border-radius: 50%;
   background-color: var(--subtle);
 
@@ -269,23 +279,23 @@ $feed-width: $unit12;
 // source, time and tags on one wrapping line under the headline. It wraps
 // rather than clipping, so the time is always on the card however narrow the
 // column gets — that is the whole reason it is not inline with the title.
-.story-article-foot {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0 $unit1;
-  margin-top: 1px;
-  font-size: $text0;
-  line-height: 1.4;
-}
-
-// the source and when it ran, held apart from the tags by the source's case.
+// who ran it and when, trailing the headline in the same line. Held together
+// as one unbreakable run so the pair wraps as a unit — a source stranded at
+// the end of one line with its time on the next reads as two facts.
+//
 // The casing stops at the source: `timeAgo` writes "36m", and uppercasing that
 // to "36M" makes 36 minutes read as 36 months.
 .story-article-meta {
-  flex: none;
+  margin-left: $unit0;
+  font-size: $text0;
+  font-weight: 500;
   color: var(--lighter);
   white-space: nowrap;
+  // the headline is the row's own voice; this is the attribution around it.
+  // Smaller and greyer was not enough at the point where they touch, so the
+  // meta gets a rule to lean on and the eye is told where one ends
+  border-left: 1px solid var(--subtle);
+  padding-left: $unit1;
 }
 
 

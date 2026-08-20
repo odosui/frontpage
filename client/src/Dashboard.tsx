@@ -82,7 +82,9 @@ const Dashboard: React.FC = () => {
   const loadDashboards = useCallback(() => {
     api
       .listDashboards()
-      .then((data: { dashboards: Arc[] }) => setDashboards(data.dashboards || []))
+      .then((data: { dashboards: Arc[] }) =>
+        setDashboards(data.dashboards || []),
+      )
       .catch(() => undefined)
   }, [])
 
@@ -179,11 +181,15 @@ const Dashboard: React.FC = () => {
   /** Adds a source to this arc: a new one, or one another arc already reads. */
   const addSource = useCallback(
     (source: NewSource | { sourceId: string }) =>
-      api.assignSource(dashboardId, source).then((data: { sources: Source[] }) => {
-        setLoaded((prev) => (prev ? { ...prev, sources: data.sources } : prev))
-        const id = 'sourceId' in source ? source.sourceId : source.name
-        refreshSource(id)
-      }),
+      api
+        .assignSource(dashboardId, source)
+        .then((data: { sources: Source[] }) => {
+          setLoaded((prev) =>
+            prev ? { ...prev, sources: data.sources } : prev,
+          )
+          const id = 'sourceId' in source ? source.sourceId : source.name
+          refreshSource(id)
+        }),
     [dashboardId, refreshSource],
   )
 
@@ -232,7 +238,10 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     return onJobFinished((job) => {
       if (job.type === 'run_agent') {
-        if (job.payload.dashboardId === dashboardId && job.status === 'succeeded') {
+        if (
+          job.payload.dashboardId === dashboardId &&
+          job.status === 'succeeded'
+        ) {
           load()
         }
         return
@@ -301,7 +310,9 @@ const Dashboard: React.FC = () => {
       api
         .renameStory(dashboardId, storyId, title)
         .then((data: { stories: StoryFeedEntry[] }) => {
-          setLoaded((prev) => (prev ? { ...prev, stories: data.stories } : prev))
+          setLoaded((prev) =>
+            prev ? { ...prev, stories: data.stories } : prev,
+          )
         })
         .catch(() => undefined)
     },
@@ -310,7 +321,9 @@ const Dashboard: React.FC = () => {
 
   const deleteStory = useCallback(
     (storyId: number) => {
-      if (!window.confirm('Unfile this story? Its articles go back in the queue.'))
+      if (
+        !window.confirm('Unfile this story? Its articles go back in the queue.')
+      )
         return
       api
         .deleteStory(dashboardId, storyId)
@@ -419,10 +432,6 @@ const Dashboard: React.FC = () => {
   return (
     <div className="arc">
       <aside className="arc-stories">
-        <div className="arc-head">
-          <h1 className="arc-title">{dashboard.name}</h1>
-        </div>
-
         <Stories
           stories={stories}
           hasSources={sources.length > 0}
