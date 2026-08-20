@@ -29,7 +29,7 @@
 
 .arc-stories {
   overflow-y: auto;
-  padding: $unit3 $unit2 $unit6;
+  padding: $unit2 $unit1 $unit5;
   border-right: 1px solid var(--borderColor);
 }
 
@@ -45,13 +45,13 @@
 }
 
 .arc-head {
-  margin-bottom: $unit3;
+  margin-bottom: $unit1;
   padding: 0 $unit1;
 }
 
 .arc-title {
   margin: 0;
-  font-size: $text4;
+  font-size: $text3;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.01em;

@@ -7,7 +7,7 @@ $feed-width: $unit12;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: $unit4;
+  gap: $unit1;
 }
 
 .stories-placeholder {
@@ -21,8 +21,8 @@ $feed-width: $unit12;
 // each story is its own surface — the card edge, not a rule, is what the eye
 // uses to find where one story ends and the next begins
 .story {
-  padding: $unit2 $unit3 $unit2;
-  border-radius: $unit2;
+  padding: $unit1 $unit2 $unit1;
+  border-radius: $unit1;
   background-color: var(--surface-bg);
   box-shadow: var(--surface-shadow);
 }
@@ -30,12 +30,11 @@ $feed-width: $unit12;
 // the header line. There is no storyline label above it any more — the
 // dashboard is the arc, so every story on the page already belongs to it.
 .story-title {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: $unit0 $unit1;
+  // deliberately not a flex row: as a flex item the menu caret became its own
+  // line whenever the title wrapped. Inline, it simply follows the last word.
+  display: block;
   // lines the header text up with the article text below it
-  margin: 0 0 $unit1 $unit3;
+  margin: 0 0 $unit0 $unit3;
   font-size: $text0;
   font-weight: 500;
   line-height: 1.4;
@@ -52,7 +51,8 @@ $feed-width: $unit12;
 .story-menu {
   position: relative;
   display: inline-flex;
-  align-self: center;
+  vertical-align: middle;
+  margin-left: $unit0;
 }
 
 .story-menu-toggle {
@@ -137,31 +137,22 @@ $feed-width: $unit12;
   color: var(--color-accent);
 }
 
-// how many articles are under it, trailing the title
-.story-count {
-  flex: none;
-  font-size: $text0;
-  font-weight: 400;
-  color: var(--lighter);
-  font-variant-numeric: tabular-nums;
-}
-
 // the articles are the payload, so they get the plain dark text
 .story-articles {
   display: flex;
   flex-direction: column;
 }
 
-// headline, tags, meta and action all run as one wrapping line; the action
-// only shows on hover, so a column of buttons doesn't compete with the
-// headlines for attention
+// the headline on its own lines, then a quiet meta line under it. They used to
+// run together as one wrapping line, which put the time past the card's right
+// edge in a column this narrow — and clipped it away entirely.
 .story-article-row {
   position: relative;
   // the marker sits in its own gutter so wrapped lines stay flush
   padding: $unit0 $unit1 $unit0 $unit3;
-  font-size: $text2;
-  line-height: 1.45;
-  border-radius: $unit1;
+  font-size: $text1;
+  line-height: 1.35;
+  border-radius: $unit0;
   transition: background-color 0.12s ease;
 
   &:hover {
@@ -176,13 +167,14 @@ $feed-width: $unit12;
   }
 }
 
-// sits on the meta's line, just after it
+// parked at the row's top right, out of the text's way
 .story-article-action {
+  position: absolute;
+  top: $unit0;
+  right: $unit0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  vertical-align: middle;
-  margin-left: $unit1;
   width: $unit3;
   height: $unit3;
   padding: 0;
@@ -220,7 +212,8 @@ $feed-width: $unit12;
 }
 
 .story-article {
-  display: inline;
+  display: block;
+  padding-right: $unit3;
   text-decoration: none;
   color: var(--color-text);
   transition: color 0.12s ease;
@@ -273,26 +266,31 @@ $feed-width: $unit12;
   }
 }
 
-// tags run inline with the headline, in the same muted key as the meta
-.story-tag {
-  display: inline;
-  margin-left: $unit1;
+// source, time and tags on one wrapping line under the headline. It wraps
+// rather than clipping, so the time is always on the card however narrow the
+// column gets — that is the whole reason it is not inline with the title.
+.story-article-foot {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 $unit1;
+  margin-top: 1px;
   font-size: $text0;
-  font-weight: 400;
+  line-height: 1.4;
+}
+
+// the source and when it ran, held apart from the tags by the source's case.
+// The casing stops at the source: `timeAgo` writes "36m", and uppercasing that
+// to "36M" makes 36 minutes read as 36 months.
+.story-article-meta {
+  flex: none;
   color: var(--lighter);
   white-space: nowrap;
 }
 
-// continues the title's last line, like the feed's meta does
-.story-article-meta {
-  display: inline;
-  margin-left: $unit1;
-  font-size: $text0;
-  font-weight: 400;
-  color: var(--lighter);
+.story-article-source {
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 // The raw feed, folded into the top bar. It used to be a permanent column;
@@ -489,16 +487,20 @@ $feed-width: $unit12;
   }
 }
 
-// flows inline right after the title, continuing its last line
+// flows inline right after the title, continuing its last line. Same rule as
+// the story rows: the source is uppercased, the relative time is not.
 .feed-meta {
   display: inline;
   margin-left: $unit1;
   font-size: $text0;
   font-weight: 400;
   color: var(--lighter);
+  white-space: nowrap;
+}
+
+.feed-source {
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 // source management, in the top bar

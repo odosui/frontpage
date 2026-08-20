@@ -78,7 +78,8 @@ const Feed = ({
                 {article.title}
               </a>
               <span className="feed-meta">
-                {article.sourceId} · <ArticleTime article={article} />
+                <span className="feed-source">{article.sourceId}</span>{' '}
+                · <ArticleTime article={article} />
               </span>
               <ContentButton
                 article={article}

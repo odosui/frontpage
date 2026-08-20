@@ -43,7 +43,6 @@ const Stories = ({
         <article key={story.id} className="story">
           <h2 className="story-title">
             <span className="story-title-text">{story.title}</span>
-            <span className="story-count">{story.articles.length}</span>
             {(onRename || onDelete) && (
               <StoryMenu
                 title={story.title}
@@ -74,20 +73,23 @@ const Stories = ({
                 >
                   {article.title}
                 </a>
-                {article.tags.map((tag) => (
-                  <span key={tag} className="story-tag">
-                    {tag}
-                  </span>
-                ))}
-                <span className="story-article-meta">
-                  {article.sourceId} · <ArticleTime article={article} />
-                </span>
                 <ContentButton
                   article={article}
                   busy={extracting.has(article.id)}
                   onExtract={onExtract}
                   onOpen={onOpenContent}
                 />
+                {/* source and when it ran, on their own line, so a narrow
+                    column cannot push the time off the card edge. Tags are
+                    still collected and still filed — just not shown here. */}
+                <div className="story-article-foot">
+                  <span className="story-article-meta">
+                    <span className="story-article-source">
+                      {article.sourceId}
+                    </span>{' '}
+                    · <ArticleTime article={article} />
+                  </span>
+                </div>
               </div>
             ))}
           </div>
