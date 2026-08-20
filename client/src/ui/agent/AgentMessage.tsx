@@ -19,6 +19,14 @@ type Props = {
 const CALL_RE = /<\|\s*(?!DONE\s*\|)[A-Z][A-Z0-9_]*[^|]*\|>/
 
 /**
+ * The token a turn ends with. It is protocol, not something the analyst said,
+ * and the runner only strips it from the answer it returns — the transcript
+ * keeps the raw text, so the marker has to come off here or it renders as the
+ * first words of the reply.
+ */
+const DONE_RE = /<\|\s*DONE\s*\|>/g
+
+/**
  * One turn: who spoke, what it cost, and the whole of what was said.
  *
  * A tool result starts folded away. It is the evidence behind the answer rather
@@ -40,47 +48,61 @@ const AgentMessage = ({ message, label }: Props) => {
       ? `${message.toolName} ${(message.toolArgs ?? []).join(' ')}`
       : ROLE_LABEL[message.role])
 
-  const head = (
-    <>
-      {foldable && <span className={`agents-msg-caret${open ? ' is-open' : ''}`} />}
-      <span className="agents-msg-role">{heading}</span>
-      {foldable && !open && (
-        <span className="agents-msg-preview">{summarize(message.content)}</span>
-      )}
-      {message.completionTokens !== null && (
-        <span className="agents-msg-tokens">
-          {message.promptTokens}→{message.completionTokens}
-        </span>
-      )}
-    </>
-  )
+  // what to render as prose; tool output is shown verbatim instead
+  const prose = message.content.replace(DONE_RE, '').trim()
 
+  const cost =
+    message.completionTokens === null ? null : (
+      <span className="agents-msg-cost">
+        {message.promptTokens}→{message.completionTokens}
+      </span>
+    )
+
+  // Something plainly said: the name rides into the first line as a badge
+  // rather than taking a header row of its own. In a column this narrow that
+  // row cost more height than most of the messages under it.
+  if (!foldable) {
+    return (
+      <li className={`agents-msg is-${message.role}`}>
+        <div className="agents-msg-body">
+          {cost}
+          <span className="agents-msg-badge">{heading}</span>
+          <Markdown text={prose} />
+        </div>
+      </li>
+    )
+  }
+
+  // Folded, the header is not a label but the control that opens it, so it
+  // stays a row: it carries the caret, the preview of what is inside, and the
+  // whole of it is the click target.
   return (
     <li className={`agents-msg is-${message.role}`}>
-      {foldable ? (
-        <button
-          type="button"
-          className={`agents-msg-head agents-msg-toggle${
-            open ? '' : ' is-collapsed'
-          }`}
-          onClick={() => setOpen((was) => !was)}
-          aria-expanded={open}
-        >
-          {head}
-        </button>
-      ) : (
-        <header className="agents-msg-head">{head}</header>
-      )}
+      <button
+        type="button"
+        className={`agents-msg-head agents-msg-toggle${
+          open ? '' : ' is-collapsed'
+        }`}
+        onClick={() => setOpen((was) => !was)}
+        aria-expanded={open}
+      >
+        <span className={`agents-msg-caret${open ? ' is-open' : ''}`} />
+        <span className="agents-msg-role">{heading}</span>
+        {!open && (
+          <span className="agents-msg-preview">{summarize(message.content)}</span>
+        )}
+        {cost}
+      </button>
 
-      {(!foldable || open) &&
+      {open &&
         // Tool output is laid out with its own alignment and indentation, so
-        // it stays preformatted. What a person or the analyst wrote is prose,
-        // and prose gets rendered.
+        // it stays preformatted. What the analyst wrote is prose, and prose
+        // gets rendered.
         (message.role === 'tool' ? (
           <pre className="agents-msg-body">{message.content}</pre>
         ) : (
           <div className="agents-msg-body">
-            <Markdown text={message.content} />
+            <Markdown text={prose} />
           </div>
         ))}
     </li>

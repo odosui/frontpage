@@ -287,11 +287,47 @@
   font-weight: 400;
 }
 
-.agents-msg-tokens {
+// What the turn cost. In a folded header it is the last flex item; in a plain
+// message it floats out of the first line, so the prose wraps under it instead
+// of being pushed down by a row of its own.
+.agents-msg-cost {
   flex-shrink: 0;
-  margin-left: auto; // the only item that hugs the right edge
+  float: right;
+  margin-left: auto; // in the header flex row, this is what hugs the right edge
+  padding-left: $unit1;
+  font-size: $text0;
+  font-weight: 400;
   color: var(--lighter);
   font-variant-numeric: tabular-nums;
+}
+
+// the header is a flex row, where a float means nothing and would only
+// reorder the item
+.agents-msg-head .agents-msg-cost {
+  float: none;
+}
+
+// Who is speaking, set into the first line of what they said. Floated rather
+// than inline so a long first paragraph wraps under it cleanly, and so the
+// badge keeps its own line-height without stretching the prose's.
+.agents-msg-badge {
+  float: left;
+  margin-right: $unit1;
+  padding: 0 $unit0 + 1px;
+  border-radius: $unit0;
+  font-size: $text0;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--lighter);
+  background-color: var(--color-bg-hover);
+
+  // the analyst is the voice worth finding when skimming back
+  .is-assistant & {
+    color: var(--accentText);
+    background-color: var(--color-accent);
+  }
 }
 
 .agents-msg-body {
