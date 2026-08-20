@@ -1,20 +1,49 @@
 import * as React from 'react'
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate } from 'slim-react-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'slim-react-router'
 import api, {
-  type Channel,
+  type Dashboard as Arc,
+  type Fact,
   type FeedArticle,
+  type NewSource,
+  type Prediction,
+  type Source,
   type StoryFeedEntry,
-  type Storyline,
 } from './api'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
-import AddChannelModal from './AddChannelModal'
+import AddSourceModal from './AddSourceModal'
 import ArticleContentModal from './ArticleContentModal'
-import Feed from './Feed'
+import Chat from './Chat'
+import Facts from './Facts'
+import Predictions from './Predictions'
 import Stories from './Stories'
-import StorylineTree, { type Selection } from './StorylineTree'
 
+type Loaded = {
+  dashboard: Arc
+  sources: Source[]
+  feed: FeedArticle[]
+  stories: StoryFeedEntry[]
+  facts: Fact[]
+  /** Which revision of the facts the page is looking at; 0 when there is none. */
+  factsVersion: number
+  predictions: Prediction[]
+  uncategorized: number
+}
+
+/** How often a page left open re-reads itself, for changes made elsewhere. */
+const REFRESH_MS = 20_000
+
+/**
+ * One arc, on its own page: the stories it is made of down the left, what it
+ * has established and what that points to in the middle, and an agent to talk
+ * to about it on the right.
+ *
+ * The dashboard *is* the arc — it owns its stories, facts, predictions and
+ * conversations. What it does not own is the sources feeding it: those are
+ * independent, assigned to it, and shared with whatever other arcs read the
+ * same outlet.
+ */
 const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -24,34 +53,86 @@ const Dashboard: React.FC = () => {
   // (setTools -> re-render -> new navigate -> setTools -> ...) forever.
   const navigateRef = useRef(navigate)
   navigateRef.current = navigate
-  const setDashboardId = useCallback((id: string) => {
+  const goToDashboard = useCallback((id: string) => {
     navigateRef.current(`/db/${id}`)
   }, [])
-  const [dashboards, setDashboards] = useState<string[]>([])
-  const [channels, setChannels] = useState<Channel[]>([])
-  const [feed, setFeed] = useState<FeedArticle[]>([])
-  const [stories, setStories] = useState<StoryFeedEntry[]>([])
-  const [storylines, setStorylines] = useState<Storyline[]>([])
-  const [uncategorized, setUncategorized] = useState(0)
-  const [selection, setSelection] = useState<Selection>(null)
-  const [loaded, setLoaded] = useState(false)
-  const [showAddModal, setShowAddModal] = useState(false)
+
+  const [dashboards, setDashboards] = useState<Arc[]>([])
+  const [loaded, setLoaded] = useState<Loaded | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [showAddSource, setShowAddSource] = useState(false)
   // the article whose stored text is on screen, if any
   const [openArticle, setOpenArticle] = useState<number | null>(null)
-  const [errors, setErrors] = useState<Map<string, string>>(new Map())
+  const [sourceErrors, setSourceErrors] = useState<Map<string, string>>(
+    new Map(),
+  )
   const { jobs, refresh: refreshJobs, onJobFinished } = useJobs()
   const { setTools } = useToolbar()
 
-  // a channel is "refreshing" while it has a job in flight
+  const load = useCallback(() => {
+    return api
+      .getDashboard(dashboardId)
+      .then((data: Loaded) => {
+        setLoaded(data)
+        setError(null)
+      })
+      .catch((err: Error) => setError(err.message))
+  }, [dashboardId])
+
+  const loadDashboards = useCallback(() => {
+    api
+      .listDashboards()
+      .then((data: { dashboards: Arc[] }) => setDashboards(data.dashboards || []))
+      .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    loadDashboards()
+  }, [loadDashboards])
+
+  useEffect(() => {
+    setLoaded(null)
+    setError(null)
+    load()
+  }, [load])
+
+  /**
+   * A quiet re-read for changes this page did not make: a fact added in
+   * another tab, or an agent run that refiled a story. The chat reports its own
+   * turns the moment they end, so this only has to be slow enough not to matter
+   * and fast enough that a page left open is not wrong for long.
+   *
+   * Paused while the tab is hidden — nobody is looking, and it would keep a
+   * backgrounded tab polling all night.
+   */
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    const timer = setInterval(tick, REFRESH_MS)
+    document.addEventListener('visibilitychange', tick)
+
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', tick)
+    }
+  }, [load])
+
+  const sources = loaded?.sources ?? []
+  const sourceIds = new Set(sources.map((s) => s.id))
+
+  // a source is "refreshing" while it has a job in flight. Jobs are not scoped
+  // to a dashboard any more — a fetch serves every arc reading that source —
+  // so the test is whether this dashboard reads it.
   const refreshing = new Set(
     jobs
       .filter(
         (job) =>
           (job.status === 'queued' || job.status === 'running') &&
-          job.payload.dashboardId === dashboardId &&
-          job.payload.channelId,
+          job.payload.sourceId &&
+          sourceIds.has(job.payload.sourceId),
       )
-      .map((job) => job.payload.channelId as string),
+      .map((job) => job.payload.sourceId as string),
   )
 
   // an article is "extracting" while its content job is in flight
@@ -61,87 +142,13 @@ const Dashboard: React.FC = () => {
         (job) =>
           job.type === 'extract_content' &&
           (job.status === 'queued' || job.status === 'running') &&
-          job.payload.dashboardId === dashboardId &&
           job.payload.articleId,
       )
       .map((job) => job.payload.articleId as number),
   )
 
-  const loadDashboards = useCallback(() => {
-    api.listDashboards().then((data: { dashboards: string[] }) => {
-      setDashboards(data.dashboards || [])
-    })
-  }, [])
-
-  useEffect(() => {
-    loadDashboards()
-  }, [loadDashboards])
-
-  useEffect(() => {
-    setLoaded(false)
-    api
-      .getDashboard(dashboardId)
-      .then(
-        (data: {
-          channels: Channel[]
-          feed: FeedArticle[]
-          stories: StoryFeedEntry[]
-          storylines: Storyline[]
-          uncategorized: number
-        }) => {
-          setChannels(data.channels || [])
-          setFeed(data.feed || [])
-          setStories(data.stories || [])
-          setStorylines(data.storylines || [])
-          setUncategorized(data.uncategorized || 0)
-          setLoaded(true)
-        },
-      )
-  }, [dashboardId])
-
-  const reloadFeed = useCallback(() => {
-    api
-      .getFeed(dashboardId)
-      .then((data: { feed: FeedArticle[]; uncategorized: number }) => {
-        setFeed(data.feed || [])
-        setUncategorized(data.uncategorized || 0)
-      })
-      .catch(() => undefined)
-  }, [dashboardId])
-
-  const reloadStories = useCallback(() => {
-    api
-      .getStories(dashboardId)
-      .then((data: { stories: StoryFeedEntry[]; storylines: Storyline[] }) => {
-        setStories(data.stories || [])
-        setStorylines(data.storylines || [])
-      })
-      .catch(() => undefined)
-  }, [dashboardId])
-
-  /**
-   * Refiles a story under another arc. The server hands back the whole list
-   * rather than the one row: a move can empty an arc or make a new one, so the
-   * tree beside it changes too.
-   */
-  const moveStory = useCallback(
-    (
-      storyId: number,
-      to: { storylineId?: number | null; storylineTitle?: string },
-    ) => {
-      api
-        .moveStory(dashboardId, storyId, to)
-        .then((data: { stories: StoryFeedEntry[]; storylines: Storyline[] }) => {
-          setStories(data.stories || [])
-          setStorylines(data.storylines || [])
-        })
-        .catch(() => undefined)
-    },
-    [dashboardId],
-  )
-
   const clearError = useCallback((id: string) => {
-    setErrors((prev) => {
+    setSourceErrors((prev) => {
       if (!prev.has(id)) return prev
       const next = new Map(prev)
       next.delete(id)
@@ -149,74 +156,51 @@ const Dashboard: React.FC = () => {
     })
   }, [])
 
-  const deleteChannel = useCallback(
-    (id: string) => {
-      if (!window.confirm(`Delete channel "${id}" and its articles?`)) return
-      api.deleteChannel(dashboardId, id).then(() => {
-        setChannels((prev) => prev.filter((c) => c.id !== id))
-        setFeed((prev) => prev.filter((a) => a.channelId !== id))
-        clearError(id)
-        // its articles went with it, so stories may have lost entries
-        reloadStories()
-      })
-    },
-    [dashboardId, clearError, reloadStories],
-  )
-
   /** Queues the work; the worker does it and the jobs poll reports back. */
-  const refreshChannel = useCallback(
+  const refreshSource = useCallback(
     (id: string) => {
       clearError(id)
       api
-        .refreshChannel(dashboardId, id)
+        .refreshSource(id)
         .then(() => refreshJobs())
         .catch((err: Error) => {
-          setErrors((prev) => new Map(prev).set(id, err.message))
+          setSourceErrors((prev) => new Map(prev).set(id, err.message))
         })
     },
-    [dashboardId, refreshJobs, clearError],
+    [refreshJobs, clearError],
   )
 
-  // pull the feed back in as each channel's analysis lands
-  useEffect(() => {
-    return onJobFinished((job) => {
-      const { dashboardId: jobDashboard, channelId } = job.payload
-      if (jobDashboard !== dashboardId) return
+  const refreshAll = useCallback(() => {
+    sources.forEach((source) => refreshSource(source.id))
+    // `sources` is derived from `loaded` every render; the id list covers it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sources.map((s) => s.id).join(','), refreshSource])
 
-      // an agent run is what files articles into stories
-      if (job.type === 'run_agent') {
-        if (job.status === 'succeeded') {
-          reloadStories()
-          // articles just left the queue, so the count moved too
-          reloadFeed()
-        }
-        return
-      }
+  /** Adds a source to this arc: a new one, or one another arc already reads. */
+  const addSource = useCallback(
+    (source: NewSource | { sourceId: string }) =>
+      api.assignSource(dashboardId, source).then((data: { sources: Source[] }) => {
+        setLoaded((prev) => (prev ? { ...prev, sources: data.sources } : prev))
+        const id = 'sourceId' in source ? source.sourceId : source.name
+        refreshSource(id)
+      }),
+    [dashboardId, refreshSource],
+  )
 
-      // the text itself is fetched by the modal; the feed only needs to know
-      // the article now has some, which is what flips the row's button
-      if (job.type === 'extract_content') {
-        if (job.status === 'succeeded') {
-          reloadStories()
-          reloadFeed()
-        }
-        return
-      }
-
-      if (!channelId) return
-
-      if (job.status === 'failed') {
-        setErrors((prev) =>
-          new Map(prev).set(channelId, job.error || `${job.type} failed`),
-        )
-        return
-      }
-
-      if (job.type !== 'extract_articles' && job.type !== 'fetch_feed') return
-      clearError(channelId)
-      reloadFeed()
-    })
-  }, [dashboardId, onJobFinished, reloadFeed, reloadStories, clearError])
+  /**
+   * Stops this arc reading a source. The source and its articles stay — other
+   * arcs may be reading them — so this only narrows what lands in the feed.
+   */
+  const removeSource = useCallback(
+    (id: string) => {
+      if (!window.confirm(`Stop reading "${id}" in this dashboard?`)) return
+      api.unassignSource(dashboardId, id).then(() => {
+        clearError(id)
+        load()
+      })
+    },
+    [dashboardId, clearError, load],
+  )
 
   /** Queues a read of one article's page; the jobs poll reports it back. */
   const extractContent = useCallback(
@@ -229,11 +213,7 @@ const Dashboard: React.FC = () => {
     [dashboardId, refreshJobs],
   )
 
-  const refreshAll = useCallback(() => {
-    channels.forEach((channel) => refreshChannel(channel.id))
-  }, [channels, refreshChannel])
-
-  /** Queues a categorizing run over whatever is still uncategorized. */
+  /** Queues a categorizing run over whatever this arc has not filed yet. */
   const runAgent = useCallback(() => {
     api
       .runAgent(dashboardId, 'categorizing_agent')
@@ -248,89 +228,149 @@ const Dashboard: React.FC = () => {
       job.payload.dashboardId === dashboardId,
   )
 
-  const addChannel = useCallback(
-    (channel: Channel) => {
-      api.addChannel(dashboardId, channel).then(() => {
-        setChannels((prev) => [
-          ...prev.filter((c) => c.id !== channel.id),
-          channel,
-        ])
-        refreshChannel(channel.id)
-      })
-    },
-    [dashboardId, refreshChannel],
-  )
+  // a finished fetch or run is what changes the page under it
+  useEffect(() => {
+    return onJobFinished((job) => {
+      if (job.type === 'run_agent') {
+        if (job.payload.dashboardId === dashboardId && job.status === 'succeeded') {
+          load()
+        }
+        return
+      }
 
-  const handleCreateDashboard = useCallback(
+      if (job.type === 'extract_content') {
+        if (job.status === 'succeeded') load()
+        return
+      }
+
+      const sourceId = job.payload.sourceId
+      if (!sourceId || !sourceIds.has(sourceId)) return
+
+      if (job.status === 'failed') {
+        setSourceErrors((prev) =>
+          new Map(prev).set(sourceId, job.error || `${job.type} failed`),
+        )
+        return
+      }
+
+      if (job.type !== 'extract_articles' && job.type !== 'fetch_feed') return
+      clearError(sourceId)
+      load()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dashboardId, onJobFinished, load, clearError, [...sourceIds].join(',')])
+
+  const createDashboard = useCallback(
     (name: string) => {
-      api.createDashboard(name).then((res: { id?: string; error?: string }) => {
-        if (res.id) {
+      api.createDashboard(name).then((res: { dashboard?: Arc }) => {
+        if (res.dashboard) {
           loadDashboards()
-          setDashboardId(res.id)
+          goToDashboard(res.dashboard.id)
         }
       })
     },
-    [loadDashboards, setDashboardId],
+    [loadDashboards, goToDashboard],
   )
 
-  const handleDeleteDashboard = useCallback(
+  const deleteDashboard = useCallback(
     (id: string) => {
-      if (!window.confirm(`Delete dashboard "${id}"?`)) return
+      if (!window.confirm(`Delete dashboard "${id}" and everything in it?`)) {
+        return
+      }
       api.deleteDashboard(id).then(() => {
         loadDashboards()
-        if (dashboardId === id) setDashboardId('default')
+        if (dashboardId === id) goToDashboard('default')
       })
     },
-    [dashboardId, loadDashboards, setDashboardId],
+    [dashboardId, loadDashboards, goToDashboard],
   )
 
-  const handleRenameDashboard = useCallback(
+  /** Only the name moves — the id is the url, so the page stays where it is. */
+  const renameDashboard = useCallback(
     (id: string, name: string) => {
-      api.renameDashboard(id, name).then((res: { id?: string }) => {
-        if (res.id) {
-          loadDashboards()
-          if (dashboardId === id) setDashboardId(res.id)
-        }
+      api.renameDashboard(id, name).then(() => {
+        loadDashboards()
+        if (dashboardId === id) load()
       })
     },
-    [dashboardId, loadDashboards, setDashboardId],
+    [dashboardId, loadDashboards, load],
   )
 
-  // the dashboard's controls are rendered by the top bar
+  const renameStory = useCallback(
+    (storyId: number, title: string) => {
+      api
+        .renameStory(dashboardId, storyId, title)
+        .then((data: { stories: StoryFeedEntry[] }) => {
+          setLoaded((prev) => (prev ? { ...prev, stories: data.stories } : prev))
+        })
+        .catch(() => undefined)
+    },
+    [dashboardId],
+  )
+
+  const deleteStory = useCallback(
+    (storyId: number) => {
+      if (!window.confirm('Unfile this story? Its articles go back in the queue.'))
+        return
+      api
+        .deleteStory(dashboardId, storyId)
+        .then(() => load())
+        .catch(() => undefined)
+    },
+    [dashboardId, load],
+  )
+
+  // the arc's controls, its sources and its latest headlines are all rendered
+  // by the top bar
   const isRefreshing = refreshing.size > 0
+  const feed = loaded?.feed ?? []
+  const uncategorized = loaded?.uncategorized ?? 0
   useEffect(() => {
     setTools({
       dashboards,
       current: dashboardId,
-      onSelect: setDashboardId,
-      onCreate: handleCreateDashboard,
-      onDelete: handleDeleteDashboard,
-      onRename: handleRenameDashboard,
-      onRefreshAll: refreshAll,
+      currentName: loaded?.dashboard.name ?? dashboardId,
+      onSelect: goToDashboard,
+      onCreate: createDashboard,
+      onDelete: deleteDashboard,
+      onRename: renameDashboard,
+      sources,
+      refreshingSources: refreshing,
+      sourceErrors,
       isRefreshing,
-      onAddChannel: () => setShowAddModal(true),
-      channels,
-      refreshingChannels: refreshing,
-      channelErrors: errors,
-      onRefreshChannel: refreshChannel,
-      onDeleteChannel: deleteChannel,
+      onRefreshSource: refreshSource,
+      onRemoveSource: removeSource,
+      onAddSource: () => setShowAddSource(true),
+      onRefreshAll: refreshAll,
+      feed,
+      uncategorized,
+      agentRunning,
+      onRunAgent: runAgent,
+      onExtract: extractContent,
+      onOpenArticle: setOpenArticle,
+      extracting,
     })
-    // `refreshing` is rebuilt every render; isRefreshing/jobs cover its changes
+    // `refreshing` and `extracting` are rebuilt every render; the flags and the
+    // jobs list they derive from cover their changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     setTools,
     dashboards,
     dashboardId,
-    setDashboardId,
-    handleCreateDashboard,
-    handleDeleteDashboard,
-    handleRenameDashboard,
+    loaded,
+    goToDashboard,
+    createDashboard,
+    deleteDashboard,
+    renameDashboard,
+    refreshSource,
+    removeSource,
     refreshAll,
+    runAgent,
+    extractContent,
     isRefreshing,
-    channels,
-    errors,
-    refreshChannel,
-    deleteChannel,
+    sourceErrors,
+    agentRunning,
+    jobs,
   ])
 
   useEffect(() => () => setTools(null), [setTools])
@@ -349,12 +389,12 @@ const Dashboard: React.FC = () => {
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         if (dashboards.length < 2) return
-        const idx = dashboards.indexOf(dashboardId)
+        const idx = dashboards.findIndex((d) => d.id === dashboardId)
         if (idx === -1) return
         const delta = e.key === 'ArrowLeft' ? -1 : 1
         const next = (idx + delta + dashboards.length) % dashboards.length
         e.preventDefault()
-        setDashboardId(dashboards[next]!)
+        goToDashboard(dashboards[next]!.id)
       } else if (e.code === 'KeyR') {
         e.preventDefault()
         refreshAll()
@@ -362,55 +402,71 @@ const Dashboard: React.FC = () => {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [dashboards, dashboardId, setDashboardId, refreshAll])
+  }, [dashboards, dashboardId, goToDashboard, refreshAll])
 
-  // the tree filters the list beside it. A selection that survives a reload
-  // but matches nothing would leave the pane blank, so it falls back to all.
-  const filtered = stories.filter((story) => {
-    if (selection === null) return true
-    if (selection.kind === 'story') return story.id === selection.id
-    return story.storyline?.id === selection.id
-  })
-  const visibleStories = filtered.length > 0 ? filtered : stories
+  if (error) {
+    return (
+      <div className="arc">
+        <p className="arc-error">{error}</p>
+      </div>
+    )
+  }
 
   if (!loaded) return null
 
+  const { dashboard, stories } = loaded
+
   return (
-    <div className="dashboard">
-      <main className="dashboard-main">
-        <div className="dashboard-tree">
-          <StorylineTree
-            dashboardId={dashboardId}
-            stories={stories}
-            selection={selection}
-            onSelect={setSelection}
-          />
+    <div className="arc">
+      <aside className="arc-stories">
+        <div className="arc-head">
+          <h1 className="arc-title">{dashboard.name}</h1>
         </div>
-        <div className="dashboard-stories">
-          <Stories
-            stories={visibleStories}
-            hasArticles={feed.length > 0}
-            extracting={extracting}
-            onExtract={extractContent}
-            onOpenContent={setOpenArticle}
-            storylines={storylines}
-            onMove={moveStory}
-          />
-        </div>
-      </main>
-      <aside className="dashboard-feed">
-        <Feed
-          articles={feed}
-          hasChannels={channels.length > 0}
-          uncategorized={uncategorized}
-          running={agentRunning}
-          onRunAgent={runAgent}
+
+        <Stories
+          stories={stories}
+          hasSources={sources.length > 0}
+          hasArticles={feed.length > 0}
+          extracting={extracting}
+          onExtract={extractContent}
+          onOpenContent={setOpenArticle}
+          onRename={renameStory}
+          onDelete={deleteStory}
         />
       </aside>
-      <AddChannelModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={addChannel}
+
+      {/* facts before predictions, the way they are derived: what the arc has
+          established, then what that implies about what happens next */}
+      <aside className="arc-facts">
+        <Facts
+          dashboardId={dashboardId}
+          facts={loaded.facts ?? []}
+          version={loaded.factsVersion ?? 0}
+          onChanged={load}
+        />
+      </aside>
+
+      <section className="arc-predictions">
+        <Predictions
+          dashboardId={dashboardId}
+          predictions={loaded.predictions ?? []}
+          onChanged={load}
+        />
+      </section>
+
+      <aside className="arc-chat">
+        <Chat
+          dashboardId={dashboardId}
+          dashboardName={dashboard.name}
+          onChanged={load}
+        />
+      </aside>
+
+      <AddSourceModal
+        isOpen={showAddSource}
+        assigned={sources}
+        onClose={() => setShowAddSource(false)}
+        onAdd={addSource}
       />
       <ArticleContentModal
         dashboardId={dashboardId}

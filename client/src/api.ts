@@ -1,65 +1,64 @@
 export default {
-  // Dashboard management
+  // Sources. Independent of any dashboard: created, edited and deleted here,
+  // and only *assigned* to a dashboard by the calls further down.
+  listSources: () => api('get', '/sources'),
+  createSource: (source: NewSource) => apiJson('post', '/sources', source),
+  updateSource: (id: string, patch: Partial<NewSource>) =>
+    apiJson('patch', `/sources/${id}`, patch),
+  deleteSource: (id: string) => api('delete', `/sources/${id}`),
+  refreshSource: (id: string) => api('post', `/sources/${id}/refresh`),
+
+  // Dashboard management. A dashboard is one running arc — what used to be a
+  // storyline — and owns the stories, facts and predictions under it.
   listDashboards: () => api('get', '/dashboards'),
   createDashboard: (name: string) => apiJson('post', '/dashboards', { name }),
   deleteDashboard: (id: string) => api('delete', `/dashboards/${id}`),
+  /** Only the display name moves; the id stays, so the url keeps working. */
   renameDashboard: (id: string, name: string) =>
     apiJson('patch', `/dashboards/${id}`, { name }),
 
-  // Channels and the feed, scoped to a dashboard
+  /** The whole arc: stories, facts, predictions, sources and the latest feed. */
   getDashboard: (dashboardId: string) =>
     api('get', `/dashboards/${dashboardId}`),
   getFeed: (dashboardId: string) =>
     api('get', `/dashboards/${dashboardId}/feed`),
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${dashboardId}/stories`),
-  /** Refiles a story: an existing arc by id, a new one by title, or neither. */
-  moveStory: (
-    dashboardId: string,
-    storyId: number,
-    to: { storylineId?: number | null; storylineTitle?: string },
-  ) => apiJson('patch', `/dashboards/${dashboardId}/stories/${storyId}/storyline`, to),
+  renameStory: (dashboardId: string, storyId: number, title: string) =>
+    apiJson('patch', `/dashboards/${dashboardId}/stories/${storyId}`, { title }),
+  /** Unfiles the story; its articles go back into the dashboard's queue. */
+  deleteStory: (dashboardId: string, storyId: number) =>
+    api('delete', `/dashboards/${dashboardId}/stories/${storyId}`),
 
-  getStoryline: (dashboardId: string, slug: string) =>
-    api('get', `/dashboards/${dashboardId}/storylines/${slug}`),
+  // Which sources this dashboard reads
+  listDashboardSources: (dashboardId: string) =>
+    api('get', `/dashboards/${dashboardId}/sources`),
+  /** An existing source by id, or a new one described inline. */
+  assignSource: (dashboardId: string, source: { sourceId: string } | NewSource) =>
+    apiJson('post', `/dashboards/${dashboardId}/sources`, source),
+  unassignSource: (dashboardId: string, id: string) =>
+    api('delete', `/dashboards/${dashboardId}/sources/${id}`),
 
-  // Facts: what a storyline is taken to have established. Each of these writes
+  // Facts: what a dashboard is taken to have established. Each of these writes
   // a whole new version of the set — the rows are never edited in place
-  createFact: (dashboardId: string, slug: string, fact: NewFact) =>
-    apiJson('post', `/dashboards/${dashboardId}/storylines/${slug}/facts`, fact),
-  updateFact: (
-    dashboardId: string,
-    slug: string,
-    id: string,
-    patch: FactPatch,
-  ) =>
-    apiJson(
-      'patch',
-      `/dashboards/${dashboardId}/storylines/${slug}/facts/${id}`,
-      patch,
-    ),
-  deleteFact: (dashboardId: string, slug: string, id: string) =>
-    api('delete', `/dashboards/${dashboardId}/storylines/${slug}/facts/${id}`),
-  factsHistory: (dashboardId: string, slug: string) =>
-    api('get', `/dashboards/${dashboardId}/storylines/${slug}/facts/history`),
+  createFact: (dashboardId: string, fact: NewFact) =>
+    apiJson('post', `/dashboards/${dashboardId}/facts`, fact),
+  updateFact: (dashboardId: string, id: string, patch: FactPatch) =>
+    apiJson('patch', `/dashboards/${dashboardId}/facts/${id}`, patch),
+  deleteFact: (dashboardId: string, id: string) =>
+    api('delete', `/dashboards/${dashboardId}/facts/${id}`),
+  factsHistory: (dashboardId: string) =>
+    api('get', `/dashboards/${dashboardId}/facts/history`),
 
   // Predictions: the reader writes the claim, the analyst puts odds on it
-  createPrediction: (dashboardId: string, slug: string, content: string) =>
-    apiJson('post', `/dashboards/${dashboardId}/storylines/${slug}/predictions`, {
-      content,
-    }),
+  createPrediction: (dashboardId: string, content: string) =>
+    apiJson('post', `/dashboards/${dashboardId}/predictions`, { content }),
   updatePrediction: (dashboardId: string, id: number, content: string) =>
     apiJson('patch', `/dashboards/${dashboardId}/predictions/${id}`, {
       content,
     }),
   deletePrediction: (dashboardId: string, id: number) =>
     api('delete', `/dashboards/${dashboardId}/predictions/${id}`),
-  addChannel: (dashboardId: string, channel: Channel) =>
-    apiJson('post', `/dashboards/${dashboardId}/channels`, { channel }),
-  deleteChannel: (dashboardId: string, id: string) =>
-    api('delete', `/dashboards/${dashboardId}/channels/${id}`),
-  refreshChannel: (dashboardId: string, id: string) =>
-    api('post', `/dashboards/${dashboardId}/channels/${id}/refresh`),
 
   // One article's own text, read off its page by the extract_content job
   extractArticleContent: (dashboardId: string, articleId: number) =>
@@ -78,13 +77,10 @@ export default {
   runAgent: (dashboardId: string, kind: string) =>
     apiJson('post', `/dashboards/${dashboardId}/agents/run`, { kind }),
 
-  // Chat: a session that stays open, one queued turn per message
-  /** `storyline` is a slug; the server turns it into the agent's context. */
-  startChat: (dashboardId: string, kind: string, storyline?: string) =>
-    apiJson('post', `/dashboards/${dashboardId}/agents/chats`, {
-      kind,
-      storyline,
-    }),
+  // Chat: a session that stays open, one queued turn per message. The server
+  // writes the dashboard's own state into the agent's opening context.
+  startChat: (dashboardId: string, kind: string) =>
+    apiJson('post', `/dashboards/${dashboardId}/agents/chats`, { kind }),
   sendChatMessage: (sessionId: number, content: string) =>
     apiJson('post', `/agents/sessions/${sessionId}/messages`, { content }),
   /** Approving is what actually performs the change the agent asked for. */
@@ -127,11 +123,14 @@ export type DatabaseStats = {
   tables: TableStat[]
   content: {
     dashboards: number
-    channels: number
+    sources: number
     articles: number
-    uncategorizedArticles: number
-    channelsWithoutUrl: number
-    channelsNeverFetched: number
+    filings: number
+    stories: number
+    sourcesWithoutUrl: number
+    sourcesNeverFetched: number
+    /** Sources no dashboard reads — still fetched, still storing articles. */
+    unreadSources: number
     newestArticleAt: string | null
     oldestArticleAt: string | null
   }
@@ -144,8 +143,11 @@ export type DatabaseStats = {
   }
   dashboards: {
     id: string
-    channels: number
+    name: string
+    sources: number
     articles: number
+    stories: number
+    uncategorized: number
     lastFetchedAt: string | null
   }[]
 }
@@ -165,7 +167,7 @@ export type Job = {
   status: JobStatus
   payload: {
     dashboardId?: string
-    channelId?: string
+    sourceId?: string
     articleId?: number
     url?: string
   }
@@ -258,28 +260,56 @@ export type Article = {
   publishedAt?: string | null
 }
 
-/** Sources we know how to pull from. `web` and `rss` are implemented so far. */
-export const CHANNEL_KINDS = ['web', 'rss', 'telegram', 'twitter'] as const
+/** Kinds of source we know how to pull from. `web` and `rss` are implemented. */
+export const SOURCE_KINDS = ['web', 'rss', 'telegram', 'twitter'] as const
 
-export type ChannelKind = (typeof CHANNEL_KINDS)[number]
+export type SourceKind = (typeof SOURCE_KINDS)[number]
 
-export type Channel = {
+/**
+ * A place we pull headlines from. Sources belong to nobody: any number of
+ * dashboards may read the same one, and it is fetched once for all of them.
+ */
+export type Source = {
   id: string
-  kind: ChannelKind
+  name: string
+  kind: SourceKind
+  url: string
+  fetchedAt: string | null
+  /** How many articles we hold from it, across every dashboard. */
+  articleCount: number
+  /** How many dashboards read it. */
+  dashboardCount: number
+}
+
+/** A source on its way in. The name doubles as the id. */
+export type NewSource = {
+  name: string
+  kind: SourceKind
   url: string
 }
 
-/** An article as the feed shows it: with the channel it came from. */
+/** A dashboard is one running arc — what used to be called a storyline. */
+export type Dashboard = {
+  /** The slug, and how it is addressed in a url. */
+  id: string
+  /** What the reader called it, spaces and punctuation intact. */
+  name: string
+  storyCount: number
+  sourceCount: number
+  createdAt: string
+}
+
+/** An article as the feed shows it: with the source it came from. */
 export type FeedArticle = Article & {
   /** The database id — what an extract_content job is queued against. */
   id: number
-  channelId: string
+  sourceId: string
   createdAt: string
   /** Whether its text has been pulled from the page yet. */
   hasContent: boolean
-  /** Still waiting for the categorizing agent: no story, and not skipped. */
+  /** This dashboard has not filed it yet: no story, and not skipped. */
   uncategorized: boolean
-  /** 1-10, as scored by the categorizing agent; null until it has run. */
+  /** 1-10, as this dashboard's categorizing agent scored it; null until it ran. */
   importance: number | null
   /** Broadest first; empty until the article has been categorized. */
   tags: string[]
@@ -299,18 +329,10 @@ export type ArticleImage = {
 export type ArticleContent = {
   title: string
   url: string
-  channelId: string
+  sourceId: string
   content: string
   contentAt: string
   images: ArticleImage[]
-}
-
-export type Storyline = {
-  id: number
-  title: string
-  slug: string
-  /** How many stories hang off it; only the full list carries this. */
-  storyCount?: number
 }
 
 /** 1 someone said it, 5 established beyond doubt. */
@@ -327,11 +349,11 @@ export const MAX_CONFIDENCE = 5
 export const DEFAULT_CONFIDENCE = 3
 
 /**
- * Something the storyline is taken to have established, as opposed to what any
+ * Something the dashboard is taken to have established, as opposed to what any
  * one article claims. Written by the reader or by the analyst.
  */
 export type Fact = {
-  /** Stable within its storyline across versions, e.g. "f3". */
+  /** Stable within its dashboard across versions, e.g. "f3". */
   id: string
   content: string
   /** 1-5; see CONFIDENCE_LABELS. */
@@ -356,7 +378,6 @@ export type Fact = {
  */
 export type FactsVersion = {
   id: number
-  storylineId: number
   version: number
   facts: Fact[]
   author: 'reader' | 'analyst'
@@ -395,7 +416,6 @@ export type Forecast = {
  */
 export type Prediction = {
   id: number
-  storylineId: number
   content: string
   /** 0-100, or null until it has been forecast. */
   probability: number | null
@@ -405,15 +425,11 @@ export type Prediction = {
   updatedAt: string
 }
 
-/**
- * One story with the articles under it. The storyline is only a label — the
- * same one can head several entries, since the list is ordered by story.
- */
+/** One story with the articles this dashboard filed under it. */
 export type StoryFeedEntry = {
   id: number
   title: string
   slug: string
-  storyline: Storyline | null
   /** The story's newest article — what the list is sorted by. */
   updatedAt: string
   articles: FeedArticle[]

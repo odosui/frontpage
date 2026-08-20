@@ -17,7 +17,6 @@ export type Forecast = {
 export type Prediction = {
   id: number;
   dashboardId: string;
-  storylineId: number;
   content: string;
   /** The newest forecast's probability; null until it has been forecast. */
   probability: number | null;
@@ -30,7 +29,6 @@ export type Prediction = {
 type Row = {
   id: string;
   dashboard_id: string;
-  storyline_id: string;
   content: string;
   probability: number | null;
   created_at: Date;
@@ -62,7 +60,6 @@ function toPrediction(row: Row, forecasts: Forecast[]): Prediction {
   return {
     id: Number(row.id),
     dashboardId: row.dashboard_id,
-    storylineId: Number(row.storyline_id),
     content: row.content,
     probability: row.probability,
     forecasts,
@@ -71,19 +68,18 @@ function toPrediction(row: Row, forecasts: Forecast[]): Prediction {
   };
 }
 
-const COLUMNS = `id, dashboard_id, storyline_id, content, probability,
+const COLUMNS = `id, dashboard_id, content, probability,
                  created_at, updated_at`;
 
 /** The arc's predictions with their whole history, oldest claim first. */
-export async function forStoryline(
+export async function forDashboard(
   dashboardId: string,
-  storylineId: number,
 ): Promise<Prediction[]> {
   const { rows } = await query<Row>(
     `select ${COLUMNS} from predictions
-      where dashboard_id = $1 and storyline_id = $2
+      where dashboard_id = $1
       order by id`,
-    [dashboardId, storylineId],
+    [dashboardId],
   );
   if (rows.length === 0) return [];
 
@@ -129,13 +125,12 @@ export async function get(
 /** Written by the reader, with no number on it yet. */
 export async function create(
   dashboardId: string,
-  storylineId: number,
   content: string,
 ): Promise<Prediction> {
   const { rows } = await query<{ id: string }>(
-    `insert into predictions (dashboard_id, storyline_id, content)
-     values ($1, $2, $3) returning id`,
-    [dashboardId, storylineId, content.trim()],
+    `insert into predictions (dashboard_id, content)
+     values ($1, $2) returning id`,
+    [dashboardId, content.trim()],
   );
   return (await get(dashboardId, Number(rows[0]!.id)))!;
 }

@@ -5,24 +5,17 @@ import PredictionRow from './ui/predictions/PredictionRow'
 
 type Props = {
   dashboardId: string
-  /** The arc these predictions belong to, by slug. */
-  storyline: string
   predictions: Prediction[]
   /** Called after any change, so the page reloads what it holds. */
   onChanged: () => void
 }
 
 /**
- * What this storyline points to and has not settled. The claims are the
+ * What this dashboard points to and has not settled. The claims are the
  * reader's; the odds on them are the analyst's, and it moves them as the
  * coverage does — every move kept with its reasoning, one toggle away.
  */
-const StorylinePredictions = ({
-  dashboardId,
-  storyline,
-  predictions,
-  onChanged,
-}: Props) => {
+const Predictions = ({ dashboardId, predictions, onChanged }: Props) => {
   const [adding, setAdding] = useState(false)
   const [content, setContent] = useState('')
   const [busy, setBusy] = useState(false)
@@ -44,7 +37,7 @@ const StorylinePredictions = ({
   const add = async () => {
     const trimmed = content.trim()
     if (!trimmed) return
-    await guard(() => api.createPrediction(dashboardId, storyline, trimmed))
+    await guard(() => api.createPrediction(dashboardId, trimmed))
     setContent('')
     setAdding(false)
   }
@@ -107,8 +100,8 @@ const StorylinePredictions = ({
 
         {predictions.length === 0 && !adding ? (
           <p className="facts-placeholder">
-            Nothing predicted yet. Write what this storyline might lead to and
-            the analyst will put a probability on it, and keep moving it as the
+            Nothing predicted yet. Write what this arc might lead to and the
+            analyst will put a probability on it, and keep moving it as the
             coverage changes.
           </p>
         ) : (
@@ -128,4 +121,4 @@ const StorylinePredictions = ({
   )
 }
 
-export default StorylinePredictions
+export default Predictions

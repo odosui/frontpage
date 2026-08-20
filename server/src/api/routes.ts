@@ -13,6 +13,31 @@ export type RouteConfig = {
 export const createRoutes = (api: Api): RouteConfig[] => [
   { method: "get", path: "/api/health", handler: async () => api.health() },
 
+  // Sources. Independent of any dashboard: they are created, edited and
+  // deleted here, and only *assigned* to a dashboard further down.
+  { method: "get", path: "/api/sources", handler: async () => api.listSources() },
+  {
+    method: "post",
+    path: "/api/sources",
+    handler: async ({ body }) => api.createSource(body),
+  },
+  {
+    method: "patch",
+    path: "/api/sources/:id",
+    handler: async ({ pathParams, body }) =>
+      api.updateSource(pathParams.id ?? "", body),
+  },
+  {
+    method: "delete",
+    path: "/api/sources/:id",
+    handler: async ({ pathParams }) => api.deleteSource(pathParams.id ?? ""),
+  },
+  {
+    method: "post",
+    path: "/api/sources/:id/refresh",
+    handler: async ({ pathParams }) => api.refreshSource(pathParams.id ?? ""),
+  },
+
   // Dashboard management
   {
     method: "get",
@@ -36,7 +61,8 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.renameDashboard(pathParams.id ?? "", body),
   },
 
-  // Channels and the feed, scoped to a dashboard
+  // One dashboard: the arc, its stories, what they establish and what they
+  // point to — everything the page renders.
   {
     method: "get",
     path: "/api/dashboards/:dashboardId",
@@ -46,8 +72,7 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   {
     method: "get",
     path: "/api/dashboards/:dashboardId/feed",
-    handler: async ({ pathParams }) =>
-      api.getFeed(pathParams.dashboardId ?? ""),
+    handler: async ({ pathParams }) => api.getFeed(pathParams.dashboardId ?? ""),
   },
   {
     method: "get",
@@ -56,36 +81,73 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.getStories(pathParams.dashboardId ?? ""),
   },
   {
-    method: "get",
-    path: "/api/dashboards/:dashboardId/storylines/:slug",
+    method: "patch",
+    path: "/api/dashboards/:dashboardId/stories/:id",
+    handler: async ({ pathParams, body }) =>
+      api.renameStory(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
+  },
+  {
+    method: "delete",
+    path: "/api/dashboards/:dashboardId/stories/:id",
     handler: async ({ pathParams }) =>
-      api.getStoryline(pathParams.dashboardId ?? "", pathParams.slug ?? ""),
+      api.deleteStory(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+  },
+
+  // Which sources this dashboard reads
+  {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/sources",
+    handler: async ({ pathParams }) =>
+      api.listDashboardSources(pathParams.dashboardId ?? ""),
+  },
+  // Assigns a source. An existing one by `sourceId`, or a brand new one
+  // described inline — creating and assigning in one round trip, which is what
+  // "add a source" means from inside a dashboard.
+  {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/sources",
+    handler: async ({ pathParams, body }) =>
+      api.assignSource(pathParams.dashboardId ?? "", body),
+  },
+  {
+    method: "delete",
+    path: "/api/dashboards/:dashboardId/sources/:id",
+    handler: async ({ pathParams }) =>
+      api.unassignSource(pathParams.dashboardId ?? "", pathParams.id ?? ""),
+  },
+
+  // Facts: what this dashboard is taken to have established
+  {
+    method: "post",
+    path: "/api/dashboards/:dashboardId/facts",
+    handler: async ({ pathParams, body }) =>
+      api.createFact(pathParams.dashboardId ?? "", body),
+  },
+  {
+    method: "get",
+    path: "/api/dashboards/:dashboardId/facts/history",
+    handler: async ({ pathParams }) =>
+      api.getFactsHistory(pathParams.dashboardId ?? ""),
   },
   {
     method: "patch",
-    path: "/api/dashboards/:dashboardId/stories/:id/storyline",
+    path: "/api/dashboards/:dashboardId/facts/:id",
     handler: async ({ pathParams, body }) =>
-      api.moveStory(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
+      api.updateFact(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
   },
   {
-    method: "post",
-    path: "/api/dashboards/:dashboardId/storylines/:slug/facts",
-    handler: async ({ pathParams, body }) =>
-      api.createFact(
-        pathParams.dashboardId ?? "",
-        pathParams.slug ?? "",
-        body,
-      ),
+    method: "delete",
+    path: "/api/dashboards/:dashboardId/facts/:id",
+    handler: async ({ pathParams }) =>
+      api.deleteFact(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
+
+  // Predictions: the reader writes the claim, the analyst puts odds on it
   {
     method: "post",
-    path: "/api/dashboards/:dashboardId/storylines/:slug/predictions",
+    path: "/api/dashboards/:dashboardId/predictions",
     handler: async ({ pathParams, body }) =>
-      api.createPrediction(
-        pathParams.dashboardId ?? "",
-        pathParams.slug ?? "",
-        body,
-      ),
+      api.createPrediction(pathParams.dashboardId ?? "", body),
   },
   {
     method: "patch",
@@ -103,35 +165,8 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     handler: async ({ pathParams }) =>
       api.deletePrediction(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
-  {
-    method: "get",
-    path: "/api/dashboards/:dashboardId/storylines/:slug/facts/history",
-    handler: async ({ pathParams }) =>
-      api.getFactsHistory(pathParams.dashboardId ?? "", pathParams.slug ?? ""),
-  },
-  // a fact is identified inside its storyline's set, not globally, so both
-  // halves of the address are needed to reach one
-  {
-    method: "patch",
-    path: "/api/dashboards/:dashboardId/storylines/:slug/facts/:id",
-    handler: async ({ pathParams, body }) =>
-      api.updateFact(
-        pathParams.dashboardId ?? "",
-        pathParams.slug ?? "",
-        pathParams.id ?? "",
-        body,
-      ),
-  },
-  {
-    method: "delete",
-    path: "/api/dashboards/:dashboardId/storylines/:slug/facts/:id",
-    handler: async ({ pathParams }) =>
-      api.deleteFact(
-        pathParams.dashboardId ?? "",
-        pathParams.slug ?? "",
-        pathParams.id ?? "",
-      ),
-  },
+
+  // One article's own text
   {
     method: "post",
     path: "/api/dashboards/:dashboardId/articles/:id/content",
@@ -147,36 +182,14 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     handler: async ({ pathParams }) =>
       api.getArticleContent(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
-  {
-    method: "get",
-    path: "/api/dashboards/:dashboardId/channels",
-    handler: async ({ pathParams }) =>
-      api.listChannels(pathParams.dashboardId ?? ""),
-  },
-  {
-    method: "post",
-    path: "/api/dashboards/:dashboardId/channels",
-    handler: async ({ pathParams, body }) =>
-      api.addChannel(pathParams.dashboardId ?? "", body),
-  },
-  {
-    method: "post",
-    path: "/api/dashboards/:dashboardId/channels/:id/refresh",
-    handler: async ({ pathParams }) =>
-      api.refreshChannel(pathParams.dashboardId ?? "", pathParams.id ?? ""),
-  },
-  {
-    method: "delete",
-    path: "/api/dashboards/:dashboardId/channels/:id",
-    handler: async ({ pathParams }) =>
-      api.deleteChannel(pathParams.dashboardId ?? "", pathParams.id ?? ""),
-  },
 
   // Jobs
-  { method: "get", path: "/api/jobs", handler: async ({ query }) =>
-      api.listJobs(query) },
-  { method: "get", path: "/api/jobs/stats", handler: async () =>
-      api.jobStats() },
+  {
+    method: "get",
+    path: "/api/jobs",
+    handler: async ({ query }) => api.listJobs(query),
+  },
+  { method: "get", path: "/api/jobs/stats", handler: async () => api.jobStats() },
 
   // Agents
   { method: "get", path: "/api/agents", handler: async () => api.listAgents() },
@@ -189,8 +202,7 @@ export const createRoutes = (api: Api): RouteConfig[] => [
   {
     method: "get",
     path: "/api/agents/sessions/:id",
-    handler: async ({ pathParams }) =>
-      api.getAgentSession(pathParams.id ?? ""),
+    handler: async ({ pathParams }) => api.getAgentSession(pathParams.id ?? ""),
   },
   {
     method: "post",

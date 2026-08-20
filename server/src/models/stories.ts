@@ -3,16 +3,17 @@ import * as articles from "./articles";
 import { StoryFeedEntry } from "../api/types";
 import { slugify } from "../utils/slug";
 
-/** The arc as a story carries it: the label, not the row. */
-type Storyline = NonNullable<StoryFeedEntry["storyline"]>;
+/**
+ * A story is one event as one dashboard sees it, and every article under it is
+ * there because that dashboard filed it there — see `article_filings`. Two
+ * dashboards reading the same source keep entirely separate stories over the
+ * same articles.
+ */
 
 type StoryRow = {
   id: string;
   title: string;
   slug: string;
-  storyline_id: string | null;
-  storyline_title: string | null;
-  storyline_slug: string | null;
   updated_at: Date;
 };
 
@@ -22,19 +23,24 @@ type StoryArticleRow = {
   title: string;
   url: string;
   image: string;
-  channel_id: string;
+  source_id: string;
   created_at: Date;
   published_at: Date | null;
   importance: number | null;
   has_content: boolean;
 };
 
+const FEED_SELECT = `select s.id, s.title, s.slug,
+                            max(a.sorted_at) as updated_at
+                       from stories s
+                       join article_filings f on f.story_id = s.id
+                       join articles a on a.id = f.article_id`;
+
 /**
  * The dashboard's stories, each with its articles. Ordered by the story's
- * newest article rather than by storyline, so a fresh headline pulls its story
- * to the top even when an older story from the same arc sits above it. Newest
- * by `sorted_at` — the publisher's date where there is one, ours otherwise —
- * so a feed handing us its back catalogue does not shove week-old events up.
+ * newest article, so a fresh headline pulls its story to the top. Newest by
+ * `sorted_at` — the publisher's date where there is one, ours otherwise — so a
+ * feed handing us its back catalogue does not shove week-old events up.
  *
  * Stories nobody has filed an article under are left out — there is nothing to
  * render for them.
@@ -45,93 +51,46 @@ export async function feed(
 ): Promise<StoryFeedEntry[]> {
   const { rows } = await query<StoryRow>(
     `${FEED_SELECT}
-     where s.dashboard_id = $1
-     group by s.id, sl.id
-     order by max(a.sorted_at) desc, s.id desc
-     limit $2`,
+      where s.dashboard_id = $1 and f.dashboard_id = $1
+      group by s.id
+      order by max(a.sorted_at) desc, s.id desc
+      limit $2`,
     [dashboardId, limit],
   );
-  return withArticles(rows);
+  return withArticles(dashboardId, rows);
 }
-
-/**
- * The same feed, narrowed to one arc and addressed by slug — the storyline
- * page is a url someone can keep, so it is not keyed on a database id.
- * Null when no such arc exists, which the route turns into a 404; an arc that
- * exists but has nothing filed under it is an empty list, not a miss.
- */
-export async function feedForStoryline(
-  dashboardId: string,
-  slug: string,
-  limit: number,
-): Promise<{ storyline: Storyline; stories: StoryFeedEntry[] } | null> {
-  const { rows: found } = await query<{
-    id: string;
-    title: string;
-    slug: string;
-  }>(
-    `select id, title, slug from storylines
-      where dashboard_id = $1 and slug = $2
-      limit 1`,
-    [dashboardId, slug],
-  );
-  const arc = found[0];
-  if (!arc) return null;
-
-  const { rows } = await query<StoryRow>(
-    `${FEED_SELECT}
-     where s.dashboard_id = $1 and s.storyline_id = $2
-     group by s.id, sl.id
-     order by max(a.sorted_at) desc, s.id desc
-     limit $3`,
-    [dashboardId, arc.id, limit],
-  );
-
-  return {
-    storyline: { id: Number(arc.id), title: arc.title, slug: arc.slug },
-    stories: await withArticles(rows),
-  };
-}
-
-const FEED_SELECT = `select s.id, s.title, s.slug,
-                            sl.id as storyline_id, sl.title as storyline_title,
-                            sl.slug as storyline_slug,
-                            max(a.sorted_at) as updated_at
-                     from stories s
-                     join articles a on a.story_id = s.id
-                     left join storylines sl on sl.id = s.storyline_id`;
 
 /** Hangs each story's articles, with their tags, off the rows just selected. */
-async function withArticles(rows: StoryRow[]): Promise<StoryFeedEntry[]> {
+async function withArticles(
+  dashboardId: string,
+  rows: StoryRow[],
+): Promise<StoryFeedEntry[]> {
   if (rows.length === 0) return [];
 
   const entries = rows.map<StoryFeedEntry>((r) => ({
     id: Number(r.id),
     title: r.title,
     slug: r.slug,
-    storyline: r.storyline_id
-      ? {
-          id: Number(r.storyline_id),
-          title: r.storyline_title ?? "",
-          slug: r.storyline_slug ?? "",
-        }
-      : null,
     updatedAt: r.updated_at.toISOString(),
     articles: [],
   }));
 
   const byId = new Map(entries.map((e) => [e.id, e]));
   const { rows: articleRows } = await query<StoryArticleRow>(
-    `select id, story_id, title, url, image, channel_id,
-            created_at, published_at, importance,
-            content is not null as has_content
-     from articles
-     where story_id = any($1::bigint[])
-     order by sorted_at desc, position, id`,
-    [[...byId.keys()]],
+    `select a.id, f.story_id, a.title, a.url, a.image, a.source_id,
+            a.created_at, a.published_at, f.importance,
+            a.content is not null as has_content
+       from article_filings f
+       join articles a on a.id = f.article_id
+      where f.dashboard_id = $1 and f.story_id = any($2::bigint[])
+      order by a.sorted_at desc, a.position, a.id`,
+    [dashboardId, [...byId.keys()]],
   );
 
-  const tags = await articles.tagsFor(articleRows.map((r) => Number(r.id)));
+  const tags = await articles.tagsFor(
+    dashboardId,
+    articleRows.map((r) => Number(r.id)),
+  );
 
   for (const row of articleRows) {
     byId.get(Number(row.story_id))?.articles.push({
@@ -142,7 +101,7 @@ async function withArticles(rows: StoryRow[]): Promise<StoryFeedEntry[]> {
       image: row.image,
       // an article under a story is by definition categorized
       uncategorized: false,
-      channelId: row.channel_id,
+      sourceId: row.source_id,
       createdAt: row.created_at.toISOString(),
       publishedAt: row.published_at?.toISOString() ?? null,
       importance: row.importance,
@@ -165,14 +124,14 @@ export async function detail(
 ): Promise<{ story: StoryFeedEntry; totalArticles: number } | null> {
   const { rows } = await query<StoryRow>(
     `${FEED_SELECT}
-     where s.dashboard_id = $1
-       and (lower(s.title) = lower($2) or s.title ilike '%' || $2 || '%')
-     group by s.id, sl.id
-     order by (lower(s.title) = lower($2)) desc, max(a.sorted_at) desc
-     limit 1`,
+      where s.dashboard_id = $1 and f.dashboard_id = $1
+        and (lower(s.title) = lower($2) or s.title ilike '%' || $2 || '%')
+      group by s.id
+      order by (lower(s.title) = lower($2)) desc, max(a.sorted_at) desc
+      limit 1`,
     [dashboardId, title],
   );
-  const found = await withArticles(rows);
+  const found = await withArticles(dashboardId, rows);
   const story = found[0];
   if (!story) return null;
 
@@ -187,19 +146,31 @@ export async function detail(
   };
 }
 
-/**
- * Refiles one story under a different arc, or under none. Only the story moves
- * — its articles go with it because they hang off the story, not the arc.
- */
-export async function moveToStoryline(
+/** Renames a story in place; the slug follows, so later runs match the new one. */
+export async function rename(
   dashboardId: string,
   storyId: number,
-  storylineId: number | null,
+  title: string,
+): Promise<boolean> {
+  const trimmed = title.trim();
+  if (!trimmed) throw new Error("a story needs a title");
+
+  const { rowCount } = await query(
+    `update stories set title = $3, slug = $4
+      where dashboard_id = $1 and id = $2`,
+    [dashboardId, storyId, trimmed, slugify(trimmed)],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+/** Unfiles a story and everything under it; the articles return to the queue. */
+export async function remove(
+  dashboardId: string,
+  storyId: number,
 ): Promise<boolean> {
   const { rowCount } = await query(
-    `update stories set storyline_id = $3
-      where dashboard_id = $1 and id = $2`,
-    [dashboardId, storyId, storylineId],
+    "delete from stories where dashboard_id = $1 and id = $2",
+    [dashboardId, storyId],
   );
   return (rowCount ?? 0) > 0;
 }
@@ -217,13 +188,13 @@ export type MergeResult = {
 };
 
 /**
- * Folds one story into another: every article under `sourceId` moves to
+ * Folds one story into another: every article filed under `sourceId` moves to
  * `targetId`, then the source is deleted. Nothing new is created, and the
- * target keeps its own title and storyline — a merge says these articles were
- * always part of that story, not that a third story should exist.
+ * target keeps its own title — a merge says these articles were always part of
+ * that story, not that a third story should exist.
  *
- * All of it in one transaction — half a merge would leave articles orphaned by
- * `on delete set null`, which is the one outcome worse than not merging.
+ * All of it in one transaction — half a merge would leave filings pointing at
+ * nothing, which is the one outcome worse than not merging.
  *
  * Never called by an agent directly. It runs from an approved proposal, with
  * the ids the reader was shown.
@@ -256,18 +227,18 @@ export async function merge(
     }
 
     const { rowCount: moved } = await client.query(
-      `update articles set story_id = $1
+      `update article_filings set story_id = $1
         where dashboard_id = $2 and story_id = $3`,
       [targetId, dashboardId, sourceId],
     );
 
-    await client.query(`delete from stories where dashboard_id = $1 and id = $2`, [
-      dashboardId,
-      sourceId,
-    ]);
+    await client.query(
+      "delete from stories where dashboard_id = $1 and id = $2",
+      [dashboardId, sourceId],
+    );
 
     const { rows: counted } = await client.query<{ articles: string }>(
-      `select count(*) as articles from articles
+      `select count(*) as articles from article_filings
         where dashboard_id = $1 and story_id = $2`,
       [dashboardId, targetId],
     );
@@ -284,7 +255,6 @@ export async function merge(
 
 export type StoryMatch = {
   title: string;
-  storyline: string | null;
   articleCount: number;
 };
 
@@ -299,17 +269,14 @@ export async function search(
   term: string,
   limit: number,
 ): Promise<StoryMatch[]> {
-  const { rows } = await query<{
-    title: string;
-    storyline: string | null;
-    articles: string;
-  }>(
-    `select s.title, sl.title as storyline, count(a.id) as articles
+  const { rows } = await query<{ title: string; articles: string }>(
+    `select s.title, count(f.article_id) as articles
        from stories s
-       left join storylines sl on sl.id = s.storyline_id
-       left join articles a on a.story_id = s.id
+       left join article_filings f
+         on f.story_id = s.id and f.dashboard_id = $1
+       left join articles a on a.id = f.article_id
       where s.dashboard_id = $1 and s.title ilike '%' || $2 || '%'
-      group by s.id, sl.title
+      group by s.id
       order by max(a.sorted_at) desc nulls last, s.id desc
       limit $3`,
     [dashboardId, term, limit],
@@ -317,82 +284,62 @@ export async function search(
 
   return rows.map((r) => ({
     title: r.title,
-    storyline: r.storyline,
     articleCount: Number(r.articles),
   }));
 }
 
 /**
- * Every story filed under one storyline, newest first. Grepping by title only
- * finds an event when the run already guesses its wording; opening the arc it
- * belongs to shows the run what is actually in there, so a story that was named
- * differently the first time still gets found instead of forked.
- *
- * The storyline is resolved by slug first — runs are told to reuse exact titles
- * — and falls back to a substring match on the title, newest arc wins.
+ * Every story in the dashboard, newest first. Grepping by title only finds an
+ * event when the run already guesses its wording; listing what is actually
+ * there shows the run the whole arc, so a story that was named differently the
+ * first time still gets found instead of forked.
  */
-export async function underStoryline(
+export async function latest(
   dashboardId: string,
-  storyline: string,
   limit: number,
-): Promise<{ storyline: string; stories: StoryMatch[] } | null> {
-  const { rows: found } = await query<{ id: string; title: string }>(
-    `select id, title from storylines
-      where dashboard_id = $1 and (slug = $2 or title ilike '%' || $3 || '%')
-      order by (slug = $2) desc, created_at desc, id desc
-      limit 1`,
-    [dashboardId, slugify(storyline), storyline],
-  );
-  const arc = found[0];
-  if (!arc) return null;
-
+): Promise<StoryMatch[]> {
   const { rows } = await query<{ title: string; articles: string }>(
-    `select s.title, count(a.id) as articles
+    `select s.title, count(f.article_id) as articles
        from stories s
-       left join articles a on a.story_id = s.id
-      where s.dashboard_id = $1 and s.storyline_id = $2
+       left join article_filings f
+         on f.story_id = s.id and f.dashboard_id = $1
+       left join articles a on a.id = f.article_id
+      where s.dashboard_id = $1
       group by s.id
       order by max(a.sorted_at) desc nulls last, s.id desc
-      limit $3`,
-    [dashboardId, arc.id, limit],
+      limit $2`,
+    [dashboardId, limit],
   );
 
-  return {
-    storyline: arc.title,
-    stories: rows.map((r) => ({
-      title: r.title,
-      storyline: arc.title,
-      articleCount: Number(r.articles),
-    })),
-  };
+  return rows.map((r) => ({
+    title: r.title,
+    articleCount: Number(r.articles),
+  }));
 }
 
 /** One story to save, with the articles that belong to it and their tags. */
 export type StoryEntry = {
-  /** Null for a story that belongs to no running arc. */
-  storyline: string | null;
   story: string;
   articles: { id: number; importance: number | null; tags: string[] }[];
 };
 
 export type SaveResult = {
-  storylines: number;
   stories: number;
+  /** Stories matched by slug instead of created — the point of the exercise. */
+  reusedStories: number;
   articles: number;
   tags: number;
-  /** Rows matched by slug instead of created — the point of the whole exercise. */
-  reusedStorylines: number;
   reusedTags: number;
 };
 
 /**
- * Writes a categorization run into storylines / stories / tags in one
- * transaction, reusing whatever is already there: storylines and tags are
- * matched by slug within the dashboard, so a second run over the same arc
- * extends it instead of forking it.
+ * Writes a categorization run into stories, filings and tags in one
+ * transaction, reusing whatever is already there: stories and tags are matched
+ * by slug within the dashboard, so a second run over the same event extends it
+ * instead of forking it.
  *
- * Nothing is ever deleted here — articles are only moved into a story — so a
- * re-run cannot lose earlier work.
+ * Nothing is ever deleted here — an article is only filed — so a re-run cannot
+ * lose earlier work.
  */
 export async function save(
   dashboardId: string,
@@ -400,72 +347,63 @@ export async function save(
 ): Promise<SaveResult> {
   return withTransaction(async (client) => {
     const result: SaveResult = {
-      storylines: 0,
       stories: 0,
+      reusedStories: 0,
       articles: 0,
       tags: 0,
-      reusedStorylines: 0,
       reusedTags: 0,
     };
 
-    // slug -> id, so repeated names inside one run cost a single lookup
-    const storylineIds = new Map<string, number>();
+    // slug -> id, so a repeated name inside one run costs a single lookup
     const tagIds = new Map<string, number>();
 
     for (const entry of entries) {
       const storySlug = slugify(entry.story);
       if (!storySlug || entry.articles.length === 0) continue;
 
-      // a standalone story hangs off no arc at all, rather than off one
-      // literally called "standalone"
-      const storylineSlug = entry.storyline ? slugify(entry.storyline) : "";
-      let storylineId: number | null = storylineSlug
-        ? (storylineIds.get(storylineSlug) ?? null)
-        : null;
-
-      if (storylineSlug && storylineId === null) {
-        const existing = await client.query<{ id: string }>(
-          "select id from storylines where dashboard_id = $1 and slug = $2",
-          [dashboardId, storylineSlug],
-        );
-        if (existing.rows[0]) {
-          storylineId = Number(existing.rows[0].id);
-          result.reusedStorylines++;
-        } else {
-          const created = await client.query<{ id: string }>(
-            `insert into storylines (dashboard_id, title, slug)
-             values ($1, $2, $3) returning id`,
-            [dashboardId, entry.storyline, storylineSlug],
-          );
-          storylineId = Number(created.rows[0]!.id);
-          result.storylines++;
-        }
-        storylineIds.set(storylineSlug, storylineId);
-      }
-
       // a story already carrying this slug is the same event seen again: keep
       // the row and hang the new articles off it
-      const story = await client.query<{ id: string }>(
-        `insert into stories (dashboard_id, storyline_id, title, slug)
-         values ($1, $2, $3, $4)
-         on conflict (dashboard_id, slug)
-           do update set storyline_id = excluded.storyline_id
-         returning id`,
-        [dashboardId, storylineId, entry.story, storySlug],
+      const existing = await client.query<{ id: string }>(
+        "select id from stories where dashboard_id = $1 and slug = $2",
+        [dashboardId, storySlug],
       );
-      const storyId = Number(story.rows[0]!.id);
-      result.stories++;
+      let storyId: number;
+      if (existing.rows[0]) {
+        storyId = Number(existing.rows[0].id);
+        result.reusedStories++;
+      } else {
+        const created = await client.query<{ id: string }>(
+          `insert into stories (dashboard_id, title, slug)
+           values ($1, $2, $3) returning id`,
+          [dashboardId, entry.story, storySlug],
+        );
+        storyId = Number(created.rows[0]!.id);
+        result.stories++;
+      }
 
       for (const article of entry.articles) {
-        // a re-run may leave importance out; coalesce keeps the earlier score
-        const moved = await client.query(
-          `update articles
-             set story_id = $3,
-                 importance = coalesce($4, importance)
-           where id = $1 and dashboard_id = $2`,
-          [article.id, dashboardId, storyId, article.importance],
+        // A re-run may leave importance out; coalesce keeps the earlier score.
+        // The filing is only written for articles this dashboard can actually
+        // see, so a model that invents an id cannot file it here.
+        const filed = await client.query(
+          `insert into article_filings
+               (dashboard_id, article_id, story_id, importance)
+             select $1, a.id, $3, $4
+               from articles a
+              where a.id = $2
+                and a.source_id in (
+                  select ds.source_id from dashboard_sources ds
+                   where ds.dashboard_id = $1
+                )
+           on conflict (dashboard_id, article_id) do update
+              set story_id = excluded.story_id,
+                  importance = coalesce(excluded.importance,
+                                        article_filings.importance),
+                  skipped_at = null,
+                  skipped_reason = null`,
+          [dashboardId, article.id, storyId, article.importance],
         );
-        result.articles += moved.rowCount ?? 0;
+        result.articles += filed.rowCount ?? 0;
 
         for (const name of article.tags) {
           const tagSlug = slugify(name);
@@ -473,12 +411,12 @@ export async function save(
 
           let tagId = tagIds.get(tagSlug);
           if (tagId === undefined) {
-            const existing = await client.query<{ id: string }>(
+            const found = await client.query<{ id: string }>(
               "select id from tags where dashboard_id = $1 and slug = $2",
               [dashboardId, tagSlug],
             );
-            if (existing.rows[0]) {
-              tagId = Number(existing.rows[0].id);
+            if (found.rows[0]) {
+              tagId = Number(found.rows[0].id);
               result.reusedTags++;
             } else {
               const created = await client.query<{ id: string }>(

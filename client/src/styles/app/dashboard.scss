@@ -2,181 +2,6 @@
 
 $feed-width: $unit12;
 
-.dashboard {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  align-items: stretch;
-  background-color: var(--color-bg);
-  overflow: hidden;
-}
-
-// the storyline / story / articles view: the tree takes one part, the stories
-// beside it two, and each pane scrolls on its own rather than the whole main
-.dashboard-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-}
-
-.dashboard-tree {
-  flex: 1;
-  min-width: 0;
-  overflow-y: auto;
-  padding: $unit3 $unit2;
-  border-right: 1px solid var(--borderColor);
-}
-
-.dashboard-stories {
-  flex: 2;
-  min-width: 0;
-  overflow-y: auto;
-  padding: $unit6 $unit4;
-}
-
-// storyline → story navigation, filtering the list beside it
-
-.tree-list,
-.tree-stories {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.tree-list {
-  display: flex;
-  flex-direction: column;
-  gap: $unit2;
-}
-
-// every row is the same shape: a full-width label that wraps
-.tree-all,
-.tree-storyline,
-.tree-story {
-  display: block;
-  width: 100%;
-  padding: $unit0 $unit1;
-  border: none;
-  border-radius: $unit0;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.12s ease;
-
-  &:hover {
-    background-color: var(--color-bg-hover);
-  }
-
-  &.is-active {
-    background-color: var(--color-bg-hover);
-    color: var(--color-accent);
-  }
-}
-
-.tree-all {
-  margin-bottom: $unit3;
-  font-size: $text1;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-// the caret sits outside the label, so clicking the arc name still filters —
-// folding it away is a separate, smaller target
-.tree-branch {
-  display: flex;
-  align-items: baseline;
-  gap: $unit0;
-}
-
-.tree-toggle {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: $unit2;
-  height: $unit2;
-  padding: 0;
-  border: none;
-  border-radius: $unit0;
-  background: none;
-  cursor: pointer;
-
-  &:hover .tree-caret {
-    border-left-color: var(--color-text);
-  }
-}
-
-// a triangle drawn from borders, so it needs no icon and rotates cleanly
-.tree-caret {
-  width: 0;
-  height: 0;
-  border-top: $unit0 solid transparent;
-  border-bottom: $unit0 solid transparent;
-  border-left: $unit0 solid var(--lighter);
-  transition: transform 0.12s ease;
-
-  &.is-open {
-    transform: rotate(90deg);
-  }
-}
-
-.tree-storyline {
-  // width: 100% from the shared rule would ignore the caret beside it
-  flex: 1;
-  width: auto;
-  min-width: 0;
-  font-size: $text0;
-  font-weight: 600;
-  color: var(--lighter);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-// only shows on hover: the arc's page is a deliberate move, not something to
-// hit by accident while filtering
-.tree-open {
-  flex: none;
-  padding: 0 $unit0;
-  font-size: $text1;
-  line-height: 1;
-  text-decoration: none;
-  color: var(--lighter);
-  opacity: 0;
-  transition:
-    opacity 0.12s ease,
-    color 0.12s ease;
-
-  &:hover,
-  &:focus-visible {
-    opacity: 1;
-    color: var(--color-accent);
-  }
-
-  .tree-branch:hover & {
-    opacity: 1;
-  }
-}
-
-// how much is folded away, and how big the arc is when it isn't
-.tree-count {
-  margin-left: $unit1;
-  font-weight: 400;
-  letter-spacing: 0;
-  opacity: 0.6;
-}
-
-// stepped in, so the stories read as sitting under their storyline
-.tree-story {
-  padding-left: $unit4;
-  font-size: $text1;
-  line-height: 1.35;
-  color: var(--color-text);
-}
-
-// one comfortable reading column, centred in whatever room the main area has
 .stories {
   max-width: $unit15;
   margin: 0 auto;
@@ -202,8 +27,8 @@ $feed-width: $unit12;
   box-shadow: var(--surface-shadow);
 }
 
-// the header line: storyline then story, identical but for colour — that
-// alone is enough to tell them apart at this size.
+// the header line. There is no storyline label above it any more — the
+// dashboard is the arc, so every story on the page already belongs to it.
 .story-title {
   display: flex;
   align-items: baseline;
@@ -221,8 +46,8 @@ $feed-width: $unit12;
   text-wrap: balance;
 }
 
-// refiling a story: the caret keeps out of the way until the card is hovered,
-// since moving a story is a deliberate act and a column of carets down the
+// renaming or unfiling a story: the caret keeps out of the way until the card
+// is hovered, since both are deliberate acts and a column of carets down the
 // page would read as clutter
 .story-menu {
   position: relative;
@@ -257,7 +82,7 @@ $feed-width: $unit12;
   }
 }
 
-// the same border-drawn triangle the storyline tree uses, pointing down
+// a border-drawn triangle, pointing down
 .story-menu-caret {
   width: 0;
   height: 0;
@@ -273,16 +98,6 @@ $feed-width: $unit12;
   max-height: $unit12;
   overflow-y: auto;
   padding: $unit1;
-}
-
-.story-menu-heading {
-  margin: 0 0 $unit0;
-  padding: 0 $unit1;
-  font-size: $text0;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--lighter);
 }
 
 .story-menu-item {
@@ -305,18 +120,9 @@ $feed-width: $unit12;
     background-color: var(--color-bg-hover);
   }
 
-  // where it already is: shown so the reader can see it, not offered
-  &.is-current {
-    color: var(--lighter);
-    cursor: default;
+  &--danger {
+    color: var(--danger);
   }
-}
-
-.story-menu-count {
-  flex: none;
-  font-size: $text0;
-  color: var(--lighter);
-  font-variant-numeric: tabular-nums;
 }
 
 .story-menu-divider {
@@ -325,26 +131,19 @@ $feed-width: $unit12;
   background: var(--borderColor);
 }
 
-// the storyline reads as plain header text; the colour is spent on the story.
-// both spans need their colour set outright — the global `*` rule would
-// otherwise paint them --color-text instead of letting them inherit
-// capped so a long arc name cannot push the story title — the part that says
-// what happened — off the line; the full title is on the tooltip
-.story-storyline {
-  max-width: $unit11;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--lighter);
-  white-space: nowrap;
-  // clipping makes this a scroll container, whose baseline is synthesized from
-  // its bottom edge — it would hang below the title under the header's
-  // baseline alignment. Both spans share a font size and line height, so
-  // aligning their tops puts the baselines back in the same place.
-  align-self: flex-start;
-}
-
+// the title needs its colour set outright — the global `*` rule would
+// otherwise paint it --color-text instead of letting it inherit
 .story-title-text {
   color: var(--color-accent);
+}
+
+// how many articles are under it, trailing the title
+.story-count {
+  flex: none;
+  font-size: $text0;
+  font-weight: 400;
+  color: var(--lighter);
+  font-variant-numeric: tabular-nums;
 }
 
 // the articles are the payload, so they get the plain dark text
@@ -496,17 +295,43 @@ $feed-width: $unit12;
   white-space: nowrap;
 }
 
-.dashboard-feed {
+// The raw feed, folded into the top bar. It used to be a permanent column;
+// on the arc page the stories, facts, predictions and chat all want the width,
+// and the unfiled queue is something you check and dismiss rather than read
+// alongside. What stays visible is the count, on the button itself.
+.latest-menu {
+  position: relative;
+}
+
+.latest-dropdown {
+  position: absolute;
+  top: calc(100% + $unit1);
+  right: 0;
+  z-index: 20;
   width: $feed-width;
-  max-width: 100%;
-  flex-shrink: 0;
-  overflow-y: auto;
-  padding: $unit2 $unit2 $unit6;
-  border-left: 1px solid var(--borderColor);
+  max-width: calc(100vw - #{$unit4});
+  // tall enough to be the column it replaces, short enough to stay a dropdown
+  max-height: calc(100vh - #{$unit8});
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: $unit1 $unit2 $unit2;
+  background-color: var(--surface-bg);
+  border-radius: $unit2;
+  box-shadow: var(--surface-shadow-hover);
+}
+
+// header pinned, list scrolling under it — the Run button must not scroll away
+// while the reader is looking at what it would act on
+.feed {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 // the heading carries the queue depth, with the run button beside it
 .feed-head {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -568,27 +393,33 @@ $feed-width: $unit12;
 }
 
 .feed-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
-// the link is the row: title text with the meta trailing it inline
+// the headline is the row, with the meta trailing it inline and the read
+// button parked at the end
 .feed-item {
-  display: block;
-  padding: $unit0 0;
+  position: relative;
+  padding: $unit0 $unit4 $unit0 0;
   font-size: $text1;
   line-height: 1.3;
-  text-decoration: none;
-  color: var(--color-text);
-  transition: color 0.12s ease;
+  border-radius: $unit0;
 
   &:hover {
-    color: var(--color-accent);
+    background-color: var(--color-bg-hover);
+  }
+
+  &:hover .feed-action {
+    opacity: 1;
   }
 
   // not filed under a story yet: bolder text plus a dot sitting inline before
   // it, so wrapped lines start flush left instead of hanging off a gutter
-  &--uncategorized {
+  &--uncategorized .feed-item-link {
     font-weight: 600;
 
     &::before {
@@ -600,6 +431,60 @@ $feed-width: $unit12;
       vertical-align: middle;
       border-radius: 50%;
       background-color: var(--color-marker-amber);
+    }
+  }
+}
+
+.feed-item-link {
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+}
+
+// same three states as the story rows' button, parked at the row's end
+.feed-action {
+  position: absolute;
+  top: $unit0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit3;
+  height: $unit3;
+  padding: 0;
+  border: none;
+  border-radius: $unit0;
+  background: none;
+  color: var(--lighter);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s ease,
+    color 0.12s ease;
+
+  svg {
+    fill: currentColor;
+  }
+
+  &:hover {
+    color: var(--color-accent);
+  }
+
+  &.has-content {
+    opacity: 1;
+    color: var(--color-accent);
+  }
+
+  &.is-busy {
+    opacity: 1;
+    cursor: default;
+
+    svg {
+      animation: spin 1s linear infinite;
     }
   }
 }
@@ -616,9 +501,9 @@ $feed-width: $unit12;
   white-space: nowrap;
 }
 
-// channel management, in the top bar
+// source management, in the top bar
 
-.channels-menu {
+.sources-menu {
   position: relative;
 
   .topbar-btn.has-error {
@@ -626,7 +511,7 @@ $feed-width: $unit12;
   }
 }
 
-.channels-dropdown {
+.sources-dropdown {
   position: absolute;
   top: calc(100% + $unit1);
   right: 0;
@@ -638,20 +523,20 @@ $feed-width: $unit12;
   box-shadow: var(--surface-shadow-hover);
 }
 
-.channels-empty {
+.sources-empty {
   padding: $unit2;
   font-size: $text1;
   color: var(--lighter);
 }
 
-// separates the per-channel rows from the dashboard-wide actions below
-.channels-divider {
+// separates the per-source rows from the dashboard-wide actions below
+.sources-divider {
   height: 1px;
   margin: $unit1 $unit0;
   background: var(--borderColor);
 }
 
-.channels-menu-btn {
+.sources-menu-btn {
   display: flex;
   align-items: center;
   gap: $unit1;
@@ -686,7 +571,7 @@ $feed-width: $unit12;
   }
 }
 
-.channels-item {
+.sources-item {
   display: flex;
   align-items: center;
   gap: $unit1;
@@ -698,7 +583,7 @@ $feed-width: $unit12;
   }
 }
 
-.channels-item-name {
+.sources-item-name {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -710,25 +595,33 @@ $feed-width: $unit12;
   white-space: nowrap;
 }
 
-.channels-item-kind {
+.sources-item-kind {
   font-size: $text0;
   color: var(--lighter);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
-.channels-item-error {
+// read by more than one arc: refreshing it here fills the others too, and
+// dropping it here leaves them alone — worth saying before either click
+.sources-item-shared {
+  font-size: $text0;
+  color: var(--lighter);
+  font-variant-numeric: tabular-nums;
+}
+
+.sources-item-error {
   font-size: $text0;
   color: $red;
 }
 
-.channels-item-actions {
+.sources-item-actions {
   display: flex;
   align-items: center;
   gap: $unit0;
 }
 
-.channels-action {
+.sources-action {
   background: none;
   border: none;
   cursor: pointer;
@@ -776,7 +669,7 @@ $feed-width: $unit12;
   letter-spacing: -0.01em;
 }
 
-.add-channel-form {
+.add-source-form {
   width: $unit13;
 
   .form-field {
@@ -916,4 +809,112 @@ $feed-width: $unit12;
     line-height: 1.4;
     color: var(--lighter);
   }
+}
+
+// Picking a source to add. Two tabs rather than one form, because there are
+// two situations: most of the time the outlet is already in the system and
+// pointing this arc at it costs nothing — not even a second fetch — and making
+// a new one is the other case. Hence existing first.
+.modal-tabs {
+  display: flex;
+  gap: $unit0;
+  margin: -$unit2 0 $unit3;
+}
+
+.modal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0;
+  padding: $unit1 $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  font-size: $text1;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+  }
+
+  &.is-active {
+    color: var(--color-text);
+    background-color: var(--color-bg-hover);
+  }
+}
+
+.modal-tab-count {
+  font-size: $text0;
+  color: var(--lighter);
+  font-variant-numeric: tabular-nums;
+}
+
+.source-picker {
+  width: $unit13;
+  max-width: 100%;
+  max-height: $unit12;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source-picker-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $unit2;
+  width: 100%;
+  padding: $unit2;
+  border: none;
+  border-radius: $unit1;
+  background: none;
+  font-size: $text1;
+  text-align: left;
+  color: var(--color-text);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.source-picker-name {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  min-width: 0;
+}
+
+.source-picker-kind,
+.source-picker-meta {
+  flex: none;
+  font-size: $text0;
+  color: var(--lighter);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.form-hint {
+  max-width: $unit13;
+  margin: 0 0 $unit2;
+  font-size: $text0;
+  line-height: 1.5;
+  color: var(--lighter);
+}
+
+.form-error {
+  max-width: $unit13;
+  margin: 0 0 $unit2;
+  font-size: $text1;
+  color: var(--danger);
 }

@@ -3,30 +3,26 @@ import * as articles from "../../models/articles";
 import { JobHandler } from "../types";
 
 export type ExtractContentPayload = {
-  dashboardId: string;
   articleId: number;
 };
 
 /**
  * Reads one article's page and stores its text. Queued per article by the
  * reader rather than run over the whole feed: fetching every article of every
- * channel would be a different thing entirely — a crawl — and most articles
- * are never opened.
+ * source would be a different thing entirely — a crawl — and most articles are
+ * never opened.
  *
- * Nothing is snapshotted; a retry just downloads again.
+ * The text belongs to the article, so it is stored once and every dashboard
+ * reading that source gets it. Nothing is snapshotted; a retry downloads again.
  */
 export const extractContentHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, articleId } = payload as ExtractContentPayload;
-  if (!dashboardId || !articleId) {
-    throw new Error("extract_content requires dashboardId and articleId");
-  }
+  const { articleId } = payload as ExtractContentPayload;
+  if (!articleId) throw new Error("extract_content requires an articleId");
 
-  const article = await articles.byId(dashboardId, Number(articleId));
-  if (!article) {
-    throw new Error(`article ${dashboardId}/${articleId} no longer exists`);
-  }
+  const article = await articles.byId(Number(articleId));
+  if (!article) throw new Error(`article ${articleId} no longer exists`);
 
-  const stored = await fetchAndStore(dashboardId, article.id);
+  const stored = await fetchAndStore(article.id);
 
   log(
     `read ${stored.chars} characters and ${stored.images} ` +
@@ -37,6 +33,7 @@ export const extractContentHandler: JobHandler = async (payload, { log }) => {
   return {
     result: {
       articleId: article.id,
+      sourceId: article.sourceId,
       url: article.url,
       chars: stored.chars,
       images: stored.images,

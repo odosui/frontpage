@@ -1,13 +1,12 @@
 import { createHash } from "crypto";
 import * as articles from "../../models/articles";
-import * as channels from "../../models/channels";
+import * as sources from "../../models/sources";
 import { fetchFeed } from "../../components/feeds/download";
 import { parseFeed, recentOnly } from "../../components/feeds/parse";
 import { JobHandler } from "../types";
 
 export type FetchFeedPayload = {
-  dashboardId: string;
-  channelId: string;
+  sourceId: string;
 };
 
 /** How far back into a feed is worth storing. See `recentOnly`. */
@@ -20,74 +19,66 @@ const MAX_AGE_DAYS = 5;
  * snapshotted either — parsing is cheap enough to redo on a retry.
  */
 export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, channelId } = payload as FetchFeedPayload;
-  if (!dashboardId || !channelId) {
-    throw new Error("fetch_feed requires dashboardId and channelId");
+  const { sourceId } = payload as FetchFeedPayload;
+  if (!sourceId) throw new Error("fetch_feed requires a sourceId");
+
+  const source = await sources.get(sourceId);
+  if (!source) throw new Error(`source ${sourceId} no longer exists`);
+  if (!source.url) throw new Error(`source ${sourceId} has no url configured`);
+  if (source.kind !== "rss") {
+    throw new Error(`fetch_feed cannot handle a ${source.kind} source`);
   }
 
-  const channel = await channels.get(dashboardId, channelId);
-  if (!channel) {
-    throw new Error(`channel ${dashboardId}/${channelId} no longer exists`);
-  }
-  if (!channel.url) {
-    throw new Error(
-      `channel ${dashboardId}/${channelId} has no url configured`,
-    );
-  }
-  if (channel.kind !== "rss") {
-    throw new Error(`fetch_feed cannot handle a ${channel.kind} channel`);
-  }
-
-  const state = await channels.getFetchState(dashboardId, channelId);
+  const state = await sources.getFetchState(sourceId);
   // only trust the validators once a previous run actually stored articles,
-  // otherwise a 304 would strand the channel empty
+  // otherwise a 304 would strand the source empty
   const validators = state?.contentHash
     ? { etag: state.etag, lastModified: state.lastModified }
     : undefined;
 
-  const feed = await fetchFeed(channel.url, validators);
+  const feed = await fetchFeed(source.url, validators);
 
   // nothing new to store
   if (feed.notModified) {
-    log(`${channel.url} unchanged (304)`);
-    return { result: { url: channel.url, unchanged: "not-modified" } };
+    log(`${source.url} unchanged (304)`);
+    return { result: { url: source.url, unchanged: "not-modified" } };
   }
 
   const contentHash = createHash("sha256").update(feed.xml).digest("hex");
 
   if (state?.contentHash === contentHash) {
-    log(`${channel.url} unchanged (same content)`);
-    return { result: { url: channel.url, unchanged: "same-content" } };
+    log(`${source.url} unchanged (same content)`);
+    return { result: { url: source.url, unchanged: "same-content" } };
   }
 
-  const items = parseFeed(feed.xml, channel.url);
+  const items = parseFeed(feed.xml, source.url);
   if (items.length === 0) {
-    // a feed that parses to nothing is a broken channel, not a quiet day —
+    // a feed that parses to nothing is a broken source, not a quiet day —
     // failing keeps the validators unsaved so the next run re-downloads
-    throw new Error(`no items found in feed ${channel.url}`);
+    throw new Error(`no items found in feed ${source.url}`);
   }
 
-  // an empty list here is a quiet week, not a broken channel, so it goes
+  // an empty list here is a quiet week, not a broken source, so it goes
   // through prepend as normal — which lets the validators be saved below,
   // where the throw above deliberately does not
   const fresh = recentOnly(items, MAX_AGE_DAYS);
 
-  const added = await articles.prepend(dashboardId, channelId, fresh);
+  const added = await articles.prepend(sourceId, fresh);
 
   // only now is it safe to remember this feed as "already read"
-  await channels.saveValidators(dashboardId, channelId, {
+  await sources.saveValidators(sourceId, {
     etag: feed.etag ?? null,
     lastModified: feed.lastModified ?? null,
   });
-  await channels.saveContentHash(dashboardId, channelId, contentHash);
+  await sources.saveContentHash(sourceId, contentHash);
 
   const stale = items.length - fresh.length;
   log(
-    `parsed ${items.length} items from ${channel.url}, ${added} new` +
+    `parsed ${items.length} items from ${source.url}, ${added} new` +
       (stale ? `, ${stale} older than ${MAX_AGE_DAYS} days` : ""),
   );
 
   return {
-    result: { url: channel.url, parsed: items.length, stale, added },
+    result: { url: source.url, sourceId, parsed: items.length, stale, added },
   };
 };

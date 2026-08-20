@@ -1,12 +1,11 @@
 import * as facts from "../../../models/facts";
-import * as storylines from "../../../models/storylines";
-import { AgentContext, AgentTool } from "../types";
+import { AgentTool } from "../types";
 
 /**
- * The analyst's own notes, kept between conversations. Everything else it can
- * call reads what the world reported; this is where it writes down what it has
- * concluded, so the next session starts from what was settled rather than
- * working it out again.
+ * The analyst's own notes on this dashboard, kept between conversations.
+ * Everything else it can call reads what the world reported; this is where it
+ * writes down what it has concluded, so the next session starts from what was
+ * settled rather than working it out again.
  *
  * The list is revised whole rather than a line at a time. What an arc
  * establishes is one document — raising the confidence on one fact usually
@@ -20,9 +19,9 @@ import { AgentContext, AgentTool } from "../types";
 export const reviseFacts: AgentTool = {
   name: "REVISE_FACTS",
   usage:
-    '<|REVISE_FACTS "Russian-Ukrainian war" "Reuters has now put a second source behind the July shipment, so the supply claim stops being a Ukrainian allegation" f3 "**Wildberries** warehouses have supplied drone components since **July 2026**, first reported by **Reuters** on **12 August 2026**" 4 9241 "The **Kaluga** plant reopened on **3 August**, per **Kommersant**" 2|>',
+    '<|REVISE_FACTS "Reuters has now put a second source behind the July shipment, so the supply claim stops being a Ukrainian allegation" f3 "**Wildberries** warehouses have supplied drone components since **July 2026**, first reported by **Reuters** on **12 August 2026**" 4 9241 "The **Kaluga** plant reopened on **3 August**, per **Kommersant**" 2|>',
   description:
-    "Rewrites what a storyline has established, as a new version: the arc's exact title, one line saying why the set changed, then the facts. " +
+    "Rewrites what this dashboard has established, as a new version: one line saying why the set changed, then the facts. " +
     "Each fact is its id (as given to you, e.g. f3) if it already exists and nothing if it is new, then the line in quotes, then how sure it is from 1 to 5 — 1 rumour, 2 one source, 3 reported, 4 corroborated, 5 certain — and optionally the id of the article it rests on, from GET_STORY. " +
     "Pass the WHOLE list every time, including the facts you are not touching, keeping their ids: whatever you leave out is dropped, which is how a fact that turned out to be false is removed. " +
     "Keep a fact when it is merely shakier than it looked and lower its confidence instead. " +
@@ -31,21 +30,13 @@ export const reviseFacts: AgentTool = {
     "Name who says so in the line too, and name the outlet or person that reported it first rather than whoever you read repeating it. " +
     "The reasoning is kept with the version, so the reader can read back why the knowledge moved.",
   run: async (args, ctx) => {
-    const [arc, reasoning] = args;
-    if (!arc) {
-      return "ERROR: REVISE_FACTS needs the storyline title first.";
-    }
+    const [reasoning] = args;
     if (!reasoning?.trim()) {
-      return "ERROR: REVISE_FACTS needs the reasoning behind the revision, in quotes, right after the storyline title.";
+      return "ERROR: REVISE_FACTS needs the reasoning behind the revision first, in quotes.";
     }
 
-    const storyline = await resolve(ctx, arc);
-    if (!storyline) {
-      return `ERROR: no storyline matching "${arc}" — use the exact title.`;
-    }
-
-    const before = await facts.forStoryline(ctx.dashboardId, storyline.id);
-    const drafts = parseFacts(args.slice(2));
+    const before = await facts.forDashboard(ctx.dashboardId);
+    const drafts = parseFacts(args.slice(1));
     if (drafts.length === 0 && before.length > 0) {
       return (
         "ERROR: REVISE_FACTS was given no facts, which would erase all " +
@@ -53,7 +44,7 @@ export const reviseFacts: AgentTool = {
       );
     }
 
-    const version = await facts.revise(ctx.dashboardId, storyline.id, {
+    const version = await facts.revise(ctx.dashboardId, {
       facts: drafts,
       author: "analyst",
       reasoning,
@@ -138,12 +129,6 @@ function summarize(
   ]
     .filter(Boolean)
     .join("\n");
-}
-
-/** Exact slug first, then a loose title match — the same way stories resolve. */
-async function resolve(ctx: AgentContext, title: string) {
-  const found = await storylines.search(ctx.dashboardId, title, 1);
-  return found[0] ?? null;
 }
 
 function describe(confidence: number): string {

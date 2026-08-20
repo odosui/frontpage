@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
+import { type Dashboard } from './api'
 import ChevronDownIcon from './icons/ChevronDownIcon'
 import EditIcon from './icons/EditIcon'
 import TrashIcon from './icons/TrashIcon'
 import PlusIcon from './icons/PlusIcon'
 
 type Props = {
-  dashboards: string[]
+  dashboards: Dashboard[]
   current: string
   onSelect: (id: string) => void
   onCreate: (name: string) => void
@@ -54,9 +55,9 @@ const DashboardSwitcher = ({
     setCreating(false)
   }
 
-  const handleRename = (id: string) => {
+  const handleRename = (id: string, was: string) => {
     const trimmed = editName.trim()
-    if (!trimmed || trimmed === id) {
+    if (!trimmed || trimmed === was) {
       setEditingId(null)
       return
     }
@@ -64,72 +65,81 @@ const DashboardSwitcher = ({
     setEditingId(null)
   }
 
+  const currentName =
+    dashboards.find((d) => d.id === current)?.name ?? current
+
   return (
     <div className="dash-switcher" ref={ref}>
       <button className="dash-switcher-trigger" onClick={() => setOpen(!open)}>
-        <span className="dash-switcher-label">{current}</span>
+        <span className="dash-switcher-label">{currentName}</span>
         <ChevronDownIcon />
       </button>
 
       {open && (
         <div className="dash-switcher-dropdown">
-          {dashboards.map((id) => (
-            <div
-              key={id}
-              className={`dash-switcher-item${id === current ? ' active' : ''}`}
-            >
-              {editingId === id ? (
-                <input
-                  className="dash-switcher-edit-input"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRename(id)
-                    if (e.key === 'Escape') setEditingId(null)
-                  }}
-                  onBlur={() => handleRename(id)}
-                  autoFocus
-                />
-              ) : (
-                <>
-                  <button
-                    className="dash-switcher-item-btn"
-                    onClick={() => {
-                      onSelect(id)
-                      setOpen(false)
+          {dashboards.map((dashboard) => {
+            const { id, name } = dashboard
+            return (
+              <div
+                key={id}
+                className={`dash-switcher-item${id === current ? ' active' : ''}`}
+              >
+                {editingId === id ? (
+                  <input
+                    className="dash-switcher-edit-input"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRename(id, name)
+                      if (e.key === 'Escape') setEditingId(null)
                     }}
-                  >
-                    {id}
-                  </button>
-                  <div className="dash-switcher-item-actions">
+                    onBlur={() => handleRename(id, name)}
+                    autoFocus
+                  />
+                ) : (
+                  <>
                     <button
-                      className="dash-switcher-action"
-                      title="Rename"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingId(id)
-                        setEditName(id)
+                      className="dash-switcher-item-btn"
+                      onClick={() => {
+                        onSelect(id)
+                        setOpen(false)
                       }}
                     >
-                      <EditIcon />
+                      {name}
+                      <span className="dash-switcher-item-count">
+                        {dashboard.storyCount}
+                      </span>
                     </button>
-                    {id !== 'default' && (
+                    <div className="dash-switcher-item-actions">
                       <button
-                        className="dash-switcher-action dash-switcher-action--danger"
-                        title="Delete"
+                        className="dash-switcher-action"
+                        title="Rename"
                         onClick={(e) => {
                           e.stopPropagation()
-                          onDelete(id)
+                          setEditingId(id)
+                          setEditName(name)
                         }}
                       >
-                        <TrashIcon />
+                        <EditIcon />
                       </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+                      {id !== 'default' && (
+                        <button
+                          className="dash-switcher-action dash-switcher-action--danger"
+                          title="Delete"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDelete(id)
+                          }}
+                        >
+                          <TrashIcon />
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
 
           <div className="dash-switcher-divider" />
 
@@ -138,7 +148,7 @@ const DashboardSwitcher = ({
               <input
                 ref={inputRef}
                 className="dash-switcher-create-input"
-                placeholder="Dashboard name..."
+                placeholder="New arc, e.g. Russian-Ukrainian war"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => {

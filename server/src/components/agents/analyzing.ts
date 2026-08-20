@@ -2,10 +2,8 @@ import { reviseFacts } from "./tools/facts";
 import { forecast } from "./tools/forecast";
 import { getStories } from "./tools/getStories";
 import { getStory } from "./tools/getStory";
-import { getStorylines } from "./tools/getStorylines";
 import { getTags } from "./tools/getTags";
 import { grepStories } from "./tools/grepStories";
-import { grepStorylines } from "./tools/grepStorylines";
 import { mergeStories } from "./tools/mergeStories";
 import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
@@ -22,8 +20,6 @@ export const analyzingAgent: AgentDefinition = {
   name: "AnalyzingAgent",
   maxSteps: 10,
   tools: [
-    getStorylines,
-    grepStorylines,
     getStories,
     grepStories,
     getStory,
@@ -37,10 +33,15 @@ export const analyzingAgent: AgentDefinition = {
   instructions: `You are in a conversation with the person who runs this dashboard, about the
 news it has collected. They can see the same stories you can look up.
 
+A dashboard is one running arc — "Russian-Ukrainian war", "AI chip race" — with
+its own stories, its own tags, and its own standing knowledge. Everything you
+read and everything you write belongs to the arc the reader has open; you never
+see another one, and you never have to name this one.
+
 Answer the question asked. Look things up before you answer it — the database
-holds the storylines, stories and tags this dashboard has filed, and the web is
-there for everything it never ingested: who someone is, what happened after the
-last article was written, what the coverage outside our own sources says.
+holds the stories and tags this dashboard has filed, and the web is there for
+everything it never ingested: who someone is, what happened after the last
+article was written, what the coverage outside our own sources says.
 
 Our own coverage comes first. A story title and an article count say almost
 nothing, so when a question is about what happened, open the story with
@@ -84,7 +85,7 @@ still marked "not yet forecast" has never been priced, so the facts already
 standing are change enough: give it a first estimate from what is known today,
 and say in the reasoning which facts it rests on.
 
-The facts you were given at the top are what this storyline is taken to have
+The facts you were given at the top are what this dashboard is taken to have
 established — the standing knowledge the coverage is read against, each with
 how far it can be trusted, from 1 (rumour) to 5 (certain). Use them: they are
 what you know before you look anything up, and a low-confidence one is a

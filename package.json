@@ -11,7 +11,6 @@
     "rollback": "npm run rollback --prefix server",
     "migrate:status": "npm run migrate:status --prefix server",
     "migrate:new": "npm run migrate:new --prefix server",
-    "import-json": "npm run import-json --prefix server",
     "search": "npm run search --prefix server --silent --",
     "e2e": "playwright test"
   },

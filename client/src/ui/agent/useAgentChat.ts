@@ -19,11 +19,6 @@ const LIVE_POLL_MS = 1200
 type Options = {
   dashboardId: string
   kind: string
-  /**
-   * The storyline the chat was opened from, by slug. The server turns it into
-   * the agent's opening context — the client never writes the prompt.
-   */
-  storyline?: string
 }
 
 /**
@@ -33,7 +28,7 @@ type Options = {
  * The session is opened on the first message rather than on mount, so a page
  * nobody talks to leaves no empty sessions behind.
  */
-export function useAgentChat({ dashboardId, kind, storyline }: Options) {
+export function useAgentChat({ dashboardId, kind }: Options) {
   const { refresh: refreshJobs, onJobFinished } = useJobs()
   const [sessionId, setSessionId] = useState<number | null>(null)
   const [session, setSession] = useState<AgentSession | null>(null)
@@ -51,7 +46,7 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
     setProposals(data.proposals ?? [])
   }, [])
 
-  // a different dashboard or arc is a different conversation
+  // a different dashboard is a different conversation
   useEffect(() => {
     setSessionId(null)
     setSession(null)
@@ -59,7 +54,7 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
     setThinking(false)
     setError(null)
     pendingJob.current = null
-  }, [dashboardId, kind, storyline])
+  }, [dashboardId, kind])
 
   // follow the transcript while a turn is being worked on
   useEffect(() => {
@@ -114,7 +109,6 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
           const started: { session: AgentSession } = await api.startChat(
             dashboardId,
             kind,
-            storyline,
           )
           id = started.session.id
           setSessionId(id)
@@ -130,12 +124,12 @@ export function useAgentChat({ dashboardId, kind, storyline }: Options) {
         setThinking(false)
       }
     },
-    [sessionId, dashboardId, kind, storyline, refreshJobs],
+    [sessionId, dashboardId, kind, refreshJobs],
   )
 
   /**
    * Answers a proposal. Approving is what performs the change, so the caller
-   * is told it landed — the storyline list beside the chat is now stale.
+   * is told it landed — the story list beside the chat is now stale.
    */
   const decide = useCallback(
     async (id: number, approve: boolean) => {

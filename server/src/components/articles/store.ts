@@ -17,21 +17,22 @@ export type StoredContent = {
  * The job handler calls this because the reader is not waiting on it. The
  * agent calls it inline because it is: a turn cannot wait for a job it has no
  * way to poll, and an article it needs is one page, not a crawl.
+ *
+ * Not scoped to a dashboard: the text belongs to the article, and every
+ * dashboard reading that source gets it once one of them asks for it.
  */
 export async function fetchAndStore(
-  dashboardId: string,
   articleId: number,
 ): Promise<StoredContent> {
-  const article = await articles.byId(dashboardId, articleId);
+  const article = await articles.byId(articleId);
   if (!article) {
-    throw new Error(`article ${dashboardId}/${articleId} no longer exists`);
+    throw new Error(`article ${articleId} no longer exists`);
   }
 
   const html = await fetchArticlePage(article.url);
   const readable = extractReadable(html, article.url);
 
   const saved = await articles.saveContent(
-    dashboardId,
     article.id,
     readable.text,
     readable.images,

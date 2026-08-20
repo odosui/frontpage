@@ -36,11 +36,13 @@ export type DatabaseStats = {
   tables: TableStat[];
   content: {
     dashboards: number;
-    channels: number;
+    sources: number;
     articles: number;
-    uncategorizedArticles: number;
-    channelsWithoutUrl: number;
-    channelsNeverFetched: number;
+    filings: number;
+    stories: number;
+    sourcesWithoutUrl: number;
+    sourcesNeverFetched: number;
+    unreadSources: number;
     newestArticleAt: string | null;
     oldestArticleAt: string | null;
   };
@@ -57,8 +59,11 @@ export type DatabaseStats = {
   };
   dashboards: {
     id: string;
-    channels: number;
+    name: string;
+    sources: number;
     articles: number;
+    stories: number;
+    uncategorized: number;
     lastFetchedAt: string | null;
   }[];
 };
@@ -212,24 +217,30 @@ async function tableStats(): Promise<TableStat[]> {
 
 async function contentStats() {
   const { rows } = await query<Record<string, string | null>>(
-    `select (select count(*) from dashboards)                       as dashboards,
-            (select count(*) from channels)                          as channels,
-            (select count(*) from articles)                          as articles,
-            (select count(*) from articles
-               where story_id is null and skipped_at is null)        as uncategorized_articles,
-            (select count(*) from channels where url = '')           as channels_without_url,
-            (select count(*) from channels where fetched_at is null) as channels_never_fetched,
-            (select max(created_at) from articles)                   as newest_article_at,
-            (select min(created_at) from articles)                   as oldest_article_at`,
+    `select (select count(*) from dashboards)                      as dashboards,
+            (select count(*) from sources)                         as sources,
+            (select count(*) from articles)                        as articles,
+            (select count(*) from article_filings)                 as filings,
+            (select count(*) from stories)                         as stories,
+            (select count(*) from sources where url = '')          as sources_without_url,
+            (select count(*) from sources where fetched_at is null) as sources_never_fetched,
+            -- a source nobody reads still costs a fetch and a row per article
+            (select count(*) from sources s
+              where not exists (select 1 from dashboard_sources ds
+                                 where ds.source_id = s.id))       as unread_sources,
+            (select max(created_at) from articles)                 as newest_article_at,
+            (select min(created_at) from articles)                 as oldest_article_at`,
   );
   const r = rows[0] ?? {};
   return {
     dashboards: Number(r.dashboards ?? 0),
-    channels: Number(r.channels ?? 0),
+    sources: Number(r.sources ?? 0),
     articles: Number(r.articles ?? 0),
-    uncategorizedArticles: Number(r.uncategorized_articles ?? 0),
-    channelsWithoutUrl: Number(r.channels_without_url ?? 0),
-    channelsNeverFetched: Number(r.channels_never_fetched ?? 0),
+    filings: Number(r.filings ?? 0),
+    stories: Number(r.stories ?? 0),
+    sourcesWithoutUrl: Number(r.sources_without_url ?? 0),
+    sourcesNeverFetched: Number(r.sources_never_fetched ?? 0),
+    unreadSources: Number(r.unread_sources ?? 0),
     newestArticleAt: iso(r.newest_article_at),
     oldestArticleAt: iso(r.oldest_article_at),
   };
@@ -295,29 +306,57 @@ async function jobsByStatus(): Promise<Record<string, number>> {
   return Object.fromEntries(rows.map((r) => [r.status, Number(r.count)]));
 }
 
+/**
+ * Per dashboard, everything is counted through `dashboard_sources`: an article
+ * is not the dashboard's, it is the dashboard's *source's*, so two arcs
+ * reading one outlet both count the same rows. That double counting is the
+ * honest answer to "how much is this arc looking at".
+ *
+ * Subqueries rather than joins: joining sources and articles together would
+ * multiply the two counts by each other.
+ */
 async function dashboardStats() {
   const { rows } = await query<{
     id: string;
-    channels: string;
+    name: string;
+    sources: string;
     articles: string;
+    stories: string;
+    uncategorized: string;
     last_fetched_at: string | null;
   }>(
-    // subqueries rather than joins: joining channels and articles together
-    // multiplies the two counts by each other
-    `select d.id,
-            (select count(*) from channels c where c.dashboard_id = d.id)
-              as channels,
-            (select count(*) from articles a where a.dashboard_id = d.id)
-              as articles,
-            (select max(c.fetched_at) from channels c where c.dashboard_id = d.id)
-              as last_fetched_at
-     from dashboards d
-     order by articles desc, d.id`,
+    `select d.id, d.name,
+            (select count(*) from dashboard_sources ds
+              where ds.dashboard_id = d.id)                        as sources,
+            (select count(*) from articles a
+              where a.source_id in (select ds.source_id
+                                      from dashboard_sources ds
+                                     where ds.dashboard_id = d.id)) as articles,
+            (select count(*) from stories s
+              where s.dashboard_id = d.id)                          as stories,
+            (select count(*) from articles a
+              where a.source_id in (select ds.source_id
+                                      from dashboard_sources ds
+                                     where ds.dashboard_id = d.id)
+                and not exists (select 1 from article_filings f
+                                 where f.dashboard_id = d.id
+                                   and f.article_id = a.id
+                                   and (f.story_id is not null
+                                        or f.skipped_at is not null)))
+                                                                    as uncategorized,
+            (select max(s.fetched_at) from sources s
+              where s.id in (select ds.source_id from dashboard_sources ds
+                              where ds.dashboard_id = d.id))        as last_fetched_at
+       from dashboards d
+      order by articles desc, d.id`,
   );
   return rows.map((r) => ({
     id: r.id,
-    channels: Number(r.channels),
+    name: r.name,
+    sources: Number(r.sources),
     articles: Number(r.articles),
+    stories: Number(r.stories),
+    uncategorized: Number(r.uncategorized),
     lastFetchedAt: iso(r.last_fetched_at),
   }));
 }

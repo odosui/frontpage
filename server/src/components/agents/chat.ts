@@ -19,8 +19,8 @@ export type StartChatOptions = {
   model: string;
   dashboardId: string;
   /**
-   * What this conversation is about, in one line — the storyline the chat was
-   * opened from. It joins the system message, so it holds for every turn
+   * What this conversation is about — the dashboard the chat was opened from,
+   * as it stands. It joins the system message, so it holds for every turn
    * without being repeated into the transcript.
    */
   context?: string;

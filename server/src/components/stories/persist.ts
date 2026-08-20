@@ -1,12 +1,12 @@
 import * as articles from "../../models/articles";
 import * as stories from "../../models/stories";
-import { StoryTree, Storyline } from "./categorize";
+import { StoryTree } from "./categorize";
 import { PromptArticle } from "./prompt";
 
 export type PersistResult = stories.SaveResult & {
   /** Prompt ids the model used that were not in the batch we sent it. */
   unknownIds: number[];
-  /** Articles the model rejected as not being news; they leave the queue. */
+  /** Articles the model judged not to belong here; they leave the queue. */
   skipped: number;
 };
 
@@ -25,34 +25,29 @@ export async function persistTree(
 
   const entries: stories.StoryEntry[] = [];
 
-  for (const storyline of tree.storylines ?? []) {
-    for (const story of storyline.stories ?? []) {
-      const articles: stories.StoryEntry["articles"] = [];
+  for (const story of tree.stories ?? []) {
+    const filed: stories.StoryEntry["articles"] = [];
 
-      for (const article of story.articles ?? []) {
-        const articleId = articleIds.get(article.id);
-        if (articleId === undefined) {
-          unknownIds.push(article.id);
-          continue;
-        }
-        articles.push({
-          id: articleId,
-          importance: clampImportance(article.importance),
-          tags: article.tags ?? [],
-        });
+    for (const article of story.articles ?? []) {
+      const articleId = articleIds.get(article.id);
+      if (articleId === undefined) {
+        unknownIds.push(article.id);
+        continue;
       }
-
-      if (articles.length === 0) continue;
-      entries.push({
-        storyline: storylineTitle(storyline),
-        story: cleanTitle(story.story),
-        articles,
+      filed.push({
+        id: articleId,
+        importance: clampImportance(article.importance),
+        tags: article.tags ?? [],
       });
     }
+
+    if (filed.length === 0) continue;
+    entries.push({ story: cleanTitle(story.story), articles: filed });
   }
 
-  // an article the model refused to file has to be marked, or it sits in the
-  // queue for ever: story_id stays null, so every later run picks it up again
+  // an article the model refused to file has to be marked, or it sits in this
+  // dashboard's queue for ever: nothing files it, so every later run picks it
+  // up again
   const rejected: { id: number; reason: string }[] = [];
   for (const item of tree.unassigned ?? []) {
     const articleId = articleIds.get(item.article_id);
@@ -69,22 +64,9 @@ export async function persistTree(
 }
 
 /**
- * The arc this story sits under, or null when it sits under none. The prompt
- * asks for `"standalone": true` on a story that starts its own thread, but
- * models also just write "standalone" as the title — both mean no arc, and
- * neither should become a storyline row of its own.
- */
-function storylineTitle(storyline: Storyline): string | null {
-  if (storyline.standalone) return null;
-  const title = cleanTitle(storyline.storyline);
-  if (!title || title.toLowerCase() === "standalone") return null;
-  return title;
-}
-
-/**
  * Strips a leading "#12 " that a model copied out of a tool listing. The
  * listings no longer print ids, but a title carrying one would otherwise fork
- * the arc it was meant to reuse — and compound on the next run.
+ * the story it was meant to reuse — and compound on the next run.
  */
 function cleanTitle(title: string): string {
   return (title ?? "").replace(/^(?:#\d+\s+)+/, "").trim();

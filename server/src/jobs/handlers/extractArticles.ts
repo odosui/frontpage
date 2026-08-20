@@ -1,13 +1,12 @@
 import * as articles from "../../models/articles";
-import * as channels from "../../models/channels";
+import * as sources from "../../models/sources";
 import { SMALL_MODEL } from "../../components/ai/models";
 import { extractArticles } from "../../components/websites/extract";
 import { deleteSnapshot, loadSnapshot } from "../../models/snapshots";
 import { JobHandler } from "../types";
 
 export type ExtractArticlesPayload = {
-  dashboardId: string;
-  channelId: string;
+  sourceId: string;
   snapshotId: string;
   /** Hash of the analyzed html, recorded so the next fetch can skip a no-op. */
   contentHash?: string;
@@ -18,12 +17,10 @@ export type ExtractArticlesPayload = {
 
 /** Run the model over a fetched page and store whatever articles are new. */
 export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
-  const { dashboardId, channelId, snapshotId, contentHash, etag, lastModified } =
+  const { sourceId, snapshotId, contentHash, etag, lastModified } =
     payload as ExtractArticlesPayload;
-  if (!dashboardId || !channelId || !snapshotId) {
-    throw new Error(
-      "extract_articles requires dashboardId, channelId and snapshotId",
-    );
+  if (!sourceId || !snapshotId) {
+    throw new Error("extract_articles requires sourceId and snapshotId");
   }
 
   const snapshot = await loadSnapshot(snapshotId);
@@ -43,17 +40,15 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
     return true;
   });
 
-  const added = await articles.prepend(dashboardId, channelId, unique);
+  const added = await articles.prepend(sourceId, unique);
 
   // only now is it safe to remember this page as "already analyzed" — both the
   // hash and the HTTP validators, so a failed run always re-downloads
-  await channels.saveValidators(dashboardId, channelId, {
+  await sources.saveValidators(sourceId, {
     etag: etag ?? null,
     lastModified: lastModified ?? null,
   });
-  if (contentHash) {
-    await channels.saveContentHash(dashboardId, channelId, contentHash);
-  }
+  if (contentHash) await sources.saveContentHash(sourceId, contentHash);
 
   await deleteSnapshot(snapshotId);
 
@@ -62,6 +57,7 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
   return {
     result: {
       url: snapshot.url,
+      sourceId,
       model: SMALL_MODEL,
       extracted: extracted.length,
       added,

@@ -1,5 +1,6 @@
 import { runAgent } from "../../components/agents/runner";
 import { getAgent } from "../../components/agents/registry";
+import * as dashboards from "../../models/dashboards";
 import {
   DEFAULT_WINDOW_DAYS,
   parseTree,
@@ -33,6 +34,9 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
   }
 
   const agent = getAgent(kind);
+  const dashboard = await dashboards.get(dashboardId);
+  if (!dashboard) throw new Error(`dashboard ${dashboardId} no longer exists`);
+
   const window = days ?? DEFAULT_WINDOW_DAYS;
   const articles = await uncategorizedArticles(dashboardId, {
     days: window,
@@ -54,7 +58,7 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
 
   const run = await runAgent(agent, {
     model: model || BIG_MODEL,
-    task: categorizeStoriesPrompt(articles),
+    task: categorizeStoriesPrompt(dashboard.name, articles),
     dashboardId,
     log,
   });
@@ -68,11 +72,10 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
   // stay uncategorized and the next run picks them up again
   const saved = await persistTree(dashboardId, parseTree(run.answer), articles);
   log(
-    `saved ${saved.stories} stories under ${saved.storylines} new / ` +
-      `${saved.reusedStorylines} existing storylines, ` +
+    `saved ${saved.stories} new / ${saved.reusedStories} existing stories, ` +
       `${saved.articles} articles, ` +
       `${saved.tags} new / ${saved.reusedTags} existing tags, ` +
-      `${saved.skipped} skipped as not news` +
+      `${saved.skipped} skipped as not for this arc` +
       (saved.unknownIds.length
         ? ` (ignored ${saved.unknownIds.length} invented ids)`
         : ""),

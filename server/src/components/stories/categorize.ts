@@ -6,7 +6,7 @@ export type RecentArticle = PromptArticle & {
   articleId: number;
   url: string;
   dashboardId: string;
-  channelId: string;
+  sourceId: string;
 };
 
 /**
@@ -21,14 +21,12 @@ export type TaggedArticle = {
 
 export type Story = { story: string; articles: TaggedArticle[] };
 
-export type Storyline = {
-  storyline: string;
-  standalone?: boolean;
-  stories: Story[];
-};
-
+/**
+ * The model's whole answer: the events it found in the batch, and the articles
+ * it judged not to belong to this dashboard at all.
+ */
 export type StoryTree = {
-  storylines: Storyline[];
+  stories: Story[];
   unassigned?: { article_id: number; reason: string }[];
 };
 
@@ -56,13 +54,13 @@ export async function uncategorizedArticles(
     articleId: r.id,
     title: r.title,
     url: r.url,
-    source: hostname(r.url) || r.channelId,
+    source: hostname(r.url) || r.sourceId,
     dashboardId,
-    channelId: r.channelId,
-    // the real publish time where the channel gave us one; otherwise when we
+    sourceId: r.sourceId,
+    // the real publish time where the source gave us one; otherwise when we
     // first saw it, which is the only date a scraped page has
     publishedAt: r.publishedAt.slice(0, 16).replace("T", " "),
-    // rss channels carry the outlet's own summary; web channels never do, so
+    // rss sources carry the outlet's own summary; web sources never do, so
     // the prompt has to read with it present on some articles and not others
     ...(r.description ? { description: r.description } : {}),
   }));
@@ -75,8 +73,8 @@ export function parseTree(raw: string): StoryTree {
     throw new Error("no JSON object in the model response");
   }
   const parsed = JSON.parse(match[0]) as StoryTree;
-  if (!Array.isArray(parsed.storylines)) {
-    throw new Error("response has no storylines array");
+  if (!Array.isArray(parsed.stories)) {
+    throw new Error("response has no stories array");
   }
   return parsed;
 }

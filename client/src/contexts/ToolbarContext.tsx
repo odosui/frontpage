@@ -1,26 +1,42 @@
 import * as React from 'react'
 import { createContext, useContext, useMemo, useState } from 'react'
-import { type Channel } from '../api'
+import { type Dashboard, type FeedArticle, type Source } from '../api'
 
 /**
  * The dashboard's controls live in the top bar, which is rendered outside the
  * router. The Dashboard publishes them here and the TopBar picks them up.
+ *
+ * The raw feed rides along too: it used to be a column on the page, and is now
+ * a dropdown off the bar, so the page has to hand it over the same way it hands
+ * over the source list.
  */
 export interface DashboardTools {
-  dashboards: string[]
+  dashboards: Dashboard[]
   current: string
+  currentName: string
   onSelect: (id: string) => void
   onCreate: (name: string) => void
   onDelete: (id: string) => void
   onRename: (id: string, name: string) => void
-  onRefreshAll: () => void
+
+  /** The sources this dashboard reads — shared with whatever else reads them. */
+  sources: Source[]
+  refreshingSources: Set<string>
+  sourceErrors: Map<string, string>
   isRefreshing: boolean
-  onAddChannel: () => void
-  channels: Channel[]
-  refreshingChannels: Set<string>
-  channelErrors: Map<string, string>
-  onRefreshChannel: (id: string) => void
-  onDeleteChannel: (id: string) => void
+  onRefreshSource: (id: string) => void
+  onRemoveSource: (id: string) => void
+  onAddSource: () => void
+  onRefreshAll: () => void
+
+  /** The Latest dropdown: everything collected, filed or not. */
+  feed: FeedArticle[]
+  uncategorized: number
+  agentRunning: boolean
+  onRunAgent: () => void
+  onExtract: (articleId: number) => void
+  onOpenArticle: (articleId: number) => void
+  extracting: Set<number>
 }
 
 interface ToolbarValue {

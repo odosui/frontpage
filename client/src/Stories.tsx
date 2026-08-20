@@ -1,46 +1,40 @@
 import { BookIcon, DownloadIcon, SyncIcon } from '@primer/octicons-react'
-import { type StoryFeedEntry, type Storyline } from './api'
+import { type StoryFeedEntry } from './api'
 import ArticleTime from './ui/ArticleTime'
 import StoryMenu from './ui/StoryMenu'
 
 type Props = {
   stories: StoryFeedEntry[]
+  /** Whether this dashboard reads any source at all — for the empty state. */
+  hasSources: boolean
   hasArticles: boolean
   /** Articles with an extract_content job in flight right now. */
   extracting: Set<number>
   onExtract: (articleId: number) => void
   onOpenContent: (articleId: number) => void
-  /** Every arc a story can be moved to; empty where moving is not offered. */
-  storylines?: Storyline[]
-  /** Left out on the storyline page, where every story is already in place. */
-  onMove?: (
-    storyId: number,
-    to: { storylineId?: number | null; storylineTitle?: string },
-  ) => void
+  onRename?: (storyId: number, title: string) => void
+  onDelete?: (storyId: number) => void
 }
 
 /**
- * The categorized view: storyline label, story headline, then the articles
- * that make it up. Ordered by newest article, so the same storyline can head
- * several entries at different places in the list — it's a label, not a group.
+ * The arc, as events: one entry per story, newest first by its newest article,
+ * with the articles that make it up under each.
+ *
+ * There is no storyline label any more — the dashboard is the arc, so every
+ * story on this page already belongs to it.
  */
 const Stories = ({
   stories,
+  hasSources,
   hasArticles,
   extracting,
   onExtract,
   onOpenContent,
-  storylines = [],
-  onMove,
+  onRename,
+  onDelete,
 }: Props) => {
   if (stories.length === 0) {
-    return (
-      <p className="stories-placeholder">
-        {hasArticles
-          ? 'Nothing categorized yet — run the categorizing agent.'
-          : 'No articles yet. Add a channel and refresh to start collecting.'}
-      </p>
-    )
+    return <p className="stories-placeholder">{emptyState(hasSources, hasArticles)}</p>
   }
 
   return (
@@ -48,29 +42,21 @@ const Stories = ({
       {stories.map((story) => (
         <article key={story.id} className="story">
           <h2 className="story-title">
-            {story.storyline && (
-              <span className="story-storyline" title={story.storyline.title}>
-                {story.storyline.title}
-              </span>
-            )}
             <span className="story-title-text">{story.title}</span>
-            {onMove && (
+            <span className="story-count">{story.articles.length}</span>
+            {(onRename || onDelete) && (
               <StoryMenu
-                current={story.storyline}
-                storylines={storylines}
-                onMove={(storylineId) => onMove(story.id, { storylineId })}
-                onCreate={(storylineTitle) =>
-                  onMove(story.id, { storylineTitle })
+                title={story.title}
+                onRename={
+                  onRename ? (title) => onRename(story.id, title) : undefined
                 }
+                onDelete={onDelete ? () => onDelete(story.id) : undefined}
               />
             )}
           </h2>
           <div className="story-articles">
             {story.articles.map((article) => (
-              <div
-                key={`${article.channelId}:${article.url}`}
-                className="story-article-row"
-              >
+              <div key={article.id} className="story-article-row">
                 <span
                   className={`story-article-dot is-${band(article.importance)}`}
                   title={
@@ -94,7 +80,7 @@ const Stories = ({
                   </span>
                 ))}
                 <span className="story-article-meta">
-                  {article.channelId} · <ArticleTime article={article} />
+                  {article.sourceId} · <ArticleTime article={article} />
                 </span>
                 <ContentButton
                   article={article}
@@ -109,6 +95,15 @@ const Stories = ({
       ))}
     </div>
   )
+}
+
+/** Which of the three ways this arc can be empty the reader is looking at. */
+function emptyState(hasSources: boolean, hasArticles: boolean): string {
+  if (!hasSources) {
+    return 'No sources yet. Assign one from the top bar to start collecting articles.'
+  }
+  if (!hasArticles) return 'No articles yet — hit refresh on a source.'
+  return 'Nothing filed under this dashboard yet — run the categorizing agent.'
 }
 
 /**

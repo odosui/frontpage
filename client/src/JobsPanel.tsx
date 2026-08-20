@@ -83,7 +83,9 @@ const JobsPanel: React.FC<JobsPanelProps> = ({ onClose }) => {
 }
 
 const JobRow: React.FC<{ job: Job }> = ({ job }) => {
-  const target = [job.payload.dashboardId, job.payload.channelId]
+  // a fetch names its source, an agent run names its dashboard; nothing names
+  // both any more, since a source is not owned by an arc
+  const target = [job.payload.sourceId, job.payload.dashboardId]
     .filter(Boolean)
     .join(' / ')
 

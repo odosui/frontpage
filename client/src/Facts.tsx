@@ -13,8 +13,6 @@ import FactsVersionModal from './ui/facts/FactsVersionModal'
 
 type Props = {
   dashboardId: string
-  /** The arc these facts belong to, by slug. */
-  storyline: string
   facts: Fact[]
   /** Which revision `facts` is; 0 when nothing has been written down yet. */
   version: number
@@ -23,7 +21,7 @@ type Props = {
 }
 
 /**
- * What this storyline is taken to have established, newest first — the standing
+ * What this dashboard is taken to have established, newest first — the standing
  * knowledge the coverage is read against, rather than a summary of it.
  *
  * The same list the analyst is given at the top of every conversation, so what
@@ -34,13 +32,7 @@ type Props = {
  * panel possible: what stood before is still there, next to the reason it
  * stopped standing.
  */
-const StorylineFacts = ({
-  dashboardId,
-  storyline,
-  facts,
-  version,
-  onChanged,
-}: Props) => {
+const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
   const [adding, setAdding] = useState(false)
   const [content, setContent] = useState('')
   const [confidence, setConfidence] = useState(DEFAULT_CONFIDENCE)
@@ -54,12 +46,12 @@ const StorylineFacts = ({
 
   const loadHistory = useCallback(() => {
     return api
-      .factsHistory(dashboardId, storyline)
+      .factsHistory(dashboardId)
       .then((data: { versions: FactsVersion[] }) =>
         setVersions(data.versions ?? []),
       )
       .catch((err: Error) => setError(err.message))
-  }, [dashboardId, storyline])
+  }, [dashboardId])
 
   // a revision — this pane's or the analyst's — lands as a new version prop,
   // which refreshes the list behind it
@@ -84,10 +76,7 @@ const StorylineFacts = ({
     const trimmed = content.trim()
     if (!trimmed) return
     await guard(() =>
-      api.createFact(dashboardId, storyline, {
-        content: trimmed,
-        confidence,
-      }),
+      api.createFact(dashboardId, { content: trimmed, confidence }),
     )
     setContent('')
     setConfidence(DEFAULT_CONFIDENCE)
@@ -95,10 +84,9 @@ const StorylineFacts = ({
   }
 
   const save = (id: string, patch: FactPatch) =>
-    guard(() => api.updateFact(dashboardId, storyline, id, patch))
+    guard(() => api.updateFact(dashboardId, id, patch))
 
-  const remove = (id: string) =>
-    guard(() => api.deleteFact(dashboardId, storyline, id))
+  const remove = (id: string) => guard(() => api.deleteFact(dashboardId, id))
 
   return (
     <div className="facts">
@@ -145,7 +133,7 @@ const StorylineFacts = ({
             <MarkdownTextarea
               className="fact-input"
               autoFocus
-              placeholder="What does this storyline establish?"
+              placeholder="What does this dashboard establish?"
               value={content}
               disabled={busy}
               onChange={setContent}
@@ -178,9 +166,9 @@ const StorylineFacts = ({
 
         {facts.length === 0 && !adding ? (
           <p className="facts-placeholder">
-            Nothing established yet. What holds true across this storyline —
-            written by you or by the analyst — lives here, and is what the
-            analyst reasons from.
+            Nothing established yet. What holds true across this arc — written
+            by you or by the analyst — lives here, and is what the analyst
+            reasons from.
           </p>
         ) : (
           <ul className="facts-list">
@@ -210,4 +198,4 @@ const StorylineFacts = ({
   )
 }
 
-export default StorylineFacts
+export default Facts

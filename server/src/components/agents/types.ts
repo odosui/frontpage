@@ -17,8 +17,8 @@ export type AgentContext = {
 };
 
 export type AgentTool = {
-  name: string; // GET_STORYLINES
-  usage: string; // `<|GET_STORYLINES 20|>`
+  name: string; // GET_STORIES
+  usage: string; // `<|GET_STORIES 50|>`
   description: string;
   /**
    * True for a tool that asks to change something rather than reading it.

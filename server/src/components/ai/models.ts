@@ -1,6 +1,6 @@
 const DEFAULT_SMALL_MODEL = "google/gemini-3.1-flash-lite";
 // picked by benchmarking ten models over the same 50-article batch: clean
-// storyline arcs and the best coverage per second, at a fifth of the cost of
+// running arcs and the best coverage per second, at a fifth of the cost of
 // the models that matched it on quality
 const DEFAULT_BIG_MODEL = "openai/gpt-5.4";
 

@@ -1,21 +1,12 @@
-import {
-  HomeIcon,
-  GearIcon,
-  ZapIcon,
-  DependabotIcon,
-} from '@primer/octicons-react'
+import { GearIcon, ZapIcon, DependabotIcon } from '@primer/octicons-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'slim-react-router'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AgentsModal from './AgentsModal'
-import ChannelsMenu from './ChannelsMenu'
 import DashboardSwitcher from './DashboardSwitcher'
-
-const NAV_ITEMS = [
-  { path: '/db/default', icon: HomeIcon },
-  { path: '/settings', icon: GearIcon },
-]
+import LatestMenu from './LatestMenu'
+import SourcesMenu from './SourcesMenu'
 
 interface TopBarProps {
   jobsOpen: boolean
@@ -31,15 +22,16 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
   return (
     <header className="topbar">
       <nav className="topbar-nav">
-        {NAV_ITEMS.map(({ path, icon: Icon }) => (
-          <Link
-            key={path}
-            to={path}
-            className={`topbar-item${location.pathname.startsWith(path) ? ' active' : ''}`}
-          >
-            <Icon size={18} />
-          </Link>
-        ))}
+        <Link
+          to="/settings"
+          className={`topbar-item${
+            location.pathname.startsWith('/settings') ? ' active' : ''
+          }`}
+          title="Settings"
+          aria-label="Settings"
+        >
+          <GearIcon size={18} />
+        </Link>
       </nav>
 
       {tools && (
@@ -56,14 +48,25 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
       <div className="topbar-actions">
         {tools && (
           <>
-            <ChannelsMenu
-              channels={tools.channels}
-              refreshing={tools.refreshingChannels}
-              errors={tools.channelErrors}
+            {/* the raw feed, which used to be a column of its own */}
+            <LatestMenu
+              articles={tools.feed}
+              hasSources={tools.sources.length > 0}
+              uncategorized={tools.uncategorized}
+              running={tools.agentRunning}
+              onRunAgent={tools.onRunAgent}
+              extracting={tools.extracting}
+              onExtract={tools.onExtract}
+              onOpenContent={tools.onOpenArticle}
+            />
+            <SourcesMenu
+              sources={tools.sources}
+              refreshing={tools.refreshingSources}
+              errors={tools.sourceErrors}
               isRefreshingAll={tools.isRefreshing}
-              onRefresh={tools.onRefreshChannel}
-              onDelete={tools.onDeleteChannel}
-              onAdd={tools.onAddChannel}
+              onRefresh={tools.onRefreshSource}
+              onRemove={tools.onRemoveSource}
+              onAdd={tools.onAddSource}
               onRefreshAll={tools.onRefreshAll}
             />
             <button

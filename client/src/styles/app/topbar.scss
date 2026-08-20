@@ -375,3 +375,29 @@
     opacity: 0.85;
   }
 }
+
+// The unfiled count, on the Latest button. The list itself is a dropdown now,
+// so this is the only thing about the queue that is visible without opening it
+// — which makes it the whole reason the button is worth glancing at.
+.topbar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: $unit3;
+  padding: 0 $unit0;
+  border-radius: $unit3;
+  font-size: $text0;
+  font-weight: 600;
+  line-height: $unit3;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-menu-bg);
+  background-color: var(--color-marker-amber);
+}
+
+// how many stories the arc holds, beside its name in the switcher
+.dash-switcher-item-count {
+  margin-left: $unit1;
+  font-size: $text0;
+  color: var(--lighter);
+  font-variant-numeric: tabular-nums;
+}

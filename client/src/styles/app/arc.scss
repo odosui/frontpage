@@ -1,10 +1,13 @@
 @use '../vars' as *;
 @use '../breakpoints' as *;
 
-// one arc across four equal columns: its stories, the story itself, the facts
-// it establishes, and the agent. Each scrolls on its own, so reading one never
-// moves the others.
-.storyline {
+// One arc across four equal columns: the stories it is made of, what it has
+// established, what that points to, and the agent. Each scrolls on its own, so
+// reading one never moves the others.
+//
+// This is the whole app now — a dashboard *is* an arc. The raw feed that used
+// to hold a fifth column moved into the top bar, where it drops down over this.
+.arc {
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -16,17 +19,15 @@
 
 // every column is a quarter, and none of them may push the others out: without
 // min-width a long headline or url would widen its own column past its share
-.storyline-stories,
-.storyline-facts,
-.storyline-predictions,
-.storyline-chat {
+.arc-stories,
+.arc-facts,
+.arc-predictions,
+.arc-chat {
   flex: 0 0 25%;
   min-width: 0;
 }
 
-// the dashboard's story list, at a quarter of the width: the cards inside are
-// the same component and the same styles, just in a narrower column
-.storyline-stories {
+.arc-stories {
   overflow-y: auto;
   padding: $unit3 $unit2 $unit6;
   border-right: 1px solid var(--borderColor);
@@ -34,34 +35,21 @@
 
 // the three panes to the right of the stories are each a fixed header over
 // their own scroll, so their headings stay put while their contents move
-.storyline-facts,
-.storyline-predictions,
-.storyline-chat {
+.arc-facts,
+.arc-predictions,
+.arc-chat {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid var(--borderColor);
 }
 
-.storyline-head {
+.arc-head {
   margin-bottom: $unit3;
   padding: 0 $unit1;
 }
 
-.storyline-back {
-  display: inline-block;
-  margin-bottom: $unit1;
-  font-size: $text0;
-  text-decoration: none;
-  color: var(--lighter);
-  transition: color 0.12s ease;
-
-  &:hover {
-    color: var(--color-accent);
-  }
-}
-
-.storyline-title {
+.arc-title {
   margin: 0;
   font-size: $text4;
   font-weight: 600;
@@ -71,20 +59,16 @@
   text-wrap: balance;
 }
 
-.storyline-placeholder,
-.storyline-error {
-  padding: $unit2;
-  font-size: $text1;
-  line-height: 1.4;
-  color: var(--lighter);
-}
-
-.storyline-error {
+.arc-error {
   display: flex;
   flex-direction: column;
   gap: $unit1;
   align-items: flex-start;
   margin: $unit6 auto;
+  padding: $unit2;
+  font-size: $text1;
+  line-height: 1.4;
+  color: var(--lighter);
 }
 
 // facts, predictions and chat are the same kind of column — a heading that stays put over a
@@ -619,7 +603,7 @@
   color: $red;
 }
 
-// what the storyline points to and has not settled
+// what the arc points to and has not settled
 
 .predictions-list {
   list-style: none;

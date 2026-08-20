@@ -9,7 +9,6 @@ import TopBar from './TopBar'
 
 const Dashboard = lazy(() => import('./Dashboard'))
 const Settings = lazy(() => import('./Settings'))
-const Storyline = lazy(() => import('./Storyline'))
 
 const App: React.FC = () => {
   const [jobsOpen, setJobsOpen] = useState(false)
@@ -28,12 +27,9 @@ const App: React.FC = () => {
               <main className="app-content">
                 <Suspense fallback={<Fallback />}>
                   <Switch>
+                    {/* before the dashboard route: `/db/:id` is the catch-all,
+                        and a bare `/` falls through to the default arc */}
                     <Route path="/settings" component={Settings} />
-                    {/* before the dashboard routes: `/db/:id` would swallow it */}
-                    <Route
-                      path={['/db/:id/storylines/:slug', '/storylines/:slug']}
-                      component={Storyline}
-                    />
                     <Route path={['/db/:id', '/']} component={Dashboard} />
                   </Switch>
                 </Suspense>

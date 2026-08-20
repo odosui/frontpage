@@ -59,16 +59,13 @@ describe("parseFacts", () => {
 
   it("survives the call as the model actually writes it", () => {
     const [call] = parseToolCalls(
-      '<|REVISE_FACTS "Russian-Ukrainian war" "Reuters added a second source" ' +
+      '<|REVISE_FACTS "Reuters added a second source" ' +
         'f3 "**Wildberries** warehouses supply drone components" 4 9241 ' +
         '"The **Kaluga** plant reopened" 2|>',
     );
     expect(call?.name).toBe("REVISE_FACTS");
-    expect(call?.args.slice(0, 2)).toEqual([
-      "Russian-Ukrainian war",
-      "Reuters added a second source",
-    ]);
-    expect(parseFacts(call!.args.slice(2))).toEqual([
+    expect(call?.args[0]).toBe("Reuters added a second source");
+    expect(parseFacts(call!.args.slice(1))).toEqual([
       {
         id: "f3",
         content: "**Wildberries** warehouses supply drone components",

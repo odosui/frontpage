@@ -7,8 +7,8 @@ import { useAgentChat } from './ui/agent/useAgentChat'
 
 type Props = {
   dashboardId: string
-  /** The arc the conversation is about, by slug — the server reads it up. */
-  storyline: string
+  /** The arc's name, for the placeholder. The server builds the real context. */
+  dashboardName: string
   /**
    * Called whenever the agent may have changed what the page is showing: after
    * every finished turn, and after an approved proposal. The agent writes facts
@@ -25,18 +25,14 @@ const CHAT_LABEL: Partial<Record<AgentMessage['role'], string>> = {
 }
 
 /**
- * The agent you talk to about one storyline. The transcript and its message
- * cards are the same ones the agents view uses; what is added here is the
- * composer, a session that stays open between questions, and the proposals it
- * needs answered before it can change anything.
+ * The agent you talk to about one arc. The transcript and its message cards are
+ * the same ones the agents view uses; what is added here is the composer, a
+ * session that stays open between questions, and the proposals it needs
+ * answered before it can change anything.
  */
-const StorylineChat = ({ dashboardId, storyline, onChanged }: Props) => {
+const Chat = ({ dashboardId, dashboardName, onChanged }: Props) => {
   const { session, messages, proposals, thinking, error, send, decide } =
-    useAgentChat({
-      dashboardId,
-      kind: 'analyzing_agent',
-      storyline,
-    })
+    useAgentChat({ dashboardId, kind: 'analyzing_agent' })
 
   // A turn ending is the moment anything it wrote exists. Watching the flag
   // rather than the transcript: a turn writes several messages, and only its
@@ -75,8 +71,8 @@ const StorylineChat = ({ dashboardId, storyline, onChanged }: Props) => {
       <div className="chat-transcript">
         {empty ? (
           <p className="chat-placeholder">
-            Ask about this storyline — what changed, what it follows from, who
-            someone is. The agent can read the dashboard and search the web.
+            Ask about {dashboardName} — what changed, what it follows from, who
+            someone is. The agent can read this dashboard and search the web.
           </p>
         ) : (
           <>
@@ -104,11 +100,11 @@ const StorylineChat = ({ dashboardId, storyline, onChanged }: Props) => {
 
       <ChatComposer
         disabled={thinking}
-        placeholder="Ask about this storyline…"
+        placeholder={`Ask about ${dashboardName}…`}
         onSend={send}
       />
     </div>
   )
 }
 
-export default StorylineChat
+export default Chat

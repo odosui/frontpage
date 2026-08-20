@@ -57,7 +57,7 @@ const ArticleContentModal = ({ dashboardId, articleId, onClose }: Props) => {
             </a>
           </h2>
           <p className="article-content-meta">
-            {article.channelId} · read {formatWhen(article.contentAt)}
+            {article.sourceId} · read {formatWhen(article.contentAt)}
           </p>
           {article.content.split('\n\n').map((paragraph, i) => (
             <p key={i} className="article-content-p">

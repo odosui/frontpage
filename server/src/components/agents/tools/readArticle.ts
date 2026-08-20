@@ -21,11 +21,13 @@ export const readArticle: AgentTool = {
       return "ERROR: READ_ARTICLE needs an article id, as a number.";
     }
 
-    const article = await articles.byId(ctx.dashboardId, id);
-    if (!article) return `(no article #${id} in this dashboard)`;
+    const article = await articles.byId(id);
+    if (!article || !(await articles.isVisibleTo(ctx.dashboardId, id))) {
+      return `(no article #${id} in this dashboard)`;
+    }
 
-    const head = `${article.title}\n${article.url}\n${article.channelId}`;
-    const stored = await articles.contentOf(ctx.dashboardId, id);
+    const head = `${article.title}\n${article.url}\n${article.sourceId}`;
+    const stored = await articles.contentOf(id);
     if (stored) {
       return `${head} · read ${stored.contentAt.slice(0, 10)}\n\n${cap(stored.content)}`;
     }
@@ -34,7 +36,7 @@ export const readArticle: AgentTool = {
     // is an answer about that article — the agent should say the source is
     // unreadable rather than treat the tool as broken.
     try {
-      const fetched = await fetchAndStore(ctx.dashboardId, id);
+      const fetched = await fetchAndStore(id);
       if (!fetched.text.trim()) {
         return `${head}\n\n(the page was fetched but carried no readable text)`;
       }

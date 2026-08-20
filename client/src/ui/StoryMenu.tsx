@@ -1,27 +1,27 @@
 import { useState } from 'react'
-import { type Storyline } from '../api'
 import DropdownMenu from './DropdownMenu'
 
 type Props = {
-  /** The arc it sits under now, so the menu can mark it and skip it. */
-  current: Storyline | null
-  storylines: Storyline[]
-  onMove: (storylineId: number | null) => void
-  onCreate: (title: string) => void
+  title: string
+  onRename?: ((title: string) => void) | undefined
+  onDelete?: (() => void) | undefined
 }
 
 /**
- * Refiling a story: every arc in the dashboard, plus a new one. Hidden until
- * the story is hovered — moving a story is a deliberate act, and a caret on
+ * What can be done to one story. Moving it between arcs used to live here;
+ * that went away with storylines — a story belongs to the dashboard it was
+ * filed in, so what is left is fixing a bad title and unfiling a bad story.
+ *
+ * Hidden until the story is hovered: both are deliberate acts, and a caret on
  * every card would be a row of them down the page.
  */
-const StoryMenu = ({ current, storylines, onMove, onCreate }: Props) => {
+const StoryMenu = ({ title, onRename, onDelete }: Props) => {
   const [open, setOpen] = useState(false)
 
-  const create = () => {
+  const rename = () => {
     setOpen(false)
-    const title = window.prompt('New storyline for this story:')?.trim()
-    if (title) onCreate(title)
+    const next = window.prompt('Rename this story:', title)?.trim()
+    if (next && next !== title) onRename?.(next)
   }
 
   return (
@@ -30,49 +30,32 @@ const StoryMenu = ({ current, storylines, onMove, onCreate }: Props) => {
         className="story-menu-toggle"
         onClick={() => setOpen((was) => !was)}
         aria-expanded={open}
-        aria-label="Move this story to another storyline"
-        title="Move to another storyline"
+        aria-label={`Actions for ${title}`}
+        title="Story actions"
       >
         <span className="story-menu-caret" />
       </button>
 
       <DropdownMenu open={open} onClose={() => setOpen(false)}>
         <div className="story-menu-list">
-          <p className="story-menu-heading">Move to</p>
-
-          {storylines.map((storyline) => (
-            <button
-              key={storyline.id}
-              className={`story-menu-item${
-                current?.id === storyline.id ? ' is-current' : ''
-              }`}
-              disabled={current?.id === storyline.id}
-              onClick={() => {
-                setOpen(false)
-                onMove(storyline.id)
-              }}
-            >
-              {storyline.title}
-              <span className="story-menu-count">{storyline.storyCount}</span>
+          {onRename && (
+            <button className="story-menu-item" onClick={rename}>
+              Rename…
             </button>
-          ))}
-
-          <div className="story-menu-divider" />
-
-          <button className="story-menu-item" onClick={create}>
-            New storyline…
-          </button>
-
-          {current && (
-            <button
-              className="story-menu-item"
-              onClick={() => {
-                setOpen(false)
-                onMove(null)
-              }}
-            >
-              No storyline
-            </button>
+          )}
+          {onDelete && (
+            <>
+              <div className="story-menu-divider" />
+              <button
+                className="story-menu-item story-menu-item--danger"
+                onClick={() => {
+                  setOpen(false)
+                  onDelete()
+                }}
+              >
+                Unfile this story
+              </button>
+            </>
           )}
         </div>
       </DropdownMenu>

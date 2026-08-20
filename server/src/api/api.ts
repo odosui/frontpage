@@ -8,16 +8,15 @@ import { BIG_MODEL } from "../components/ai/models";
 import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
 import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
-import * as channels from "../models/channels";
 import * as dashboards from "../models/dashboards";
 import * as facts from "../models/facts";
 import * as predictions from "../models/predictions";
 import * as proposals from "../models/proposals";
+import * as sources from "../models/sources";
 import * as stories from "../models/stories";
-import * as storylines from "../models/storylines";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
-import { CHANNEL_KINDS, Channel, ChannelKind, StoryFeedEntry } from "./types";
+import { SOURCE_KINDS, SourceKind, StoryFeedEntry } from "./types";
 
 dayjs.extend(relativeTime);
 
@@ -30,61 +29,157 @@ export const createApi = async () => {
   return {
     health: () => ok({ status: "ok" }),
 
-    listDashboards: async () => {
-      return ok({ dashboards: await dashboards.listAll() });
+    // Sources
+
+    listSources: async () => ok({ sources: await sources.all() }),
+
+    createSource: async (body: {
+      name?: string;
+      kind?: string;
+      url?: string;
+    }) => {
+      const created = await makeSource(body);
+      if ("error" in created) return created.error;
+      return ok({ source: created.source });
     },
+
+    updateSource: async (
+      id: string,
+      body: { name?: string; kind?: string; url?: string },
+    ) => {
+      const existing = await sources.get(id);
+      if (!existing) return error(404, "source not found");
+
+      const kind = (body.kind ?? existing.kind) as SourceKind;
+      if (!SOURCE_KINDS.includes(kind)) {
+        return error(400, `kind must be one of ${SOURCE_KINDS.join(", ")}`);
+      }
+      const name = (body.name ?? existing.name).trim();
+      if (!name) return error(400, "name is required");
+      const url = (body.url ?? existing.url).trim();
+      if (!url) return error(400, "url is required");
+
+      return ok({ source: await sources.upsert({ id, name, kind, url }) });
+    },
+
+    /**
+     * Deletes the source outright, taking its articles — and therefore every
+     * dashboard's filings over them — with it. Unassigning is the gentler
+     * thing, and lives under the dashboard.
+     */
+    deleteSource: async (id: string) => {
+      if (!id) return error(400, "source id is required");
+      if (!(await sources.remove(id))) return error(404, "source not found");
+      return ok({ success: true });
+    },
+
+    /**
+     * Queues the work rather than doing it — the worker picks up fetch_page,
+     * which chains into extract_articles. Fetched once however many dashboards
+     * are reading it; clients follow progress via /api/jobs.
+     */
+    refreshSource: async (id: string) => {
+      if (!id) return error(400, "source id is required");
+      const source = await sources.get(id);
+      if (!source) return error(404, "source not found");
+      if (!source.url) return error(400, "source has no url configured");
+
+      // a feed says what its articles are, so rss skips the page-analysis
+      // chain entirely and goes straight to a single parse-and-store job
+      const type =
+        source.kind === "web"
+          ? "fetch_page"
+          : source.kind === "rss"
+            ? "fetch_feed"
+            : null;
+      if (!type) {
+        return error(400, `${source.kind} sources cannot be fetched yet`);
+      }
+
+      const job = await queue.enqueue({
+        type,
+        payload: { sourceId: id, url: source.url },
+      });
+      console.log(`[refresh] ${id} queued as job ${job.id}`);
+
+      return ok({ job });
+    },
+
+    // Dashboards
+
+    listDashboards: async () => ok({ dashboards: await dashboards.listAll() }),
 
     createDashboard: async (body: { name: string }) => {
       if (!body.name || typeof body.name !== "string") {
         return error(400, "name is required");
       }
-      const id = dashboards.slugify(body.name);
+      const name = body.name.trim();
+      const id = dashboards.idFor(name);
       if (!id) return error(400, "invalid name");
-      if (await dashboards.exists(id))
+      if (await dashboards.exists(id)) {
         return error(409, "dashboard already exists");
-      await dashboards.create(id, body.name);
-      return ok({ id });
+      }
+      return ok({ dashboard: await dashboards.create(id, name) });
     },
 
     deleteDashboard: async (id: string) => {
       if (!id || dashboards.isDefault(id)) {
         return error(400, "cannot delete default dashboard");
       }
-      if (!(await dashboards.exists(id)))
+      if (!(await dashboards.exists(id))) {
         return error(404, "dashboard not found");
+      }
       await dashboards.remove(id);
       return ok({ success: true });
     },
 
+    /**
+     * Only the display name moves. The id is the url the reader may have kept
+     * and the key every story, fact and prediction hangs off.
+     */
     renameDashboard: async (id: string, body: { name: string }) => {
       if (!id) return error(400, "dashboard id is required");
-      if (!body.name || typeof body.name !== "string")
+      if (!body.name || typeof body.name !== "string") {
         return error(400, "name is required");
-      const newId = dashboards.slugify(body.name);
-      if (!newId) return error(400, "invalid name");
-      if (!(await dashboards.exists(id)))
-        return error(404, "dashboard not found");
-      if (await dashboards.exists(newId))
-        return error(409, "name already taken");
-      await dashboards.rename(id, newId);
-      return ok({ id: newId });
+      }
+      const name = body.name.trim();
+      if (!name) return error(400, "invalid name");
+
+      const renamed = await dashboards.rename(id, name);
+      if (!renamed) return error(404, "dashboard not found");
+      return ok({ dashboard: renamed });
     },
 
-    /** Channels plus the merged article feed — everything the page renders. */
+    /**
+     * The whole arc, as the page renders it: its stories, what they are taken
+     * to establish, what they point to, the sources feeding it and the latest
+     * headlines off them.
+     */
     getDashboard: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      const [list, feed, storyFeed, arcs, uncategorized] = await Promise.all([
-        channels.list(id),
-        articles.feed(id, MAX_ITEMS),
-        stories.feed(id, MAX_STORIES),
-        storylines.all(id),
-        articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
-      ]);
+      const dashboard = await dashboards.get(id);
+      if (!dashboard) return error(404, "dashboard not found");
+
+      const [assigned, feed, storyFeed, known, claims, uncategorized] =
+        await Promise.all([
+          sources.forDashboard(id),
+          articles.feed(id, MAX_ITEMS),
+          stories.feed(id, MAX_STORIES),
+          facts.current(id),
+          predictions.forDashboard(id),
+          articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
+        ]);
+
       return ok({
-        channels: list,
+        dashboard,
+        sources: assigned,
         feed,
         stories: storyFeed,
-        storylines: arcs,
+        facts: known?.facts ?? [],
+        // which revision the page is looking at, so the history panel can say
+        // so without a second request on every load
+        factsVersion: known?.version ?? 0,
+        predictions: claims,
         uncategorized,
       });
     },
@@ -101,66 +196,91 @@ export const createApi = async () => {
     /** The categorized view: stories with their articles, newest story first. */
     getStories: async (dashboardId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      const [feed, arcs] = await Promise.all([
-        stories.feed(id, MAX_STORIES),
-        storylines.all(id),
-      ]);
-      return ok({ stories: feed, storylines: arcs });
+      return ok({ stories: await stories.feed(id, MAX_STORIES) });
     },
 
-    /**
-     * Refiles a story under another arc. `storylineTitle` makes the arc if it
-     * is not there yet, so the reader can move a story somewhere that does not
-     * exist without a second round trip; a null `storylineId` leaves it
-     * standalone.
-     */
-    moveStory: async (
+    renameStory: async (
       dashboardId: string,
       storyId: string,
-      body: { storylineId?: number | null; storylineTitle?: string },
+      body: { title?: string },
     ) => {
       const id = dashboards.resolveId(dashboardId);
       const numeric = Number(storyId);
       if (!Number.isFinite(numeric)) {
         return error(400, "story id must be a number");
       }
+      const title = (body?.title ?? "").trim();
+      if (!title) return error(400, "title is required");
 
-      let storylineId = body?.storylineId ?? null;
-      if (body?.storylineTitle) {
-        const title = String(body.storylineTitle).trim();
-        if (!title) return error(400, "a storyline needs a title");
-        storylineId = (await storylines.ensure(id, title)).id;
+      if (!(await stories.rename(id, numeric, title))) {
+        return error(404, "story not found");
+      }
+      return ok({ stories: await stories.feed(id, MAX_STORIES) });
+    },
+
+    /** Unfiles the story; its articles go back into the dashboard's queue. */
+    deleteStory: async (dashboardId: string, storyId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      const numeric = Number(storyId);
+      if (!Number.isFinite(numeric)) {
+        return error(400, "story id must be a number");
+      }
+      if (!(await stories.remove(id, numeric))) {
+        return error(404, "story not found");
+      }
+      return ok({ stories: await stories.feed(id, MAX_STORIES) });
+    },
+
+    // A dashboard's sources
+
+    listDashboardSources: async (dashboardId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      return ok({ sources: await sources.forDashboard(id) });
+    },
+
+    /**
+     * Points this dashboard at a source: an existing one by `sourceId`, or a
+     * new one described inline. Creating and assigning in one call is what
+     * "add a source" means from inside a dashboard, and it is the only place
+     * the two are combined.
+     */
+    assignSource: async (
+      dashboardId: string,
+      body: { sourceId?: string; name?: string; kind?: string; url?: string },
+    ) => {
+      const id = dashboards.resolveId(dashboardId);
+      if (!(await dashboards.exists(id))) {
+        return error(404, "dashboard not found");
       }
 
-      const moved = await stories.moveToStoryline(id, numeric, storylineId);
-      if (!moved) return error(404, "story not found");
+      let sourceId = (body?.sourceId ?? "").trim();
+      if (sourceId) {
+        if (!(await sources.get(sourceId))) return error(404, "source not found");
+      } else {
+        const created = await makeSource(body);
+        if ("error" in created) return created.error;
+        sourceId = created.source.id;
+      }
 
-      return ok({
-        stories: await stories.feed(id, MAX_STORIES),
-        storylines: await storylines.all(id),
-      });
+      await sources.assign(id, sourceId);
+      return ok({ sources: await sources.forDashboard(id) });
     },
 
-    /** One arc and everything filed under it — what the storyline page reads. */
-    getStoryline: async (dashboardId: string, slug: string) => {
+    /**
+     * Stops this dashboard reading a source. The source and its articles stay
+     * — another dashboard may be reading them, and even where none is,
+     * unassigning is not deleting.
+     */
+    unassignSource: async (dashboardId: string, sourceId: string) => {
       const id = dashboards.resolveId(dashboardId);
-      if (!slug) return error(400, "storyline slug is required");
-
-      const found = await stories.feedForStoryline(id, slug, MAX_STORIES);
-      if (!found) return error(404, "storyline not found");
-      const [known, claims] = await Promise.all([
-        facts.current(id, found.storyline.id),
-        predictions.forStoryline(id, found.storyline.id),
-      ]);
-      return ok({
-        ...found,
-        facts: known?.facts ?? [],
-        // which revision the page is looking at, so the history panel can say
-        // so without a second request on every load
-        factsVersion: known?.version ?? 0,
-        predictions: claims,
-      });
+      if (!sourceId) return error(400, "source id is required");
+      if (!(await sources.unassign(id, sourceId))) {
+        return error(404, "this dashboard does not read that source");
+      }
+      return ok({ sources: await sources.forDashboard(id) });
     },
+
+    // Predictions
 
     /**
      * The reader writes the claim; the probability is left alone. Putting a
@@ -168,19 +288,16 @@ export const createApi = async () => {
      */
     createPrediction: async (
       dashboardId: string,
-      slug: string,
       body: { content?: string },
     ) => {
       const id = dashboards.resolveId(dashboardId);
       const content = (body?.content ?? "").trim();
       if (!content) return error(400, "content is required");
+      if (!(await dashboards.exists(id))) {
+        return error(404, "dashboard not found");
+      }
 
-      const found = await stories.feedForStoryline(id, slug, 1);
-      if (!found) return error(404, "storyline not found");
-
-      return ok({
-        prediction: await predictions.create(id, found.storyline.id, content),
-      });
+      return ok({ prediction: await predictions.create(id, content) });
     },
 
     updatePrediction: async (
@@ -208,20 +325,18 @@ export const createApi = async () => {
         return error(400, "prediction id must be a number");
       }
 
-      const removed = await predictions.remove(id, numeric);
-      if (!removed) return error(404, "prediction not found");
+      if (!(await predictions.remove(id, numeric))) {
+        return error(404, "prediction not found");
+      }
       return ok({ success: true });
     },
 
-    /** Every past version of an arc's facts, newest first, with its reasoning. */
-    getFactsHistory: async (dashboardId: string, slug: string) => {
-      const id = dashboards.resolveId(dashboardId);
-      const found = await stories.feedForStoryline(id, slug, 1);
-      if (!found) return error(404, "storyline not found");
+    // Facts
 
-      return ok({
-        versions: await facts.history(id, found.storyline.id),
-      });
+    /** Every past version of this arc's facts, newest first, with its reasoning. */
+    getFactsHistory: async (dashboardId: string) => {
+      const id = dashboards.resolveId(dashboardId);
+      return ok({ versions: await facts.history(id) });
     },
 
     /**
@@ -231,13 +346,12 @@ export const createApi = async () => {
      */
     createFact: async (
       dashboardId: string,
-      slug: string,
       body: { content?: string; confidence?: number; articleId?: number | null },
     ) => {
       const content = (body?.content ?? "").trim();
       if (!content) return error(400, "content is required");
 
-      return reviseFacts(dashboardId, slug, (current) => [
+      return reviseFacts(dashboardId, (current) => [
         ...current,
         {
           content,
@@ -251,7 +365,6 @@ export const createApi = async () => {
 
     updateFact: async (
       dashboardId: string,
-      slug: string,
       factId: string,
       body: { content?: string; confidence?: number; articleId?: number | null },
     ) => {
@@ -260,7 +373,7 @@ export const createApi = async () => {
         return error(400, "content cannot be emptied");
       }
 
-      return reviseFacts(dashboardId, slug, (current) => {
+      return reviseFacts(dashboardId, (current) => {
         if (!current.some((fact) => fact.id === factId)) return null;
         return current.map((fact) =>
           fact.id === factId
@@ -279,12 +392,14 @@ export const createApi = async () => {
       });
     },
 
-    deleteFact: async (dashboardId: string, slug: string, factId: string) => {
-      return reviseFacts(dashboardId, slug, (current) => {
+    deleteFact: async (dashboardId: string, factId: string) => {
+      return reviseFacts(dashboardId, (current) => {
         if (!current.some((fact) => fact.id === factId)) return null;
         return current.filter((fact) => fact.id !== factId);
       });
     },
+
+    // Articles
 
     /**
      * Queues a read of one article's page. Queued rather than done inline so a
@@ -298,18 +413,16 @@ export const createApi = async () => {
         return error(400, "a numeric article id is required");
       }
 
-      const article = await articles.byId(id, numeric);
-      if (!article) {
+      const article = await articles.byId(numeric);
+      if (!article || !(await articles.isVisibleTo(id, numeric))) {
         return error(404, "article not found");
       }
 
-      // deliberately no channelId: the dashboard reads that as "this channel
-      // is refreshing" and would spin the whole channel for one article
       const job = await queue.enqueue({
         type: "extract_content",
-        payload: { dashboardId: id, articleId: numeric, url: article.url },
+        payload: { articleId: numeric, url: article.url },
       });
-      console.log(`[content] ${id}/${numeric} queued as job ${job.id}`);
+      console.log(`[content] article ${numeric} queued as job ${job.id}`);
 
       return ok({ job });
     },
@@ -322,93 +435,20 @@ export const createApi = async () => {
         return error(400, "a numeric article id is required");
       }
 
-      const article = await articles.byId(id, numeric);
-      if (!article) {
+      const article = await articles.byId(numeric);
+      if (!article || !(await articles.isVisibleTo(id, numeric))) {
         return error(404, "article not found");
       }
 
-      const stored = await articles.contentOf(id, numeric);
-      if (!stored) {
-        return error(404, "this article has not been read yet");
-      }
+      const stored = await articles.contentOf(numeric);
+      if (!stored) return error(404, "this article has not been read yet");
 
       return ok({
         title: article.title,
         url: article.url,
-        channelId: article.channelId,
+        sourceId: article.sourceId,
         ...stored,
       });
-    },
-
-    listChannels: async (dashboardId: string) => {
-      const id = dashboards.resolveId(dashboardId);
-      return ok({ channels: await channels.list(id) });
-    },
-
-    /**
-     * Queues the work rather than doing it — the worker picks up fetch_page,
-     * which chains into extract_articles. Clients follow progress via /api/jobs.
-     */
-    refreshChannel: async (dashboardId: string, channelId: string) => {
-      const id = dashboards.resolveId(dashboardId);
-      if (!channelId) {
-        return error(400, "channel id is required");
-      }
-      const channel = await channels.get(id, channelId);
-      if (!channel) {
-        return error(404, "channel not found");
-      }
-      if (!channel.url) {
-        return error(400, "channel has no url configured");
-      }
-      // a feed says what its articles are, so rss skips the page-analysis
-      // chain entirely and goes straight to a single parse-and-store job
-      const type =
-        channel.kind === "web"
-          ? "fetch_page"
-          : channel.kind === "rss"
-            ? "fetch_feed"
-            : null;
-      if (!type) {
-        return error(400, `${channel.kind} channels cannot be fetched yet`);
-      }
-
-      const job = await queue.enqueue({
-        type,
-        payload: { dashboardId: id, channelId, url: channel.url },
-      });
-      console.log(`[refresh] ${id}/${channelId} queued as job ${job.id}`);
-
-      return ok({ job });
-    },
-
-    addChannel: async (dashboardId: string, body: { channel: Channel }) => {
-      const id = dashboards.resolveId(dashboardId);
-      const channel = body.channel;
-      if (!channel || !channel.id || typeof channel.id !== "string") {
-        return error(400, "channel id is required");
-      }
-      if (!channel.url || typeof channel.url !== "string") {
-        return error(400, "channel url is required");
-      }
-      const kind = (channel.kind || "web") as ChannelKind;
-      if (!CHANNEL_KINDS.includes(kind)) {
-        return error(400, `kind must be one of ${CHANNEL_KINDS.join(", ")}`);
-      }
-      const saved: Channel = { id: channel.id, kind, url: channel.url };
-      await channels.add(id, saved);
-      return ok({ channel: saved });
-    },
-
-    deleteChannel: async (dashboardId: string, channelId: string) => {
-      const id = dashboards.resolveId(dashboardId);
-      if (!channelId) {
-        return error(400, "channel id is required");
-      }
-      if (!(await channels.remove(id, channelId))) {
-        return error(404, "channel not found");
-      }
-      return ok({ success: true });
     },
 
     // Jobs
@@ -452,9 +492,7 @@ export const createApi = async () => {
     ) => {
       const id = dashboards.resolveId(dashboardId);
       const limit = Math.min(Math.max(Number(params.limit) || 30, 1), 200);
-      return ok({
-        sessions: await agentSessions.list(id, params.kind, limit),
-      });
+      return ok({ sessions: await agentSessions.list(id, params.kind, limit) });
     },
 
     /** The session plus its whole transcript — what the ui polls while it runs. */
@@ -538,10 +576,7 @@ export const createApi = async () => {
       }
       const job = await queue.enqueue({
         type: "run_agent",
-        payload: {
-          kind,
-          dashboardId: id,
-        },
+        payload: { kind, dashboardId: id },
       });
       return ok({ job });
     },
@@ -551,38 +586,29 @@ export const createApi = async () => {
      * here — nothing is asked until the first message arrives, so opening a
      * chat and never using it costs no model call.
      */
-    startChat: async (
-      dashboardId: string,
-      body: { kind?: string; storyline?: string },
-    ) => {
+    startChat: async (dashboardId: string, body: { kind?: string }) => {
       const id = dashboards.resolveId(dashboardId);
       const kind = body?.kind || "";
       if (!AGENT_KINDS.includes(kind)) {
         return error(400, `kind must be one of ${AGENT_KINDS.join(", ")}`);
       }
-      if (!(await dashboards.exists(id))) {
-        return error(404, "dashboard not found");
-      }
+      const dashboard = await dashboards.get(id);
+      if (!dashboard) return error(404, "dashboard not found");
 
-      // The arc the chat was opened from, written into the system message: the
-      // first question is nearly always about something already on the screen,
-      // and a turn spent looking up what is in front of the reader is a turn
-      // they wait through for nothing.
-      const found = body?.storyline
-        ? await stories.feedForStoryline(id, body.storyline, MAX_STORIES)
-        : null;
-      const context = found
-        ? storylineContext(
-            found,
-            await facts.forStoryline(id, found.storyline.id),
-            await predictions.forStoryline(id, found.storyline.id),
-          )
-        : undefined;
+      // The arc as the reader has it on screen, written into the system
+      // message: the first question is nearly always about something already
+      // there, and a turn spent looking it up is a turn they wait through for
+      // nothing.
+      const [storyFeed, known, claims] = await Promise.all([
+        stories.feed(id, MAX_STORIES),
+        facts.forDashboard(id),
+        predictions.forDashboard(id),
+      ]);
 
       const { sessionId } = await startChat(getAgent(kind), {
         model: BIG_MODEL,
         dashboardId: id,
-        ...(context ? { context } : {}),
+        context: dashboardContext(dashboard.name, storyFeed, known, claims),
       });
       return ok({ session: await agentSessions.get(sessionId) });
     },
@@ -620,6 +646,37 @@ export const createApi = async () => {
 };
 
 export type Api = Awaited<ReturnType<typeof createApi>>;
+
+/**
+ * Validates a source described inline and writes it. Shared by the two ways
+ * one gets made: on its own from the settings page, and alongside an
+ * assignment from inside a dashboard.
+ */
+async function makeSource(
+  body: { name?: string; kind?: string; url?: string } | undefined,
+): Promise<
+  | { source: Awaited<ReturnType<typeof sources.upsert>> }
+  | { error: ReturnType<typeof error> }
+> {
+  const name = (body?.name ?? "").trim();
+  if (!name) return { error: error(400, "name is required") };
+
+  const url = (body?.url ?? "").trim();
+  if (!url) return { error: error(400, "url is required") };
+
+  const kind = (body?.kind || "web") as SourceKind;
+  if (!SOURCE_KINDS.includes(kind)) {
+    return { error: error(400, `kind must be one of ${SOURCE_KINDS.join(", ")}`) };
+  }
+
+  // the name is the id, so two sources cannot silently share one
+  const id = name;
+  if (await sources.get(id)) {
+    return { error: error(409, `a source called "${id}" already exists`) };
+  }
+
+  return { source: await sources.upsert({ id, name, kind, url }) };
+}
 
 /**
  * Writes the outcome into the conversation that asked for it.
@@ -696,36 +753,32 @@ async function carryOut(
  */
 async function reviseFacts(
   dashboardId: string,
-  slug: string,
   mutate: (current: facts.FactWithSource[]) => facts.FactDraft[] | null,
 ) {
   const id = dashboards.resolveId(dashboardId);
-  const found = await stories.feedForStoryline(id, slug, 1);
-  if (!found) return error(404, "storyline not found");
+  if (!(await dashboards.exists(id))) return error(404, "dashboard not found");
 
-  const current = await facts.current(id, found.storyline.id);
+  const current = await facts.current(id);
   const next = mutate(current?.facts ?? []);
   if (!next) return error(404, "fact not found");
 
-  const version = await facts.revise(id, found.storyline.id, {
-    facts: next,
-    author: "reader",
-  });
+  const version = await facts.revise(id, { facts: next, author: "reader" });
   return ok({ facts: version.facts, version: version.version });
 }
 
 /**
  * The arc as the reader has it on screen, for the agent's system message: the
- * title, then every story under it with how much has been filed and how recent
+ * name, then every story under it with how much has been filed and how recent
  * it is. Titles only — the articles are a tool call away, and putting them all
  * here would cost more than it is worth on a chat that asks about one of them.
  */
-function storylineContext(
-  found: { storyline: { title: string }; stories: StoryFeedEntry[] },
+function dashboardContext(
+  name: string,
+  storyFeed: StoryFeedEntry[],
   known: facts.FactWithSource[],
   claims: predictions.Prediction[],
 ): string {
-  const lines = found.stories.map((story) => {
+  const lines = storyFeed.map((story) => {
     const when = dayjs(story.updatedAt).fromNow();
     return `- ${story.title} (${story.articles.length} articles, newest ${when})`;
   });
@@ -735,9 +788,8 @@ function storylineContext(
     // the date is whenever it was trained.
     `Today is ${dayjs().format("dddd, D MMMM YYYY")}.`,
     "",
-    `The reader has the storyline "${found.storyline.title}" open, and the`,
-    `questions are most likely about it. The stories filed under it, newest`,
-    `first:`,
+    `The reader has the dashboard "${name}" open, and the questions are most`,
+    `likely about it. The stories filed under it, newest first:`,
     "",
     lines.length > 0 ? lines.join("\n") : "(nothing filed under it yet)",
     "",
@@ -757,21 +809,19 @@ function storylineContext(
  */
 function predictionsContext(claims: predictions.Prediction[]): string {
   if (claims.length === 0) {
-    return `The reader has made no predictions on this storyline yet.`;
+    return `The reader has made no predictions on this dashboard yet.`;
   }
 
   const lines = claims.map((claim) => {
     const odds =
-      claim.probability === null
-        ? "not yet forecast"
-        : `${claim.probability}%`;
+      claim.probability === null ? "not yet forecast" : `${claim.probability}%`;
     const last = claim.forecasts[0];
     const because = last ? `\n  last moved because: ${last.reasoning}` : "";
     return `- #${claim.id} [${odds}] ${claim.content}${because}`;
   });
 
   return [
-    `The reader's predictions for this storyline, with where you last put the`,
+    `The reader's predictions for this dashboard, with where you last put the`,
     `odds. The ids are what FORECAST takes.`,
     "",
     lines.join("\n"),
@@ -785,7 +835,7 @@ function predictionsContext(claims: predictions.Prediction[]): string {
  */
 function factsContext(known: facts.FactWithSource[]): string {
   if (known.length === 0) {
-    return `Nothing has been established as fact for this storyline yet. Write down what you settle.`;
+    return `Nothing has been established as fact for this dashboard yet. Write down what you settle.`;
   }
 
   const lines = known.map((fact) => {
@@ -795,7 +845,7 @@ function factsContext(known: facts.FactWithSource[]): string {
   });
 
   return [
-    `Established facts for this storyline, newest first. The number is how far`,
+    `Established facts for this dashboard, newest first. The number is how far`,
     `each can be trusted: 1 rumour, 2 one source, 3 reported, 4 corroborated,`,
     `5 certain. The ids are what REVISE_FACTS takes: carry across the ones you`,
     `are keeping, with their ids, and leave out only what you mean to drop.`,

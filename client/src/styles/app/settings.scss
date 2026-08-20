@@ -163,3 +163,80 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+// The global source list. Its own section rather than part of the stats,
+// because it is the one place here that changes something — and the only place
+// a source is edited or actually destroyed, as opposed to unassigned from one
+// dashboard.
+.sources-table {
+  width: 100%;
+  margin-bottom: $unit3;
+
+  .num.is-orphan {
+    // nobody reads it, yet it still fetches and still stores articles
+    color: var(--color-marker-amber);
+  }
+}
+
+.sources-table-url {
+  max-width: $unit13;
+}
+
+.sources-table-edit {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: $text1;
+  text-align: left;
+  color: var(--lighter);
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+}
+
+.sources-table-actions {
+  display: flex;
+  align-items: center;
+  gap: $unit0;
+  justify-content: flex-end;
+}
+
+.sources-edit,
+.sources-create {
+  display: flex;
+  align-items: center;
+  gap: $unit1;
+
+  .form-input {
+    padding: $unit1;
+    font-size: $text1;
+    background-color: transparent;
+    border: 1px solid var(--borderColor);
+    border-radius: $unit1;
+    color: var(--color-text);
+
+    &:focus {
+      border-color: var(--color-accent);
+    }
+  }
+}
+
+.sources-create {
+  margin-bottom: $unit3;
+
+  .form-input:last-of-type {
+    flex: 1;
+  }
+
+  .btn {
+    padding: $unit1 $unit3;
+    white-space: nowrap;
+  }
+}

@@ -45,7 +45,7 @@ export const mergeStories: AgentTool = {
       `Merge "${source.story.title}" (${source.totalArticles} articles) ` +
       `into "${target.story.title}" (${target.totalArticles} articles).\n` +
       `"${source.story.title}" is then deleted; ` +
-      `"${target.story.title}" keeps its title and storyline.`;
+      `"${target.story.title}" keeps its title.`;
 
     const proposal = await proposals.create({
       sessionId: ctx.sessionId,

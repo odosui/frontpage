@@ -6,18 +6,35 @@
 
 [![CI](https://github.com/odosui/frontpage/actions/workflows/ci.yml/badge.svg)](https://github.com/odosui/frontpage/actions/workflows/ci.yml)
 
-AI-powered website aggregator.
+AI-powered news aggregator and analyst.
 
-Frontpage uses LLMs to scrape front pages, extract articles, and display them in a single feed. Add any channel you want to follow and get one view of what's new across the web.
+Frontpage uses LLMs to scrape front pages, extract articles, group them into the events they cover, and keep track of what those events establish. You give it the arcs you care about and the sources to read; it does the filing.
 
 <p align="center">
   <img src="media/screen.png" alt="screenshot" width="800" />
 </p>
 
+## How it works
+
+A **dashboard** is one running arc — "Russian-Ukrainian war", "AI chip race", "Bird flu outbreak". Everything hangs off it:
+
+```
+dashboard   the arc you are following
+  story     one event inside it — several outlets merged into one entry
+    article one headline from one outlet
+  facts       what the arc is taken to have established, versioned
+  predictions what it points to and has not settled
+  chat        an agent that reads all of the above, and the web
+```
+
+**Sources** sit outside that tree. A source is a site or feed we pull from, it belongs to no dashboard, and any number of dashboards can read it — a general outlet feeds several arcs at once and is fetched once for all of them. Each dashboard files that source's articles into its own stories, under its own tags, and skips whatever is not its business. Two arcs reading the same wire never see each other's judgements.
+
 ## Features
 
-- Channels: any site you want on your front page
-- Multiple dashboards
+- Sources shared across dashboards: fetched once, filed separately
+- Stories: several outlets covering one event, merged
+- Facts and predictions per arc, versioned, with the reasoning kept
+- An analyst you can talk to about what it has collected
 - Data stored in your own PostgreSQL database
 - Any model on OpenRouter
 - Quick start with docker-compose
@@ -26,7 +43,7 @@ Frontpage uses LLMs to scrape front pages, extract articles, and display them in
 ## Keyboard shortcuts
 
 - `Alt` + `←` / `→` — switch to previous / next dashboard (wraps around)
-- `Alt` + `R` — refresh all channels on the current dashboard
+- `Alt` + `R` — refresh every source the current dashboard reads
 
 ## Motivation
 
@@ -56,7 +73,7 @@ docker run -d \
 
 ## Storage
 
-Everything — dashboards, channels, and fetched articles — lives in PostgreSQL. Point the app at your database with `FRONTPAGE_DATABASE_URL` (or `DATABASE_URL`):
+Everything — dashboards, sources, fetched articles, and what has been made of them — lives in PostgreSQL. Point the app at your database with `FRONTPAGE_DATABASE_URL` (or `DATABASE_URL`):
 
 ```
 FRONTPAGE_DATABASE_URL=postgres://user:password@localhost:5432/frontpage
@@ -77,16 +94,6 @@ npm run migrate:new -- add_tags   # scaffold a new migration file
 
 The server also applies pending migrations on startup, so a fresh database just works. Set `FRONTPAGE_AUTO_MIGRATE=false` to disable that and run them yourself. Inside the production container, use the compiled entrypoint: `npm run db -- up`.
 
-### Importing from older versions
-
-Earlier versions stored dashboards as json files under `~/.frontpage`. To bring them across:
-
-```bash
-npm run import-json
-```
-
-It reads from `FRONTPAGE_HOME` (default `~/.frontpage`), skips dashboards that already have channels, and leaves the json files untouched. Pass `-- --overwrite` to replace existing dashboards instead.
-
 ## FAQ
 
 ### Why not just use RSS?
@@ -99,8 +106,8 @@ Everything goes through [OpenRouter](https://openrouter.ai), so both settings ta
 
 There are two of them, because the app does two different jobs:
 
-- `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every channel refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
-- `FRONTPAGE_MODEL_BIG` (default `anthropic/claude-opus-5`) groups the collected articles into categories and running stories. It runs rarely and on short input — headlines only — and the quality gap between models is wide here, so it is worth paying for.
+- `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every source refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
+- `FRONTPAGE_MODEL_BIG` (default `anthropic/claude-opus-5`) files the collected headlines into stories, decides what belongs to an arc at all, and answers in the chat. It runs rarely and on short input — headlines only — and the quality gap between models is wide here, so it is worth paying for.
 
 Note: for the _small_ model, pick a _non-reasoning_ one. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout. Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api, { type DatabaseStats, type ServerStats } from './api'
 import RefreshIcon from './icons/RefreshIcon'
+import SourcesSettings from './SourcesSettings'
 
 const Settings: React.FC = () => {
   const [stats, setStats] = useState<DatabaseStats | null>(null)
@@ -26,6 +27,18 @@ const Settings: React.FC = () => {
       <div className="settings-head">
         <h1 className="settings-title">Settings</h1>
       </div>
+
+      {/* Sources first: it is the one section here you act on rather than
+          read, and the only place a source is edited or actually deleted. */}
+      <section className="settings-section">
+        <header className="settings-section-head">
+          <h2 className="settings-section-title">Sources</h2>
+          <span className="settings-muted">
+            Shared by every dashboard that reads them
+          </span>
+        </header>
+        <SourcesSettings />
+      </section>
 
       <section className="settings-section">
         <header className="settings-section-head">
@@ -139,19 +152,23 @@ const StatsBody: React.FC<{ stats: DatabaseStats }> = ({ stats }) => {
         <Stat label="Total size" value={bytes(database.bytes)} hint={database.name} />
         <Stat label="Dashboards" value={num(content.dashboards)} />
         <Stat
-          label="Channels"
-          value={num(content.channels)}
+          label="Sources"
+          value={num(content.sources)}
           hint={hints([
-            content.channelsWithoutUrl > 0 &&
-              `${content.channelsWithoutUrl} without a url`,
-            content.channelsNeverFetched > 0 &&
-              `${content.channelsNeverFetched} never fetched`,
+            content.sourcesWithoutUrl > 0 &&
+              `${content.sourcesWithoutUrl} without a url`,
+            content.sourcesNeverFetched > 0 &&
+              `${content.sourcesNeverFetched} never fetched`,
+            content.unreadSources > 0 &&
+              `${content.unreadSources} read by no dashboard`,
           ])}
         />
         <Stat
           label="Articles"
           value={num(content.articles)}
-          hint={`${num(content.uncategorizedArticles)} uncategorized`}
+          hint={`${num(content.filings)} filings across ${num(
+            content.stories,
+          )} stories`}
         />
         <Stat
           label="Page snapshots"
@@ -221,17 +238,21 @@ const StatsBody: React.FC<{ stats: DatabaseStats }> = ({ stats }) => {
         <thead>
           <tr>
             <th>Dashboard</th>
-            <th className="num">Channels</th>
+            <th className="num">Sources</th>
             <th className="num">Articles</th>
+            <th className="num">Stories</th>
+            <th className="num">Unfiled</th>
             <th className="num">Last fetch</th>
           </tr>
         </thead>
         <tbody>
           {stats.dashboards.map((d) => (
             <tr key={d.id}>
-              <td>{d.id}</td>
-              <td className="num">{num(d.channels)}</td>
+              <td title={d.id}>{d.name}</td>
+              <td className="num">{num(d.sources)}</td>
               <td className="num">{num(d.articles)}</td>
+              <td className="num">{num(d.stories)}</td>
+              <td className="num">{num(d.uncategorized)}</td>
               <td className="num">
                 {d.lastFetchedAt ? ago(d.lastFetchedAt) : 'never'}
               </td>

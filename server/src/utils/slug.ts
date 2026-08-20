@@ -1,8 +1,8 @@
 /**
- * Url-safe key for a title or tag name. Storylines and tags are matched by
- * slug within a dashboard, so this is what decides whether "US election" and
- * "U.S. Elections" are the same row — case, punctuation and spacing are all
- * flattened away.
+ * Url-safe key for a title or name. Stories and tags are matched by slug
+ * within a dashboard, and a dashboard by slug globally, so this is what
+ * decides whether "US election" and "U.S. Elections" are the same row — case,
+ * punctuation and spacing are all flattened away.
  */
 export function slugify(text: string): string {
   return text

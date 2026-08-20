@@ -15,9 +15,9 @@ export const CONFIDENCE_LABELS: Record<number, string> = {
 };
 
 /**
- * One line of what a storyline is taken to have established. It has no row of
+ * One line of what a dashboard is taken to have established. It has no row of
  * its own — it lives inside a version's array — so the id is a label the
- * storyline hands out ("f7") rather than a key, stable across versions so the
+ * dashboard hands out ("f7") rather than a key, stable across versions so the
  * same fact can be followed as it is rewritten.
  */
 export type Fact = {
@@ -50,7 +50,6 @@ export type Author = "reader" | "analyst";
 export type FactsVersion = {
   id: number;
   dashboardId: string;
-  storylineId: number;
   version: number;
   facts: FactWithSource[];
   author: Author;
@@ -62,7 +61,6 @@ export type FactsVersion = {
 type Row = {
   id: string;
   dashboard_id: string;
-  storyline_id: string;
   version: number;
   facts: StoredFact[] | null;
   author: Author;
@@ -79,46 +77,43 @@ type StoredFact = {
   createdAt?: string;
 };
 
-const SELECT = `select id, dashboard_id, storyline_id, version, facts, author,
+const SELECT = `select id, dashboard_id, version, facts, author,
                        reasoning, created_at
                   from fact_versions`;
 
-/** What the storyline page and the analyst's opening context both read. */
+/** What the dashboard page and the analyst's opening context both read. */
 export async function current(
   dashboardId: string,
-  storylineId: number,
 ): Promise<FactsVersion | null> {
   const { rows } = await query<Row>(
     `${SELECT}
-      where dashboard_id = $1 and storyline_id = $2
+      where dashboard_id = $1
       order by version desc
       limit 1`,
-    [dashboardId, storylineId],
+    [dashboardId],
   );
   if (!rows[0]) return null;
   return (await hydrate(rows))[0]!;
 }
 
 /** The current facts alone — the common case, with no version to unwrap. */
-export async function forStoryline(
+export async function forDashboard(
   dashboardId: string,
-  storylineId: number,
 ): Promise<FactWithSource[]> {
-  return (await current(dashboardId, storylineId))?.facts ?? [];
+  return (await current(dashboardId))?.facts ?? [];
 }
 
 /** Newest first, the current version included. */
 export async function history(
   dashboardId: string,
-  storylineId: number,
   limit = 50,
 ): Promise<FactsVersion[]> {
   const { rows } = await query<Row>(
     `${SELECT}
-      where dashboard_id = $1 and storyline_id = $2
+      where dashboard_id = $1
       order by version desc
-      limit $3`,
-    [dashboardId, storylineId, limit],
+      limit $2`,
+    [dashboardId, limit],
   );
   return hydrate(rows);
 }
@@ -144,7 +139,7 @@ export type Revision = {
  *
  * Drafts carrying an id keep it, so the fact stays the same fact across the
  * revision; the ones without get a fresh one, counted past every id this
- * storyline has ever handed out rather than past the current set — a number
+ * dashboard has ever handed out rather than past the current set — a number
  * that once meant one fact should never come back meaning another.
  *
  * A kept fact keeps the date it was first written down too. Only what is
@@ -153,23 +148,22 @@ export type Revision = {
  */
 export async function revise(
   dashboardId: string,
-  storylineId: number,
   revision: Revision,
 ): Promise<FactsVersion> {
   return withTransaction(async (client) => {
     // serializes concurrent revisions of the same arc: the second waits, then
     // numbers itself off the first rather than colliding with it
-    await client.query("select 1 from storylines where id = $1 for update", [
-      storylineId,
+    await client.query("select 1 from dashboards where id = $1 for update", [
+      dashboardId,
     ]);
 
     // what each surviving fact was first written down, by id
     const { rows: previous } = await client.query<{ facts: StoredFact[] | null }>(
       `select facts from fact_versions
-        where dashboard_id = $1 and storyline_id = $2
+        where dashboard_id = $1
         order by version desc
         limit 1`,
-      [dashboardId, storylineId],
+      [dashboardId],
     );
     const born = new Map<string, string>();
     for (const fact of previous[0]?.facts ?? []) {
@@ -181,8 +175,8 @@ export async function revise(
                 max((substring(f ->> 'id' from '^f([0-9]+)$'))::int), 0
               ) + 1 as next
          from fact_versions v, jsonb_array_elements(v.facts) f
-        where v.dashboard_id = $1 and v.storyline_id = $2`,
-      [dashboardId, storylineId],
+        where v.dashboard_id = $1`,
+      [dashboardId],
     );
     let next = maxRows[0]?.next ?? 1;
 
@@ -219,17 +213,16 @@ export async function revise(
 
     const { rows } = await client.query<Row>(
       `insert into fact_versions
-         (dashboard_id, storyline_id, version, facts, author, reasoning)
-       select $1::text, $2::bigint,
+         (dashboard_id, version, facts, author, reasoning)
+       select $1::text,
               coalesce(max(version), 0) + 1,
-              $3::jsonb, $4::text, $5::text
+              $2::jsonb, $3::text, $4::text
          from fact_versions
-        where dashboard_id = $1 and storyline_id = $2
-       returning id, dashboard_id, storyline_id, version, facts, author,
+        where dashboard_id = $1
+       returning id, dashboard_id, version, facts, author,
                  reasoning, created_at`,
       [
         dashboardId,
-        storylineId,
         JSON.stringify(facts),
         revision.author,
         revision.reasoning?.trim() || null,
@@ -281,7 +274,6 @@ async function hydrate(rows: Row[]): Promise<FactsVersion[]> {
   return rows.map((row) => ({
     id: Number(row.id),
     dashboardId: row.dashboard_id,
-    storylineId: Number(row.storyline_id),
     version: row.version,
     author: row.author,
     reasoning: row.reasoning,

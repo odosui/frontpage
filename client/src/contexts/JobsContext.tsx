@@ -30,7 +30,7 @@ interface JobsContextValue {
   refresh: () => void
   /**
    * Subscribe to jobs reaching a terminal state. Returns an unsubscribe fn.
-   * Used by the dashboard to reload the feed once a channel.s analysis lands.
+   * Used by the dashboard to reload the feed once a source's analysis lands.
    */
   onJobFinished: (listener: (job: Job) => void) => () => void
 }
