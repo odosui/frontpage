@@ -333,9 +333,47 @@
     text-decoration-color: rgba($red, 0.6);
   }
 
+  // a rewrite is one row carrying both versions, so the row itself stays
+  // neutral — colouring the whole line would say the whole line changed, and
+  // the point of the inline marks is that most of it did not
+  &.is-rewritten {
+    background-color: var(--color-bg-hover);
+  }
+
   // unchanged facts are the context the changes read against, and nothing more
   &.is-context {
     color: var(--lighter);
+  }
+}
+
+// the words that moved, inside a rewritten line. `ins` and `del` come with
+// their own default decoration in some browsers, so both are set outright
+// rather than left to the user agent
+.facts-diff-ins {
+  text-decoration: none;
+  background-color: rgba($green, 0.22);
+  box-shadow: 0 0 0 1px rgba($green, 0.22);
+  border-radius: 2px;
+}
+
+.facts-diff-del {
+  color: var(--lighter);
+  text-decoration: line-through;
+  text-decoration-color: rgba($red, 0.7);
+  background-color: rgba($red, 0.14);
+  border-radius: 2px;
+}
+
+// a confidence that moved, on a row with no struck-out copy to carry the old
+// number: both rungs, the old one dimmed, in the order they happened
+.facts-diff-confidence-move {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+
+  .fact-confidence.is-was {
+    opacity: 0.45;
   }
 }
 
@@ -352,6 +390,10 @@
 
   .facts-diff-row.is-removed & {
     color: $red;
+  }
+
+  .facts-diff-row.is-rewritten & {
+    color: var(--lighter);
   }
 }
 

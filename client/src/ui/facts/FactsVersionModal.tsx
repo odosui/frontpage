@@ -1,8 +1,14 @@
-import { CONFIDENCE_LABELS, type FactsVersion } from '../../api'
+import { CONFIDENCE_LABELS, type Fact, type FactsVersion } from '../../api'
 import GenericModal from '../GenericModal'
 import InlineBold from '../InlineBold'
 import { formatWhen } from '../../utils/dates'
-import { diffCounts, diffFacts } from '../../utils/factsDiff'
+import {
+  diffCounts,
+  diffFacts,
+  type FactDiffRow,
+} from '../../utils/factsDiff'
+import { wordDiff } from '../../utils/wordDiff'
+import FactDiffText from './FactDiffText'
 
 type Props = {
   /** The version being read; null closes the modal. */
@@ -84,22 +90,17 @@ const FactsVersionModal = ({ version, previous, onClose }: Props) => {
               {rows.map((row) => (
                 <li key={row.key} className={`facts-diff-row is-${row.kind}`}>
                   <span className="facts-diff-mark" aria-hidden="true">
-                    {row.kind === 'added'
-                      ? '+'
-                      : row.kind === 'removed'
-                        ? '−'
-                        : ' '}
+                    {MARKS[row.kind]}
                   </span>
-                  <span
-                    className={`fact-confidence is-${row.fact.confidence}`}
-                    title={`${row.fact.confidence}/5 — ${
-                      CONFIDENCE_LABELS[row.fact.confidence]
-                    }`}
-                  >
-                    {row.fact.confidence}
-                  </span>
+                  <Confidence row={row} />
                   <span className="facts-diff-text">
-                    <InlineBold text={row.fact.content} />
+                    {row.previous ? (
+                      <FactDiffText
+                        diff={wordDiff(row.previous.content, row.fact.content)}
+                      />
+                    ) : (
+                      <InlineBold text={row.fact.content} />
+                    )}
                   </span>
                 </li>
               ))}
@@ -108,6 +109,40 @@ const FactsVersionModal = ({ version, previous, onClose }: Props) => {
         </>
       )}
     </GenericModal>
+  )
+}
+
+const MARKS: Record<FactDiffRow['kind'], string> = {
+  added: '+',
+  removed: '−',
+  rewritten: '~',
+  context: ' ',
+}
+
+/**
+ * The rung, and where it came from when it moved. A confidence that changed is
+ * as much of the revision as a reworded clause, and on a collapsed rewrite row
+ * there is no struck-out copy left to carry the old number.
+ */
+const Confidence = ({ row }: { row: FactDiffRow }) => {
+  const badge = (fact: Fact, extra = '') => (
+    <span
+      className={`fact-confidence is-${fact.confidence}${extra}`}
+      title={`${fact.confidence}/5 — ${CONFIDENCE_LABELS[fact.confidence]}`}
+    >
+      {fact.confidence}
+    </span>
+  )
+
+  if (!row.previous || row.previous.confidence === row.fact.confidence) {
+    return badge(row.fact)
+  }
+
+  return (
+    <span className="facts-diff-confidence-move">
+      {badge(row.previous, ' is-was')}
+      {badge(row.fact)}
+    </span>
   )
 }
 

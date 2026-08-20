@@ -27,11 +27,15 @@ describe('diffFacts', () => {
     expect(diffCounts(rows)).toEqual({ added: 0, removed: 0, rewritten: 0 })
   })
 
-  it('shows a rewording as the old line then the new one', () => {
+  it('keeps a rewording on one row, carrying both versions', () => {
     const rows = diffFacts([fact('f1', 'one')], [fact('f1', 'one, corrected')])
-    expect(rows.map((r) => [r.kind, r.fact.content])).toEqual([
-      ['removed', 'one'],
-      ['added', 'one, corrected'],
+    expect(rows).toEqual([
+      {
+        kind: 'rewritten',
+        fact: fact('f1', 'one, corrected'),
+        previous: fact('f1', 'one'),
+        key: '~f1',
+      },
     ])
     // one fact changed, not one added and one dropped
     expect(diffCounts(rows)).toEqual({ added: 0, removed: 0, rewritten: 1 })
@@ -39,10 +43,9 @@ describe('diffFacts', () => {
 
   it('treats a moved confidence as a rewrite — the number is part of the claim', () => {
     const rows = diffFacts([fact('f1', 'one', 2)], [fact('f1', 'one', 4)])
-    expect(rows.map((r) => [r.kind, r.fact.confidence])).toEqual([
-      ['removed', 2],
-      ['added', 4],
-    ])
+    expect(
+      rows.map((r) => [r.kind, r.previous?.confidence, r.fact.confidence]),
+    ).toEqual([['rewritten', 2, 4]])
     expect(diffCounts(rows)).toEqual({ added: 0, removed: 0, rewritten: 1 })
   })
 
