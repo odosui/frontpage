@@ -3,6 +3,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/registry";
+import { factsAgent } from "../components/agents/facts";
 import { startChat } from "../components/agents/chat";
 import { BIG_MODEL } from "../components/ai/models";
 import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
@@ -590,10 +591,15 @@ export const createApi = async () => {
       if (!(await dashboards.exists(id))) {
         return error(404, "dashboard not found");
       }
-      const job = await queue.enqueue({
-        type: "run_agent",
-        payload: { kind, dashboardId: id },
-      });
+      // the kind decides the job, because the kinds are not interchangeable
+      // runs: `run_agent` hands the model a batch of unfiled articles and
+      // persists the tree it answers with, which is meaningless to an agent
+      // whose work is done through its own tools
+      const job = await queue.enqueue(
+        kind === factsAgent.kind
+          ? { type: "run_facts", payload: { dashboardId: id } }
+          : { type: "run_agent", payload: { kind, dashboardId: id } },
+      );
       return ok({ job });
     },
 

@@ -5,12 +5,79 @@ $feed-width: $unit12;
 .stories {
   max-width: $unit15;
   margin: 0 auto;
+}
+
+// the stories themselves, held apart from the column's header so the gap
+// between two stories is not also the gap under the heading
+.stories-list {
   display: flex;
   flex-direction: column;
   // the gap does the separating now that the cards are gone, so it has to be
   // wider than the space between two articles inside one story — otherwise the
   // list reads as one flat run of headlines with occasional labels in it
   gap: $unit4;
+}
+
+// this column's heading borrows the facts pane's, minus its padding: the pane
+// headers sit against their own column edge, and this one has to line up with
+// the story titles under it instead
+.stories .facts-head {
+  align-items: center;
+  padding: 0 $unit1 $unit2;
+}
+
+// the one thing on this page that starts an agent, so unlike the icon buttons
+// in the other headers it says what it does. Small and outlined rather than
+// filled — it is a deliberate act, not the column's primary one.
+.stories-run {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0 + 2px;
+  padding: $unit0 $unit1;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit0;
+  background: none;
+  font-size: $text0;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent);
+  }
+
+  // nothing filed to read yet
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  // a run in flight: lit and still disabled, since the spin is the only thing
+  // on this column saying the agent is working
+  &.is-busy:disabled {
+    opacity: 1;
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+}
+
+.stories-run-spin {
+  animation: stories-run-spin 1.2s linear infinite;
+}
+
+@keyframes stories-run-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .stories-placeholder {

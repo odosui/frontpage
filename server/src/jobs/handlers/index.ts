@@ -6,6 +6,7 @@ import { fetchFeedHandler } from "./fetchFeed";
 import { fetchPageHandler } from "./fetchPage";
 import { fetchRedditHandler } from "./fetchReddit";
 import { runAgentHandler } from "./runAgent";
+import { runFactsHandler } from "./runFacts";
 
 export const handlers: Record<string, JobHandler> = {
   fetch_page: fetchPageHandler,
@@ -14,6 +15,7 @@ export const handlers: Record<string, JobHandler> = {
   extract_articles: extractArticlesHandler,
   extract_content: extractContentHandler,
   run_agent: runAgentHandler,
+  run_facts: runFactsHandler,
   agent_reply: agentReplyHandler,
 };
 

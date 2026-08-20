@@ -227,6 +227,21 @@ const Dashboard: React.FC = () => {
       .catch(() => undefined)
   }, [dashboardId, refreshJobs])
 
+  /** Queues a read of the filed stories, to bring the facts up to date. */
+  const runFacts = useCallback(() => {
+    api
+      .runAgent(dashboardId, 'facts_agent')
+      .then(() => refreshJobs())
+      .catch(() => undefined)
+  }, [dashboardId, refreshJobs])
+
+  const factsRunning = jobs.some(
+    (job) =>
+      job.type === 'run_facts' &&
+      (job.status === 'queued' || job.status === 'running') &&
+      job.payload.dashboardId === dashboardId,
+  )
+
   const agentRunning = jobs.some(
     (job) =>
       job.type === 'run_agent' &&
@@ -237,7 +252,9 @@ const Dashboard: React.FC = () => {
   // a finished fetch or run is what changes the page under it
   useEffect(() => {
     return onJobFinished((job) => {
-      if (job.type === 'run_agent') {
+      // a facts run rewrites the list the pane beside it is showing, so it
+      // reloads on the same terms as a categorizing run does
+      if (job.type === 'run_agent' || job.type === 'run_facts') {
         if (
           job.payload.dashboardId === dashboardId &&
           job.status === 'succeeded'
@@ -441,6 +458,8 @@ const Dashboard: React.FC = () => {
           onOpenContent={setOpenArticle}
           onRename={renameStory}
           onDelete={deleteStory}
+          onRunFacts={runFacts}
+          runningFacts={factsRunning}
         />
       </aside>
 

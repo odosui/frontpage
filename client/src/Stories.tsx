@@ -1,4 +1,9 @@
-import { BookIcon, DownloadIcon, SyncIcon } from '@primer/octicons-react'
+import {
+  BookIcon,
+  DownloadIcon,
+  PlayIcon,
+  SyncIcon,
+} from '@primer/octicons-react'
 import { type StoryFeedEntry } from './api'
 import ArticleSource from './ui/ArticleSource'
 import ArticleTime from './ui/ArticleTime'
@@ -15,6 +20,10 @@ type Props = {
   onOpenContent: (articleId: number) => void
   onRename?: (storyId: number, title: string) => void
   onDelete?: (storyId: number) => void
+  /** Queues the facts agent over these stories. */
+  onRunFacts: () => void
+  /** Whether that run is in flight right now. */
+  runningFacts: boolean
 }
 
 /**
@@ -33,68 +42,112 @@ const Stories = ({
   onOpenContent,
   onRename,
   onDelete,
+  onRunFacts,
+  runningFacts,
 }: Props) => {
+  // the same header the facts and predictions columns carry, so the three read
+  // as three panes of one page rather than a list with two panes beside it
+  const head = (
+    <header className="facts-head">
+      <h2 className="facts-heading">
+        Stories
+        {stories.length > 0 && (
+          <span className="facts-count">{stories.length}</span>
+        )}
+      </h2>
+      <button
+        className={`stories-run${runningFacts ? ' is-busy' : ''}`}
+        onClick={onRunFacts}
+        disabled={runningFacts || stories.length === 0}
+        title={
+          stories.length === 0
+            ? 'Nothing filed to read yet'
+            : runningFacts
+              ? 'Reading the stories…'
+              : 'Read these stories and update the facts'
+        }
+      >
+        {runningFacts ? (
+          <SyncIcon size={12} className="stories-run-spin" />
+        ) : (
+          <PlayIcon size={12} />
+        )}
+        {runningFacts ? 'Running' : 'Run Facts'}
+      </button>
+    </header>
+  )
+
   if (stories.length === 0) {
-    return <p className="stories-placeholder">{emptyState(hasSources, hasArticles)}</p>
+    return (
+      <div className="stories">
+        {head}
+        <p className="stories-placeholder">
+          {emptyState(hasSources, hasArticles)}
+        </p>
+      </div>
+    )
   }
 
   return (
     <div className="stories">
-      {stories.map((story) => (
-        <article key={story.id} className="story">
-          <h2 className="story-title">
-            <span className="story-title-text">{story.title}</span>
-            {(onRename || onDelete) && (
-              <StoryMenu
-                title={story.title}
-                onRename={
-                  onRename ? (title) => onRename(story.id, title) : undefined
-                }
-                onDelete={onDelete ? () => onDelete(story.id) : undefined}
-              />
-            )}
-          </h2>
-          <div className="story-articles">
-            {story.articles.map((article) => (
-              <div key={article.id} className="story-article-row">
-                <span
-                  className={`story-article-dot is-${band(article.importance)}`}
-                  title={
-                    article.importance === null
-                      ? 'Not scored yet'
-                      : `Importance ${article.importance}/10`
+      {head}
+      <div className="stories-list">
+        {stories.map((story) => (
+          <article key={story.id} className="story">
+            <h2 className="story-title">
+              <span className="story-title-text">{story.title}</span>
+              {(onRename || onDelete) && (
+                <StoryMenu
+                  title={story.title}
+                  onRename={
+                    onRename ? (title) => onRename(story.id, title) : undefined
                   }
+                  onDelete={onDelete ? () => onDelete(story.id) : undefined}
                 />
-                {/* one run of text, not a stack of boxes: the headline, who
+              )}
+            </h2>
+            <div className="story-articles">
+              {story.articles.map((article) => (
+                <div key={article.id} className="story-article-row">
+                  <span
+                    className={`story-article-dot is-${band(article.importance)}`}
+                    title={
+                      article.importance === null
+                        ? 'Not scored yet'
+                        : `Importance ${article.importance}/10`
+                    }
+                  />
+                  {/* one run of text, not a stack of boxes: the headline, who
                     ran it and when, and the button, all in a single flow that
                     wraps where the words do. The meta is kept unbreakable so
                     "NOVAYA · 6h" travels to the next line together rather than
                     splitting across it. Tags are still collected and still
                     filed — just not shown here. */}
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="story-article"
-                  title={article.title}
-                >
-                  {article.title}
-                </a>{' '}
-                <span className="story-article-meta">
-                  <ArticleSource article={article} /> ·{' '}
-                  <ArticleTime article={article} />
-                </span>
-                <ContentButton
-                  article={article}
-                  busy={extracting.has(article.id)}
-                  onExtract={onExtract}
-                  onOpen={onOpenContent}
-                />
-              </div>
-            ))}
-          </div>
-        </article>
-      ))}
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="story-article"
+                    title={article.title}
+                  >
+                    {article.title}
+                  </a>{' '}
+                  <span className="story-article-meta">
+                    <ArticleSource article={article} /> ·{' '}
+                    <ArticleTime article={article} />
+                  </span>
+                  <ContentButton
+                    article={article}
+                    busy={extracting.has(article.id)}
+                    onExtract={onExtract}
+                    onOpen={onOpenContent}
+                  />
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   )
 }
