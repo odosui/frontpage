@@ -1,70 +1,80 @@
+/**
+ * One path segment, escaped.
+ *
+ * Ids here are not always tame: a source's id is its name, and a subreddit is
+ * called "r/energy". Interpolated raw, that slash reads as another segment and
+ * the request lands on no route at all — a 404 rather than a fetch. Every id
+ * that goes into a path goes through this.
+ */
+const seg = (value: string | number) => encodeURIComponent(String(value))
+
 export default {
   // Sources. Independent of any dashboard: created, edited and deleted here,
   // and only *assigned* to a dashboard by the calls further down.
   listSources: () => api('get', '/sources'),
   createSource: (source: NewSource) => apiJson('post', '/sources', source),
   updateSource: (id: string, patch: Partial<NewSource>) =>
-    apiJson('patch', `/sources/${id}`, patch),
-  deleteSource: (id: string) => api('delete', `/sources/${id}`),
-  refreshSource: (id: string) => api('post', `/sources/${id}/refresh`),
+    apiJson('patch', `/sources/${seg(id)}`, patch),
+  deleteSource: (id: string) => api('delete', `/sources/${seg(id)}`),
+  refreshSource: (id: string) => api('post', `/sources/${seg(id)}/refresh`),
 
   // Dashboard management. A dashboard is one running arc — what used to be a
   // storyline — and owns the stories, facts and predictions under it.
   listDashboards: () => api('get', '/dashboards'),
   createDashboard: (name: string) => apiJson('post', '/dashboards', { name }),
-  deleteDashboard: (id: string) => api('delete', `/dashboards/${id}`),
+  deleteDashboard: (id: string) => api('delete', `/dashboards/${seg(id)}`),
   /** Only the display name moves; the id stays, so the url keeps working. */
   renameDashboard: (id: string, name: string) =>
-    apiJson('patch', `/dashboards/${id}`, { name }),
+    apiJson('patch', `/dashboards/${seg(id)}`, { name }),
 
   /** The whole arc: stories, facts, predictions, sources and the latest feed. */
   getDashboard: (dashboardId: string) =>
-    api('get', `/dashboards/${dashboardId}`),
+    api('get', `/dashboards/${seg(dashboardId)}`),
   getFeed: (dashboardId: string) =>
-    api('get', `/dashboards/${dashboardId}/feed`),
+    api('get', `/dashboards/${seg(dashboardId)}/feed`),
   getStories: (dashboardId: string) =>
-    api('get', `/dashboards/${dashboardId}/stories`),
+    api('get', `/dashboards/${seg(dashboardId)}/stories`),
   renameStory: (dashboardId: string, storyId: number, title: string) =>
-    apiJson('patch', `/dashboards/${dashboardId}/stories/${storyId}`, { title }),
+    apiJson('patch', `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`, { title }),
   /** Unfiles the story; its articles go back into the dashboard's queue. */
   deleteStory: (dashboardId: string, storyId: number) =>
-    api('delete', `/dashboards/${dashboardId}/stories/${storyId}`),
+    api('delete', `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`),
 
   // Which sources this dashboard reads
   listDashboardSources: (dashboardId: string) =>
-    api('get', `/dashboards/${dashboardId}/sources`),
+    api('get', `/dashboards/${seg(dashboardId)}/sources`),
   /** An existing source by id, or a new one described inline. */
   assignSource: (dashboardId: string, source: { sourceId: string } | NewSource) =>
-    apiJson('post', `/dashboards/${dashboardId}/sources`, source),
+    apiJson('post', `/dashboards/${seg(dashboardId)}/sources`, source),
   unassignSource: (dashboardId: string, id: string) =>
-    api('delete', `/dashboards/${dashboardId}/sources/${id}`),
+    api('delete', `/dashboards/${seg(dashboardId)}/sources/${seg(id)}`),
 
   // Facts: what a dashboard is taken to have established. Each of these writes
   // a whole new version of the set — the rows are never edited in place
   createFact: (dashboardId: string, fact: NewFact) =>
-    apiJson('post', `/dashboards/${dashboardId}/facts`, fact),
+    apiJson('post', `/dashboards/${seg(dashboardId)}/facts`, fact),
   updateFact: (dashboardId: string, id: string, patch: FactPatch) =>
-    apiJson('patch', `/dashboards/${dashboardId}/facts/${id}`, patch),
+    apiJson('patch', `/dashboards/${seg(dashboardId)}/facts/${seg(id)}`, patch),
   deleteFact: (dashboardId: string, id: string) =>
-    api('delete', `/dashboards/${dashboardId}/facts/${id}`),
+    api('delete', `/dashboards/${seg(dashboardId)}/facts/${seg(id)}`),
   factsHistory: (dashboardId: string) =>
-    api('get', `/dashboards/${dashboardId}/facts/history`),
+    api('get', `/dashboards/${seg(dashboardId)}/facts/history`),
 
   // Predictions: the reader writes the claim, the analyst puts odds on it
   createPrediction: (dashboardId: string, content: string) =>
-    apiJson('post', `/dashboards/${dashboardId}/predictions`, { content }),
+    apiJson('post', `/dashboards/${seg(dashboardId)}/predictions`, { content }),
   updatePrediction: (dashboardId: string, id: number, content: string) =>
-    apiJson('patch', `/dashboards/${dashboardId}/predictions/${id}`, {
+    apiJson('patch', `/dashboards/${seg(dashboardId)}/predictions/${seg(id)}`, {
       content,
     }),
   deletePrediction: (dashboardId: string, id: number) =>
-    api('delete', `/dashboards/${dashboardId}/predictions/${id}`),
+    api('delete', `/dashboards/${seg(dashboardId)}/predictions/${seg(id)}`),
 
   // One article's own text, read off its page by the extract_content job
   extractArticleContent: (dashboardId: string, articleId: number) =>
-    api('post', `/dashboards/${dashboardId}/articles/${articleId}/content`),
+    api('post', `/dashboards/${seg(dashboardId)}/articles/${seg(articleId)}/content`),
   getArticleContent: (dashboardId: string, articleId: number) =>
-    api('get', `/dashboards/${dashboardId}/articles/${articleId}/content`),
+    api('get', `/dashboards/${seg(dashboardId)}/articles/${seg(articleId)}/content`),
 
   // Jobs
   listJobs: (limit = 50) => api('get', '/jobs', { limit }),
@@ -72,20 +82,20 @@ export default {
   // Agents
   listAgents: () => api('get', '/agents'),
   listAgentSessions: (dashboardId: string, limit = 30) =>
-    api('get', `/dashboards/${dashboardId}/agents/sessions`, { limit }),
-  getAgentSession: (id: number) => api('get', `/agents/sessions/${id}`),
+    api('get', `/dashboards/${seg(dashboardId)}/agents/sessions`, { limit }),
+  getAgentSession: (id: number) => api('get', `/agents/sessions/${seg(id)}`),
   runAgent: (dashboardId: string, kind: string) =>
-    apiJson('post', `/dashboards/${dashboardId}/agents/run`, { kind }),
+    apiJson('post', `/dashboards/${seg(dashboardId)}/agents/run`, { kind }),
 
   // Chat: a session that stays open, one queued turn per message. The server
   // writes the dashboard's own state into the agent's opening context.
   startChat: (dashboardId: string, kind: string) =>
-    apiJson('post', `/dashboards/${dashboardId}/agents/chats`, { kind }),
+    apiJson('post', `/dashboards/${seg(dashboardId)}/agents/chats`, { kind }),
   sendChatMessage: (sessionId: number, content: string) =>
-    apiJson('post', `/agents/sessions/${sessionId}/messages`, { content }),
+    apiJson('post', `/agents/sessions/${seg(sessionId)}/messages`, { content }),
   /** Approving is what actually performs the change the agent asked for. */
   decideProposal: (id: number, approve: boolean) =>
-    apiJson('post', `/agents/proposals/${id}/decide`, { approve }),
+    apiJson('post', `/agents/proposals/${seg(id)}/decide`, { approve }),
 
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),
@@ -254,16 +264,44 @@ export type Article = {
   url: string
   image: string
   /**
+   * Who published it, when that differs from the source that delivered it —
+   * a link posted to reddit is nature.com's article, carried by the subreddit.
+   * Null when the source's own name already says it.
+   */
+  publisher?: string | null
+  /** Where it was posted, when it reached us by being posted: the permalink. */
+  viaUrl?: string | null
+  /**
    * When the outlet published it. Only feeds tell us this — a scraped front
    * page leaves it null, and `createdAt` (when we first saw it) is all there is.
    */
   publishedAt?: string | null
 }
 
-/** Kinds of source we know how to pull from. `web` and `rss` are implemented. */
-export const SOURCE_KINDS = ['web', 'rss', 'telegram', 'twitter'] as const
+/**
+ * Kinds of source we know how to pull from. `web`, `rss` and `reddit` are
+ * implemented.
+ */
+export const SOURCE_KINDS = [
+  'web',
+  'rss',
+  'reddit',
+  'telegram',
+  'twitter',
+] as const
 
 export type SourceKind = (typeof SOURCE_KINDS)[number]
+
+/** The karma a reddit post needs before it is worth storing. */
+export const DEFAULT_MIN_SCORE = 20
+
+/**
+ * Per-source settings. One bag rather than a field per kind: only reddit reads
+ * `minScore`, and the kinds still to come will each want their own.
+ */
+export type SourceConfig = {
+  minScore?: number
+}
 
 /**
  * A place we pull headlines from. Sources belong to nobody: any number of
@@ -274,6 +312,7 @@ export type Source = {
   name: string
   kind: SourceKind
   url: string
+  config: SourceConfig
   fetchedAt: string | null
   /** How many articles we hold from it, across every dashboard. */
   articleCount: number
@@ -286,6 +325,7 @@ export type NewSource = {
   name: string
   kind: SourceKind
   url: string
+  config?: SourceConfig
 }
 
 /** A dashboard is one running arc — what used to be called a storyline. */
@@ -303,7 +343,8 @@ export type Dashboard = {
 export type FeedArticle = Article & {
   /** The database id — what an extract_content job is queued against. */
   id: number
-  sourceId: string
+  /** Null for an article that reached us without a source of its own. */
+  sourceId: string | null
   createdAt: string
   /** Whether its text has been pulled from the page yet. */
   hasContent: boolean
@@ -399,10 +440,22 @@ export type FactPatch = {
   articleId?: number | null
 }
 
+/** 1 highly unlikely, 5 highly likely — the same five rungs a fact's confidence uses. */
+export const LIKELIHOOD_LABELS: Record<number, string> = {
+  1: 'highly unlikely',
+  2: 'unlikely',
+  3: 'even odds',
+  4: 'likely',
+  5: 'highly likely',
+}
+
+export const MIN_LIKELIHOOD = 1
+export const MAX_LIKELIHOOD = 5
+
 /** One estimate of a prediction's odds, and why it was made. */
 export type Forecast = {
   id: number
-  probability: number
+  likelihood: number
   /** What it was before; null for the first forecast. */
   previous: number | null
   reasoning: string
@@ -412,13 +465,13 @@ export type Forecast = {
 
 /**
  * A claim about what happens next. The reader writes it; the analyst puts the
- * probability on it, and every move it makes is kept with its reasoning.
+ * likelihood on it, and every move it makes is kept with its reasoning.
  */
 export type Prediction = {
   id: number
   content: string
-  /** 0-100, or null until it has been forecast. */
-  probability: number | null
+  /** 1-5; see LIKELIHOOD_LABELS. Null until it has been forecast. */
+  likelihood: number | null
   /** Newest first. */
   forecasts: Forecast[]
   createdAt: string

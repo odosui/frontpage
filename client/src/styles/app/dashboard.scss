@@ -288,10 +288,7 @@ $feed-width: $unit12;
   white-space: nowrap;
 }
 
-.story-article-source {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
+
 
 // The raw feed, folded into the top bar. It used to be a permanent column;
 // on the arc page the stories, facts, predictions and chat all want the width,
@@ -498,9 +495,23 @@ $feed-width: $unit12;
   white-space: nowrap;
 }
 
-.feed-source {
+// Who wrote it, in both lists. Uppercased where the relative time beside it is
+// not: `timeAgo` writes "36m", and uppercasing that to "36M" makes 36 minutes
+// read as 36 months.
+.article-source {
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+// the subreddit that carried a link, demoted behind the outlet that wrote it
+.article-via {
+  color: var(--lighter);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
 }
 
 // source management, in the top bar
@@ -912,6 +923,11 @@ $feed-width: $unit12;
   font-size: $text0;
   line-height: 1.5;
   color: var(--lighter);
+
+  // sits under the input it explains, inside the field's own stack
+  &--field {
+    margin: $unit0 0 0;
+  }
 }
 
 .form-error {

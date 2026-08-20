@@ -1,17 +1,18 @@
 import { query } from "../db/pool";
-import { Source, SourceKind } from "../api/types";
+import { Source, SourceConfig, SourceKind } from "../api/types";
 
 type Row = {
   id: string;
   name: string;
   kind: SourceKind;
   url: string;
+  config: SourceConfig | null;
   fetched_at: Date | null;
   article_count: string;
   dashboard_count: string;
 };
 
-const SELECT = `select s.id, s.name, s.kind, s.url, s.fetched_at,
+const SELECT = `select s.id, s.name, s.kind, s.url, s.config, s.fetched_at,
                        (select count(*) from articles a where a.source_id = s.id)
                          as article_count,
                        (select count(*) from dashboard_sources ds
@@ -24,6 +25,7 @@ function toSource(row: Row): Source {
     name: row.name,
     kind: row.kind,
     url: row.url,
+    config: row.config ?? {},
     fetchedAt: row.fetched_at?.toISOString() ?? null,
     articleCount: Number(row.article_count),
     dashboardCount: Number(row.dashboard_count),
@@ -68,18 +70,26 @@ export type NewSource = {
   name: string;
   kind: SourceKind;
   url: string;
+  config?: SourceConfig;
 };
 
 /** Creates the source, or updates the one already carrying this id. */
 export async function upsert(source: NewSource): Promise<Source> {
   await query(
-    `insert into sources (id, name, kind, url)
-     values ($1, $2, $3, $4)
+    `insert into sources (id, name, kind, url, config)
+     values ($1, $2, $3, $4, $5::jsonb)
      on conflict (id) do update
-       set name = excluded.name,
-           kind = excluded.kind,
-           url  = excluded.url`,
-    [source.id, source.name, source.kind, source.url],
+       set name   = excluded.name,
+           kind   = excluded.kind,
+           url    = excluded.url,
+           config = excluded.config`,
+    [
+      source.id,
+      source.name,
+      source.kind,
+      source.url,
+      JSON.stringify(source.config ?? {}),
+    ],
   );
   return (await get(source.id))!;
 }

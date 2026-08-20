@@ -6,6 +6,7 @@ import { AGENT_KINDS, getAgent } from "../components/agents/registry";
 import { startChat } from "../components/agents/chat";
 import { BIG_MODEL } from "../components/ai/models";
 import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
+import { DEFAULT_MIN_SCORE } from "../components/reddit/parse";
 import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as dashboards from "../models/dashboards";
@@ -16,12 +17,24 @@ import * as sources from "../models/sources";
 import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
-import { SOURCE_KINDS, SourceKind, StoryFeedEntry } from "./types";
+import {
+  SOURCE_KINDS,
+  SourceConfig,
+  SourceKind,
+  StoryFeedEntry,
+} from "./types";
 
 dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
 const MAX_STORIES = 50;
+
+/** Which job reads each kind of source; a kind with none cannot be fetched. */
+const FETCHERS: Partial<Record<SourceKind, string>> = {
+  web: "fetch_page",
+  rss: "fetch_feed",
+  reddit: "fetch_reddit",
+};
 
 export const createApi = async () => {
   await dashboards.ensureDefaultDashboard();
@@ -37,6 +50,7 @@ export const createApi = async () => {
       name?: string;
       kind?: string;
       url?: string;
+      config?: SourceConfig;
     }) => {
       const created = await makeSource(body);
       if ("error" in created) return created.error;
@@ -45,7 +59,7 @@ export const createApi = async () => {
 
     updateSource: async (
       id: string,
-      body: { name?: string; kind?: string; url?: string },
+      body: { name?: string; kind?: string; url?: string; config?: SourceConfig },
     ) => {
       const existing = await sources.get(id);
       if (!existing) return error(404, "source not found");
@@ -59,7 +73,13 @@ export const createApi = async () => {
       const url = (body.url ?? existing.url).trim();
       if (!url) return error(400, "url is required");
 
-      return ok({ source: await sources.upsert({ id, name, kind, url }) });
+      // a config left out is the one already stored, not an empty one
+      const config = configFor(kind, body.config ?? existing.config);
+      if ("error" in config) return config.error;
+
+      return ok({
+        source: await sources.upsert({ id, name, kind, url, config: config.config }),
+      });
     },
 
     /**
@@ -84,14 +104,10 @@ export const createApi = async () => {
       if (!source) return error(404, "source not found");
       if (!source.url) return error(400, "source has no url configured");
 
-      // a feed says what its articles are, so rss skips the page-analysis
-      // chain entirely and goes straight to a single parse-and-store job
-      const type =
-        source.kind === "web"
-          ? "fetch_page"
-          : source.kind === "rss"
-            ? "fetch_feed"
-            : null;
+      // a feed and a subreddit both say what their articles are, so they skip
+      // the page-analysis chain entirely and go straight to a single
+      // parse-and-store job. Only a web page needs a model to read it.
+      const type = FETCHERS[source.kind] ?? null;
       if (!type) {
         return error(400, `${source.kind} sources cannot be fetched yet`);
       }
@@ -283,7 +299,7 @@ export const createApi = async () => {
     // Predictions
 
     /**
-     * The reader writes the claim; the probability is left alone. Putting a
+     * The reader writes the claim; the likelihood is left alone. Putting a
      * number on it is the analyst's job, through FORECAST.
      */
     createPrediction: async (
@@ -653,7 +669,9 @@ export type Api = Awaited<ReturnType<typeof createApi>>;
  * assignment from inside a dashboard.
  */
 async function makeSource(
-  body: { name?: string; kind?: string; url?: string } | undefined,
+  body:
+    | { name?: string; kind?: string; url?: string; config?: SourceConfig }
+    | undefined,
 ): Promise<
   | { source: Awaited<ReturnType<typeof sources.upsert>> }
   | { error: ReturnType<typeof error> }
@@ -669,13 +687,41 @@ async function makeSource(
     return { error: error(400, `kind must be one of ${SOURCE_KINDS.join(", ")}`) };
   }
 
+  const config = configFor(kind, body?.config);
+  if ("error" in config) return { error: config.error };
+
   // the name is the id, so two sources cannot silently share one
   const id = name;
   if (await sources.get(id)) {
     return { error: error(409, `a source called "${id}" already exists`) };
   }
 
-  return { source: await sources.upsert({ id, name, kind, url }) };
+  return { source: await sources.upsert({ id, name, kind, url, config: config.config }) };
+}
+
+/**
+ * The settings that mean something for this kind, validated. Anything a kind
+ * does not read is dropped rather than stored — a `minScore` on an rss source
+ * would sit there implying a filter that nothing applies.
+ */
+function configFor(
+  kind: SourceKind,
+  config: SourceConfig | undefined,
+): { config: SourceConfig } | { error: ReturnType<typeof error> } {
+  if (kind !== "reddit") return { config: {} };
+
+  const raw = config?.minScore;
+  if (raw === undefined || raw === null || raw === ("" as unknown)) {
+    return { config: { minScore: DEFAULT_MIN_SCORE } };
+  }
+
+  const minScore = Number(raw);
+  if (!Number.isInteger(minScore) || minScore < 0) {
+    return {
+      error: error(400, "minScore must be a whole number of points, 0 or more"),
+    };
+  }
+  return { config: { minScore } };
 }
 
 /**
@@ -814,7 +860,11 @@ function predictionsContext(claims: predictions.Prediction[]): string {
 
   const lines = claims.map((claim) => {
     const odds =
-      claim.probability === null ? "not yet forecast" : `${claim.probability}%`;
+      claim.likelihood === null
+        ? "not yet forecast"
+        : `${claim.likelihood}/5 ${
+            predictions.LIKELIHOOD_LABELS[claim.likelihood]
+          }`;
     const last = claim.forecasts[0];
     const because = last ? `\n  last moved because: ${last.reasoning}` : "";
     return `- #${claim.id} [${odds}] ${claim.content}${because}`;
@@ -822,7 +872,8 @@ function predictionsContext(claims: predictions.Prediction[]): string {
 
   return [
     `The reader's predictions for this dashboard, with where you last put the`,
-    `odds. The ids are what FORECAST takes.`,
+    `odds — 1 highly unlikely to 5 highly likely. The ids are what FORECAST`,
+    `takes.`,
     "",
     lines.join("\n"),
   ].join("\n");

@@ -1,5 +1,6 @@
 import { BookIcon, DownloadIcon, SyncIcon } from '@primer/octicons-react'
 import { type StoryFeedEntry } from './api'
+import ArticleSource from './ui/ArticleSource'
 import ArticleTime from './ui/ArticleTime'
 import StoryMenu from './ui/StoryMenu'
 
@@ -84,10 +85,8 @@ const Stories = ({
                     still collected and still filed — just not shown here. */}
                 <div className="story-article-foot">
                   <span className="story-article-meta">
-                    <span className="story-article-source">
-                      {article.sourceId}
-                    </span>{' '}
-                    · <ArticleTime article={article} />
+                    <ArticleSource article={article} /> ·{' '}
+                    <ArticleTime article={article} />
                   </span>
                 </div>
               </div>

@@ -13,12 +13,13 @@ import { AgentTool } from "../types";
 export const forecast: AgentTool = {
   name: "FORECAST",
   usage:
-    '<|FORECAST 3 65 "Two more terminals halted this week and Reuters now reports the export backlog, so the disruption is holding rather than easing"|>',
+    '<|FORECAST 3 4 "Two more terminals halted this week and Reuters now reports the export backlog, so the disruption is holding rather than easing"|>',
   description:
-    "Sets the probability on a prediction: its id, a number from 0 to 100, and why you moved it. All three are required — a probability with no reasoning is refused. " +
-    "The ids and current probabilities are in the list you were given at the top. " +
-    "A probability is a function of the facts, so record what the coverage established before you set one, and name in the reasoning the facts it turns on. " +
-    "A prediction marked 'not yet forecast' should be priced from the facts as they already stand, whether or not anything changed today. One that already has a number only moves when the facts move. " +
+    "Sets the likelihood on a prediction: its id, a rung from 1 to 5, and why you moved it. All three are required — a rung with no reasoning is refused. " +
+    "The rungs are 1 highly unlikely, 2 unlikely, 3 even odds, 4 likely, 5 highly likely. Five is as fine as the scale goes: there is no 3.5, and a percentage is not a rung. " +
+    "The ids and current rungs are in the list you were given at the top. " +
+    "A likelihood is a function of the facts, so record what the coverage established before you set one, and name in the reasoning the facts it turns on. " +
+    "A prediction marked 'not yet forecast' should be priced from the facts as they already stand, whether or not anything changed today. One that already has a rung only moves when the facts move. " +
     "Every move is kept with its reasoning, so the reader can read back how your thinking developed.",
   run: async (args, ctx) => {
     const id = Number(args[0]);
@@ -26,12 +27,16 @@ export const forecast: AgentTool = {
       return "ERROR: FORECAST needs a prediction id, as a number.";
     }
 
-    const probability = Number(args[1]);
-    if (!Number.isFinite(probability)) {
-      return "ERROR: FORECAST needs a probability from 0 to 100.";
+    const likelihood = Number(args[1]);
+    if (!Number.isFinite(likelihood)) {
+      return "ERROR: FORECAST needs a likelihood from 1 to 5.";
     }
-    if (probability < 0 || probability > 100) {
-      return `ERROR: ${args[1]} is not a probability — it must be between 0 and 100.`;
+    if (
+      !Number.isInteger(likelihood) ||
+      likelihood < predictions.MIN_LIKELIHOOD ||
+      likelihood > predictions.MAX_LIKELIHOOD
+    ) {
+      return `ERROR: ${args[1]} is not a likelihood — it must be a whole number from 1 (highly unlikely) to 5 (highly likely).`;
     }
 
     const reasoning = args.slice(2).join(" ").trim();
@@ -45,15 +50,22 @@ export const forecast: AgentTool = {
     const updated = await predictions.forecast(
       ctx.dashboardId,
       id,
-      probability,
+      likelihood,
       reasoning,
     );
     if (!updated) return `(no prediction #${id} in this dashboard)`;
 
     const from =
-      existing.probability === null
+      existing.likelihood === null
         ? "unforecast"
-        : `${existing.probability}%`;
-    return `Prediction #${id} moved from ${from} to ${updated.probability}%: ${updated.content}`;
+        : rung(existing.likelihood);
+    return `Prediction #${id} moved from ${from} to ${rung(
+      updated.likelihood!,
+    )}: ${updated.content}`;
   },
 };
+
+/** "4/5 (likely)" — the number the tool takes, and what it means. */
+function rung(likelihood: number): string {
+  return `${likelihood}/5 (${predictions.LIKELIHOOD_LABELS[likelihood]})`;
+}

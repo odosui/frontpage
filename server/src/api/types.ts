@@ -4,12 +4,39 @@ export type Article = {
   image: string;
   publishedAt?: string | null;
   description?: string;
+  /**
+   * Who published it, when that differs from the source that delivered it —
+   * a link posted to reddit is nature.com's article, carried by the subreddit.
+   * Null when the source's own name already says it.
+   */
+  publisher?: string | null;
+  /** Where it was posted, when it reached us by being posted: the permalink. */
+  viaUrl?: string | null;
 };
 
-/** Kinds of source we know how to pull from. `web` and `rss` are implemented. */
-export const SOURCE_KINDS = ["web", "rss", "telegram", "twitter"] as const;
+/**
+ * Kinds of source we know how to pull from. `web`, `rss` and `reddit` are
+ * implemented.
+ */
+export const SOURCE_KINDS = [
+  "web",
+  "rss",
+  "reddit",
+  "telegram",
+  "twitter",
+] as const;
 
 export type SourceKind = (typeof SOURCE_KINDS)[number];
+
+/**
+ * Per-source settings. One bag rather than a column per kind: only reddit
+ * reads `minScore`, and the kinds still to come will each want something of
+ * their own that means nothing to the others.
+ */
+export type SourceConfig = {
+  /** reddit: the karma a post must have before it is worth storing. */
+  minScore?: number;
+};
 
 /**
  * A place we pull headlines from. Sources belong to nobody: any number of
@@ -20,6 +47,7 @@ export type Source = {
   name: string;
   kind: SourceKind;
   url: string;
+  config: SourceConfig;
   fetchedAt: string | null;
   /** How many articles we hold from it, across every dashboard. */
   articleCount: number;
@@ -31,7 +59,8 @@ export type Source = {
 export type FeedArticle = Article & {
   /** The database id — what an extract_content job is queued against. */
   id: number;
-  sourceId: string;
+  /** Null for an article that reached us without a source of its own. */
+  sourceId: string | null;
   createdAt: string;
   /** Whether its text has been pulled from the page yet. */
   hasContent: boolean;

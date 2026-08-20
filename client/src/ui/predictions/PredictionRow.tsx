@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type Prediction } from '../../api'
+import { LIKELIHOOD_LABELS, type Prediction } from '../../api'
 import InlineBold from '../InlineBold'
 import MarkdownTextarea from '../MarkdownTextarea'
 import { formatWhen, timeAgo } from '../../utils/dates'
@@ -96,8 +96,15 @@ const PredictionRow = ({ prediction, onSave, onDelete }: Props) => {
         aria-expanded={open}
         title={history.length > 0 ? 'Show how this moved' : 'Not forecast yet'}
       >
-        <span className={`prediction-odds${band(prediction.probability)}`}>
-          {prediction.probability === null ? '—' : `${prediction.probability}%`}
+        <span
+          className={`prediction-odds${band(prediction.likelihood)}`}
+          title={
+            prediction.likelihood === null
+              ? 'Not forecast yet'
+              : LIKELIHOOD_LABELS[prediction.likelihood]
+          }
+        >
+          {prediction.likelihood === null ? '—' : `${prediction.likelihood}/5`}
         </span>
         <span className="prediction-content">
           <InlineBold text={prediction.content} />
@@ -117,8 +124,10 @@ const PredictionRow = ({ prediction, onSave, onDelete }: Props) => {
                   <div className="prediction-move-head">
                     <span className="prediction-move-odds">
                       {move.previous === null
-                        ? `set to ${move.probability}%`
-                        : `${move.previous}% → ${move.probability}%`}
+                        ? `set to ${LIKELIHOOD_LABELS[move.likelihood]}`
+                        : `${LIKELIHOOD_LABELS[move.previous]} → ${
+                            LIKELIHOOD_LABELS[move.likelihood]
+                          }`}
                     </span>
                     <time
                       className="prediction-move-when"
@@ -152,14 +161,9 @@ const PredictionRow = ({ prediction, onSave, onDelete }: Props) => {
   )
 }
 
-/** Long odds read differently from even ones, so the number carries its own key. */
-function band(probability: number | null): string {
-  if (probability === null) return ' is-none'
-  if (probability >= 80) return ' is-likely'
-  if (probability >= 60) return ' is-leaning'
-  if (probability >= 40) return ' is-even'
-  if (probability >= 20) return ' is-doubtful'
-  return ' is-unlikely'
+/** Long odds read differently from even ones, so the rung carries its own key. */
+function band(likelihood: number | null): string {
+  return likelihood === null ? ' is-none' : ` is-${likelihood}`
 }
 
 export default PredictionRow

@@ -57,7 +57,7 @@ export const reviseFacts: AgentTool = {
 /**
  * The facts as the model wrote them: `[id] "content" [confidence] [articleId]`,
  * repeated. They are told apart by shape rather than by position, the way
- * FORECAST tells a probability from its reasoning — an `fN` is an id, a quoted
+ * FORECAST tells a likelihood from its reasoning — an `fN` is an id, a quoted
  * line is content, a bare 1-5 is confidence, and a larger number is an article.
  * Nothing here is confusable with anything else, so the model never has to
  * remember an order.

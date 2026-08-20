@@ -1,5 +1,6 @@
 import { BookIcon, DownloadIcon, PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { type FeedArticle } from './api'
+import ArticleSource from './ui/ArticleSource'
 import ArticleTime from './ui/ArticleTime'
 
 type Props = {
@@ -78,8 +79,8 @@ const Feed = ({
                 {article.title}
               </a>
               <span className="feed-meta">
-                <span className="feed-source">{article.sourceId}</span>{' '}
-                · <ArticleTime article={article} />
+                <ArticleSource article={article} /> ·{' '}
+                <ArticleTime article={article} />
               </span>
               <ContentButton
                 article={article}

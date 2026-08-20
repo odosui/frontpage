@@ -644,36 +644,49 @@
   }
 }
 
-// long odds read differently from even ones, so the number carries its own key
+// a badge, on a red-to-green ramp: the rung is a judgement and reads as one at
+// a glance, before the claim beside it has been read at all. it carries the
+// number rather than the word — five of them stacked down a list, the colour
+// says which way it leans and the claim is what deserves the width. the label
+// itself is on the title, a hover away.
+//
+// the tint is mixed from the badge's own colour rather than written out five
+// times, so a rung's fill and its text can never drift apart — and the mix
+// follows the text colour into dark mode by itself
 .prediction-odds {
   flex: none;
-  min-width: $unit5;
-  font-size: $text1;
+  width: $unit5;
+  padding: 2px $unit0;
+  border-radius: $unit0;
+  font-size: $text0;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--color-text);
+  line-height: 1.3;
+  text-align: center;
+  color: var(--lighter);
+  background-color: color-mix(in srgb, currentColor 14%, transparent);
 
   &.is-none {
-    color: var(--subtle);
-  }
-
-  &.is-unlikely {
     color: var(--lighter);
   }
 
-  &.is-doubtful {
-    color: var(--color-text);
+  &.is-1 {
+    color: $red;
   }
 
-  &.is-even {
+  &.is-2 {
     color: $bleackOrange;
   }
 
-  &.is-leaning {
-    color: var(--color-accent);
+  &.is-3 {
+    color: var(--color-marker-amber);
   }
 
-  &.is-likely {
+  &.is-4 {
+    color: $green-lighter;
+  }
+
+  &.is-5 {
     color: $green;
   }
 }

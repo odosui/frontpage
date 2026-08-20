@@ -101,8 +101,8 @@ const Predictions = ({ dashboardId, predictions, onChanged }: Props) => {
         {predictions.length === 0 && !adding ? (
           <p className="facts-placeholder">
             Nothing predicted yet. Write what this arc might lead to and the
-            analyst will put a probability on it, and keep moving it as the
-            coverage changes.
+            analyst will rate how likely it is, from highly unlikely to highly
+            likely, and keep moving it as the coverage changes.
           </p>
         ) : (
           <ul className="predictions-list">

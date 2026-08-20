@@ -2,6 +2,7 @@ import * as React from 'react'
 import { useEffect, useState } from 'react'
 import GenericModal from './ui/GenericModal'
 import api, {
+  DEFAULT_MIN_SCORE,
   SOURCE_KINDS,
   type NewSource,
   type Source,
@@ -9,7 +10,7 @@ import api, {
 } from './api'
 
 /** Kinds the backend can actually fetch today; the rest are listed as coming. */
-const IMPLEMENTED: SourceKind[] = ['web', 'rss']
+const IMPLEMENTED: SourceKind[] = ['web', 'rss', 'reddit']
 
 type Props = {
   isOpen: boolean
@@ -39,6 +40,7 @@ const AddSourceModal: React.FC<Props> = ({
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [kind, setKind] = useState<SourceKind>('web')
+  const [minScore, setMinScore] = useState(String(DEFAULT_MIN_SCORE))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -64,6 +66,7 @@ const AddSourceModal: React.FC<Props> = ({
     setName('')
     setUrl('')
     setKind('web')
+    setMinScore(String(DEFAULT_MIN_SCORE))
     setError(null)
     setTab('existing')
     onClose()
@@ -85,7 +88,14 @@ const AddSourceModal: React.FC<Props> = ({
   const create = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !url.trim()) return
-    submit({ name: name.trim(), kind, url: url.trim() })
+    submit({
+      name: name.trim(),
+      kind,
+      url: url.trim(),
+      ...(kind === 'reddit'
+        ? { config: { minScore: Number(minScore) || 0 } }
+        : {}),
+    })
   }
 
   const taken = new Set(assigned.map((s) => s.id))
@@ -172,18 +182,45 @@ const AddSourceModal: React.FC<Props> = ({
             </select>
           </label>
           <label className="form-field">
-            <span className="form-label">URL</span>
+            <span className="form-label">
+              {kind === 'reddit' ? 'Subreddit' : 'URL'}
+            </span>
             <input
               className="form-input"
-              type="url"
+              // a subreddit may be typed bare, so it is not a url field
+              type={kind === 'reddit' ? 'text' : 'url'}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com/feed"
+              placeholder={
+                kind === 'reddit' ? 'r/futurology' : 'https://example.com/feed'
+              }
             />
           </label>
+
+          {/* the bar is per subreddit: what is busy on one is dead on another */}
+          {kind === 'reddit' && (
+            <label className="form-field">
+              <span className="form-label">Minimum points</span>
+              <input
+                className="form-input"
+                type="number"
+                min={0}
+                value={minScore}
+                onChange={(e) => setMinScore(e.target.value)}
+              />
+              <span className="form-hint form-hint--field">
+                Posts below this are ignored. A post that climbs past it later
+                is picked up on a following refresh.
+              </span>
+            </label>
+          )}
+
           <p className="form-hint">
-            The source is created once and can be read by any dashboard, so
-            name it after the outlet rather than after this arc.
+            {kind === 'reddit'
+              ? 'Link posts are stored as the article they point at, so the ' +
+                'outlet is what shows in the feed, with the thread one click away.'
+              : 'The source is created once and can be read by any dashboard, ' +
+                'so name it after the outlet rather than after this arc.'}
           </p>
           <div className="form-actions">
             <button type="button" className="btn btn--secondary" onClick={close}>

@@ -29,7 +29,9 @@ type FeedRow = {
   url: string;
   image: string;
   uncategorized: boolean;
-  source_id: string;
+  source_id: string | null;
+  publisher: string | null;
+  via_url: string | null;
   created_at: Date;
   published_at: Date | null;
   importance: number | null;
@@ -45,6 +47,8 @@ function toFeedArticle(row: FeedRow, tags: string[] = []): FeedArticle {
     image: row.image,
     uncategorized: row.uncategorized,
     sourceId: row.source_id,
+    publisher: row.publisher,
+    viaUrl: row.via_url,
     createdAt: row.created_at.toISOString(),
     publishedAt: row.published_at?.toISOString() ?? null,
     importance: row.importance,
@@ -64,7 +68,8 @@ export async function feed(
   limit: number,
 ): Promise<FeedArticle[]> {
   const { rows } = await query<FeedRow>(
-    `select a.id, a.title, a.url, a.image, a.source_id, a.created_at,
+    `select a.id, a.title, a.url, a.image, a.source_id, a.publisher,
+            a.via_url, a.created_at,
             a.published_at, a.content is not null as has_content,
             f.importance,
             ${UNCATEGORIZED} as uncategorized
@@ -327,12 +332,15 @@ export function prepend(sourceId: string, items: Article[]): Promise<number> {
 
     const { rowCount } = await client.query(
       `insert into articles
-           (source_id, position, title, url, image, published_at, description)
+           (source_id, position, title, url, image, published_at, description,
+            publisher, via_url)
          select $1, t.i - 1, t.title, t.url, t.image,
-                t.published_at, nullif(t.description, '')
+                t.published_at, nullif(t.description, ''),
+                nullif(t.publisher, ''), nullif(t.via_url, '')
          from unnest($2::text[], $3::text[], $4::text[], $5::timestamptz[],
-                     $6::text[])
-           with ordinality as t(title, url, image, published_at, description, i)
+                     $6::text[], $7::text[], $8::text[])
+           with ordinality as t(title, url, image, published_at, description,
+                                publisher, via_url, i)
        on conflict (source_id, url) do nothing`,
       [
         sourceId,
@@ -341,6 +349,8 @@ export function prepend(sourceId: string, items: Article[]): Promise<number> {
         items.map((a) => a.image),
         items.map((a) => a.publishedAt ?? null),
         items.map((a) => a.description ?? ""),
+        items.map((a) => a.publisher ?? ""),
+        items.map((a) => a.viaUrl ?? ""),
       ],
     );
     return rowCount ?? 0;

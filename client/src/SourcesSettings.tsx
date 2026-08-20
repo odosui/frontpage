@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import api, {
+  DEFAULT_MIN_SCORE,
   SOURCE_KINDS,
   type Source,
   type SourceKind,
@@ -8,7 +9,7 @@ import RefreshIcon from './icons/RefreshIcon'
 import TrashIcon from './icons/TrashIcon'
 
 /** Kinds the backend can actually fetch today. */
-const IMPLEMENTED: SourceKind[] = ['web', 'rss']
+const IMPLEMENTED: SourceKind[] = ['web', 'rss', 'reddit']
 
 /**
  * Every source there is, whoever reads it.
@@ -22,12 +23,18 @@ const SourcesSettings = () => {
   const [sources, setSources] = useState<Source[]>([])
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
-  const [draft, setDraft] = useState<{ url: string; kind: SourceKind }>({
-    url: '',
-    kind: 'web',
-  })
+  const [draft, setDraft] = useState<{
+    url: string
+    kind: SourceKind
+    minScore: string
+  }>({ url: '', kind: 'web', minScore: String(DEFAULT_MIN_SCORE) })
   const [creating, setCreating] = useState(false)
-  const [made, setMade] = useState({ name: '', url: '', kind: 'web' as SourceKind })
+  const [made, setMade] = useState({
+    name: '',
+    url: '',
+    kind: 'web' as SourceKind,
+    minScore: String(DEFAULT_MIN_SCORE),
+  })
 
   const load = useCallback(() => {
     api
@@ -51,7 +58,15 @@ const SourcesSettings = () => {
 
   const save = (id: string) => {
     setEditing(null)
-    guard(api.updateSource(id, { url: draft.url.trim(), kind: draft.kind }))
+    guard(
+      api.updateSource(id, {
+        url: draft.url.trim(),
+        kind: draft.kind,
+        ...(draft.kind === 'reddit'
+          ? { config: { minScore: Number(draft.minScore) || 0 } }
+          : {}),
+      }),
+    )
   }
 
   const remove = (source: Source) => {
@@ -70,8 +85,22 @@ const SourcesSettings = () => {
     const url = made.url.trim()
     if (!name || !url) return
     setCreating(false)
-    setMade({ name: '', url: '', kind: 'web' })
-    guard(api.createSource({ name, url, kind: made.kind }))
+    setMade({
+      name: '',
+      url: '',
+      kind: 'web',
+      minScore: String(DEFAULT_MIN_SCORE),
+    })
+    guard(
+      api.createSource({
+        name,
+        url,
+        kind: made.kind,
+        ...(made.kind === 'reddit'
+          ? { config: { minScore: Number(made.minScore) || 0 } }
+          : {}),
+      }),
+    )
   }
 
   return (
@@ -133,6 +162,24 @@ const SourcesSettings = () => {
                         if (e.key === 'Escape') setEditing(null)
                       }}
                     />
+                    {/* the bar is this subreddit's own: busy on one sub is
+                        dead on another */}
+                    {draft.kind === 'reddit' && (
+                      <input
+                        className="form-input sources-score"
+                        type="number"
+                        min={0}
+                        title="Minimum points"
+                        value={draft.minScore}
+                        onChange={(e) =>
+                          setDraft({ ...draft, minScore: e.target.value })
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') save(source.id)
+                          if (e.key === 'Escape') setEditing(null)
+                        }}
+                      />
+                    )}
                     <button className="btn btn--primary" onClick={() => save(source.id)}>
                       Save
                     </button>
@@ -143,10 +190,21 @@ const SourcesSettings = () => {
                     title="Edit"
                     onClick={() => {
                       setEditing(source.id)
-                      setDraft({ url: source.url, kind: source.kind })
+                      setDraft({
+                        url: source.url,
+                        kind: source.kind,
+                        minScore: String(
+                          source.config.minScore ?? DEFAULT_MIN_SCORE,
+                        ),
+                      })
                     }}
                   >
                     {source.url}
+                    {source.kind === 'reddit' && (
+                      <span className="sources-item-kind">
+                        {source.config.minScore ?? DEFAULT_MIN_SCORE}+ points
+                      </span>
+                    )}
                   </button>
                 )}
               </td>
@@ -209,7 +267,9 @@ const SourcesSettings = () => {
           </select>
           <input
             className="form-input"
-            placeholder="https://example.com/feed"
+            placeholder={
+              made.kind === 'reddit' ? 'r/futurology' : 'https://example.com/feed'
+            }
             value={made.url}
             onChange={(e) => setMade({ ...made, url: e.target.value })}
             onKeyDown={(e) => {
@@ -217,6 +277,16 @@ const SourcesSettings = () => {
               if (e.key === 'Escape') setCreating(false)
             }}
           />
+          {made.kind === 'reddit' && (
+            <input
+              className="form-input sources-score"
+              type="number"
+              min={0}
+              title="Minimum points"
+              value={made.minScore}
+              onChange={(e) => setMade({ ...made, minScore: e.target.value })}
+            />
+          )}
           <button
             className="btn btn--primary"
             disabled={!made.name.trim() || !made.url.trim()}

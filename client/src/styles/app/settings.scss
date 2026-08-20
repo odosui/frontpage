@@ -240,3 +240,9 @@
     white-space: nowrap;
   }
 }
+
+// the reddit bar, beside its subreddit — narrow, it holds two or three digits
+.sources-score {
+  width: $unit8;
+  flex: none;
+}
