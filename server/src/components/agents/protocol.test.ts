@@ -35,6 +35,30 @@ describe("parseToolCalls", () => {
     expect(calls.map((c) => c.args[0])).toEqual(["kyiv", "moscow"]);
   });
 
+  // the failure this guards against wrote one fact per word: the escape closed
+  // the string early and the rest of the sentence arrived as bare tokens
+  it("keeps a quoted argument whole across an escaped quote", () => {
+    const calls = parseToolCalls(
+      '<|REVISE_FACTS "why" f1 "a claim about \\"the west\\" and its future" 3|>',
+    );
+    expect(calls[0]!.args).toEqual([
+      "why",
+      "f1",
+      'a claim about "the west" and its future',
+      "3",
+    ]);
+  });
+
+  it("unescapes a backslash inside a quoted argument", () => {
+    const calls = parseToolCalls('<|GREP_STORIES "a\\\\b"|>');
+    expect(calls[0]!.args).toEqual(["a\\b"]);
+  });
+
+  it("leaves a backslash in a bare argument as typed", () => {
+    const calls = parseToolCalls("<|GREP_STORIES a\\b|>");
+    expect(calls[0]!.args).toEqual(["a\\b"]);
+  });
+
   it("finds nothing in a message that only talks about calls", () => {
     expect(parseToolCalls("I could call GET_STORY next.")).toEqual([]);
   });

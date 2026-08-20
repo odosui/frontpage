@@ -44,6 +44,22 @@ export const reviseFacts: AgentTool = {
       );
     }
 
+    // A fact is a sentence. A single word is what a mis-parsed call looks
+    // like — one bare token per space, each landing here as its own fact — and
+    // writing that would replace the list with rubble and keep the version
+    // forever. Refusing the whole call costs a retry; the alternative costs
+    // the reader their fact list.
+    const fragments = drafts.filter((draft) => !/\s/.test(draft.content.trim()));
+    if (fragments.length > 0) {
+      return (
+        `ERROR: ${fragments.length} of the ${drafts.length} facts is a single ` +
+        `word, starting with "${fragments[0]!.content}" — nothing was changed. ` +
+        "Each fact must be a whole line, wrapped in quotes. If the line itself " +
+        "contains a quotation mark, that is what broke the call: write it as " +
+        '\\" or use the guillemets the source did.'
+      );
+    }
+
     const version = await facts.revise(ctx.dashboardId, {
       facts: drafts,
       author: "analyst",
