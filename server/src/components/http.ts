@@ -3,6 +3,7 @@
  * conditional requests, a capped read, and charset handling. What differs is
  * only what we accept and what we do with the body.
  */
+import { PermanentError } from "../utils/errors";
 
 /** Stop reading a response past this much decompressed body. */
 const MAX_DOWNLOAD_BYTES = 3_000_000;
@@ -14,6 +15,26 @@ const MAX_DOWNLOAD_BYTES = 3_000_000;
  * was enough to trip it.
  */
 const USER_AGENT = "Front-Page-Bot/1.0 (+https://github.com/odosui)";
+
+/**
+ * Statuses a retry cannot change. 401 and 403 are how a bot wall answers —
+ * rbc.ru sits behind Qrator, which 401s every request that has not run its
+ * javascript, homepage included — and 404/410/451 mean the document is not
+ * there to be had. A 429 is deliberately not here: that one does clear.
+ */
+const BLOCKED = new Set([401, 403, 404, 410, 451]);
+
+function explain(status: number): string {
+  if (status === 401 || status === 403) {
+    return (
+      "the site is refusing automated requests, usually a javascript bot " +
+      "challenge we cannot answer. Where the source is a feed that carries " +
+      "its articles in full, the text is taken from there instead"
+    );
+  }
+  if (status === 451) return "the document is blocked for legal reasons";
+  return "the document is gone";
+}
 
 /** HTTP validators, so the next fetch can ask for a 304 instead of a body. */
 export type FetchValidators = {
@@ -56,7 +77,14 @@ export async function requestDocument(
   if (res.status === 304) return res;
 
   if (!res.ok) {
-    throw new Error(`fetch ${url} returned ${res.status} ${res.statusText}`);
+    const what = `fetch ${url} returned ${res.status} ${res.statusText}`.trim();
+    if (BLOCKED.has(res.status)) {
+      throw new PermanentError(
+        `${what} — ${explain(res.status)}. Retrying sends the same request, ` +
+          `so this one is not retried.`,
+      );
+    }
+    throw new Error(what);
   }
 
   const contentType = res.headers.get("content-type") ?? "";

@@ -1,5 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
+import { PermanentError } from "../../utils/errors";
 import { htmlToText } from "../../utils/html";
 import { ArticleImage, extractImages } from "./images";
 
@@ -57,7 +58,11 @@ export type ReadableArticle = {
   images: ArticleImage[];
 };
 
-export class UnreadableError extends Error {}
+/**
+ * Permanent: a page with no article in it holds no article on the retry
+ * either. What changes that is the publisher, not the queue.
+ */
+export class UnreadableError extends PermanentError {}
 
 /**
  * Read `html` as an article. Throws `UnreadableError` when the page holds no

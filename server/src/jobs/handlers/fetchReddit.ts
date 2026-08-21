@@ -44,7 +44,7 @@ export const fetchRedditHandler: JobHandler = async (payload, { log }) => {
   const posts = await fetchSubreddit(subreddit);
   const fresh = toArticles(posts, minScore);
 
-  const added = await articles.prepend(sourceId, fresh);
+  const { inserted } = await articles.prepend(sourceId, fresh);
 
   // Nothing here is conditional on a validator: reddit sends no etag worth
   // trusting, and the listing changes on every vote anyway. Stamping the fetch
@@ -54,7 +54,7 @@ export const fetchRedditHandler: JobHandler = async (payload, { log }) => {
   const links = fresh.filter((a) => a.publisher).length;
   log(
     `r/${subreddit}: ${posts.length} posts, ${fresh.length} at ${minScore}+ ` +
-      `points, ${added} new (${links} linking off reddit)`,
+      `points, ${inserted} new (${links} linking off reddit)`,
   );
 
   return {
@@ -64,7 +64,7 @@ export const fetchRedditHandler: JobHandler = async (payload, { log }) => {
       minScore,
       seen: posts.length,
       qualified: fresh.length,
-      added,
+      added: inserted,
       links,
     },
   };

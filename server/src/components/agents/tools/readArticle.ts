@@ -40,7 +40,12 @@ export const readArticle: AgentTool = {
       if (!fetched.text.trim()) {
         return `${head}\n\n(the page was fetched but carried no readable text)`;
       }
-      return `${head} · just fetched\n\n${cap(fetched.text)}`;
+      // said plainly: text off the feed can be a teaser, and the agent should
+      // weigh a two-paragraph summary as one
+      const how = fetched.fromFeed
+        ? "the page refused us, so this is the feed's own copy"
+        : "just fetched";
+      return `${head} · ${how}\n\n${cap(fetched.text)}`;
     } catch (e) {
       return `${head}\n\n(could not read the page: ${(e as Error).message})`;
     }

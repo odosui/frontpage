@@ -1,5 +1,6 @@
 import os from "os";
 import { closePool } from "../db/pool";
+import { PermanentError } from "../utils/errors";
 import { handlers } from "./handlers";
 import * as queue from "./queue";
 import { Job } from "./types";
@@ -48,6 +49,18 @@ async function runJob(job: Job) {
     log(`done in ${Date.now() - started}ms${chained}`);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
+
+    // a blocked page or a missing document answers the same on every attempt,
+    // so it is parked now rather than re-asked twice more over three minutes
+    if (e instanceof PermanentError) {
+      await queue.abandon(job.id, message);
+      console.error(
+        `[job ${job.id}] ${job.type} failed after ${Date.now() - started}ms ` +
+          `(not retryable): ${message}`,
+      );
+      return;
+    }
+
     const status = await queue.fail(job.id, message, backoffMs(job.attempts));
     const outcome =
       status === "queued"

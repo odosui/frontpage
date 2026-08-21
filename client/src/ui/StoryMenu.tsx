@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import DropdownMenu from './DropdownMenu'
 
 type Props = {
@@ -17,6 +17,9 @@ type Props = {
  */
 const StoryMenu = ({ title, onRename, onDelete }: Props) => {
   const [open, setOpen] = useState(false)
+  // the menu is rendered at the end of the body, so it is placed against this
+  // rather than nested under it
+  const toggle = useRef<HTMLButtonElement>(null)
 
   const rename = () => {
     setOpen(false)
@@ -27,6 +30,7 @@ const StoryMenu = ({ title, onRename, onDelete }: Props) => {
   return (
     <div className="story-menu">
       <button
+        ref={toggle}
         className="story-menu-toggle"
         onClick={() => setOpen((was) => !was)}
         aria-expanded={open}
@@ -36,7 +40,11 @@ const StoryMenu = ({ title, onRename, onDelete }: Props) => {
         <span className="story-menu-caret" />
       </button>
 
-      <DropdownMenu open={open} onClose={() => setOpen(false)}>
+      <DropdownMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        anchor={toggle}
+      >
         <div className="story-menu-list">
           {onRename && (
             <button className="story-menu-item" onClick={rename}>

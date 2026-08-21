@@ -1,3 +1,4 @@
+import { PermanentError } from "../../utils/errors";
 import * as articles from "../../models/articles";
 import { fetchArticlePage } from "./download";
 import { extractReadable } from "./readable";
@@ -8,6 +9,11 @@ export type StoredContent = {
   images: number;
   byline: string | null;
   publishedAt: string | null;
+  /**
+   * True when the text is the feed's copy rather than the page's, because the
+   * page could not be read. Usually shorter and sometimes only a teaser.
+   */
+  fromFeed: boolean;
 };
 
 /**
@@ -29,8 +35,35 @@ export async function fetchAndStore(
     throw new Error(`article ${articleId} no longer exists`);
   }
 
-  const html = await fetchArticlePage(article.url);
-  const readable = extractReadable(html, article.url);
+  let readable;
+  try {
+    readable = extractReadable(
+      await fetchArticlePage(article.url),
+      article.url,
+    );
+  } catch (e) {
+    // The page is not going to be read: it is behind a bot wall, it is gone,
+    // or there is no article in it. Where the feed kept a copy of the body,
+    // that copy is the article as far as we are ever going to have it — RBC
+    // 401s every request we can make and publishes in full over rss — so it is
+    // stored rather than losing the article entirely. A retryable failure (a
+    // timeout, a 5xx) is not a fallback: the page may well answer next time.
+    if (!(e instanceof PermanentError) || !article.feedContent) throw e;
+
+    const saved = await articles.saveContent(article.id, article.feedContent, []);
+    if (!saved) {
+      throw new Error(`article ${article.id} vanished while it was being read`);
+    }
+
+    return {
+      text: article.feedContent,
+      chars: article.feedContent.length,
+      images: 0,
+      byline: null,
+      publishedAt: null,
+      fromFeed: true,
+    };
+  }
 
   const saved = await articles.saveContent(
     article.id,
@@ -47,5 +80,6 @@ export async function fetchAndStore(
     images: readable.images.length,
     byline: readable.byline,
     publishedAt: readable.publishedAt,
+    fromFeed: false,
   };
 }

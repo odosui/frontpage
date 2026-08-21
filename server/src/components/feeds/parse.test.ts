@@ -28,6 +28,7 @@ describe("parseFeed", () => {
         image: "",
         description: "What happened.",
         publishedAt: "2026-08-12T09:30:00.000Z",
+        feedContent: null,
       },
       {
         title: "Second & headline",
@@ -35,6 +36,7 @@ describe("parseFeed", () => {
         image: "",
         description: "",
         publishedAt: null,
+        feedContent: null,
       },
     ]);
   });
@@ -58,8 +60,57 @@ describe("parseFeed", () => {
         image: "",
         description: "An atom summary.",
         publishedAt: "2026-08-12T09:30:00.000Z",
+        feedContent: null,
       },
     ]);
+  });
+
+  it("takes the body from a feed that carries its articles in full", () => {
+    const paragraph = "A sentence about what happened. ".repeat(10);
+    const xml = `<rss><channel><item>
+      <title>Full text</title>
+      <link>https://example.com/full</link>
+      <description><![CDATA[A one-line summary.]]></description>
+      <rbc_news:full-text><![CDATA[<p>${paragraph}</p>]]></rbc_news:full-text>
+    </item></channel></rss>`;
+
+    const item = parseFeed(xml, FEED_URL)[0]!;
+    expect(item.description).toBe("A one-line summary.");
+    expect(item.feedContent).toContain("A sentence about what happened.");
+    expect(item.feedContent!.length).toBeGreaterThan(200);
+  });
+
+  it("reads content:encoded as the body too", () => {
+    const paragraph = "The story, at length. ".repeat(20);
+    const xml = `<rss><channel><item>
+      <title>Encoded</title>
+      <link>https://example.com/encoded</link>
+      <description>Summary.</description>
+      <content:encoded><![CDATA[<p>${paragraph}</p>]]></content:encoded>
+    </item></channel></rss>`;
+
+    expect(parseFeed(xml, FEED_URL)[0]!.feedContent).toContain("The story, at length.");
+  });
+
+  it("ignores a body that is only the summary again", () => {
+    const xml = `<rss><channel><item>
+      <title>Same twice</title>
+      <link>https://example.com/same</link>
+      <description>${"Only a summary here. ".repeat(12)}</description>
+      <content:encoded>${"Only a summary here. ".repeat(12)}</content:encoded>
+    </item></channel></rss>`;
+
+    expect(parseFeed(xml, FEED_URL)[0]!.feedContent).toBeNull();
+  });
+
+  it("ignores a body too short to be one", () => {
+    const xml = `<rss><channel><item>
+      <title>Stub</title>
+      <link>https://example.com/stub</link>
+      <content:encoded><![CDATA[<p>Two words.</p>]]></content:encoded>
+    </item></channel></rss>`;
+
+    expect(parseFeed(xml, FEED_URL)[0]!.feedContent).toBeNull();
   });
 
   it("does not mistake the channel title for an item", () => {

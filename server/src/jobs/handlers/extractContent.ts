@@ -25,9 +25,12 @@ export const extractContentHandler: JobHandler = async (payload, { log }) => {
   const stored = await fetchAndStore(article.id);
 
   log(
-    `read ${stored.chars} characters and ${stored.images} ` +
-      `images from ${article.url}` +
-      (stored.byline ? ` by ${stored.byline}` : ""),
+    stored.fromFeed
+      ? `${article.url} would not be read, so its ${stored.chars} characters ` +
+          `come from the feed's own copy of the article`
+      : `read ${stored.chars} characters and ${stored.images} ` +
+          `images from ${article.url}` +
+          (stored.byline ? ` by ${stored.byline}` : ""),
   );
 
   return {
@@ -37,6 +40,7 @@ export const extractContentHandler: JobHandler = async (payload, { log }) => {
       url: article.url,
       chars: stored.chars,
       images: stored.images,
+      fromFeed: stored.fromFeed,
       byline: stored.byline,
       publishedAt: stored.publishedAt,
     },

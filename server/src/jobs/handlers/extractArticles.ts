@@ -40,7 +40,7 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
     return true;
   });
 
-  const added = await articles.prepend(sourceId, unique);
+  const { inserted } = await articles.prepend(sourceId, unique);
 
   // only now is it safe to remember this page as "already analyzed" — both the
   // hash and the HTTP validators, so a failed run always re-downloads
@@ -52,7 +52,7 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
 
   await deleteSnapshot(snapshotId);
 
-  log(`extracted ${extracted.length}, ${added} new`);
+  log(`extracted ${extracted.length}, ${inserted} new`);
 
   return {
     result: {
@@ -60,7 +60,7 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
       sourceId,
       model: SMALL_MODEL,
       extracted: extracted.length,
-      added,
+      added: inserted,
     },
   };
 };

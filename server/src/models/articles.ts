@@ -91,6 +91,8 @@ export type ArticleRow = {
   sourceId: string;
   title: string;
   url: string;
+  /** The feed's own copy of the body, for when the page cannot be read. */
+  feedContent: string | null;
 };
 
 /**
@@ -104,7 +106,12 @@ export async function byId(id: number): Promise<ArticleRow | null> {
     source_id: string;
     title: string;
     url: string;
-  }>("select id, source_id, title, url from articles where id = $1", [id]);
+    feed_content: string | null;
+  }>(
+    `select id, source_id, title, url, feed_content
+       from articles where id = $1`,
+    [id],
+  );
   const row = rows[0];
   if (!row) return null;
 
@@ -113,6 +120,7 @@ export async function byId(id: number): Promise<ArticleRow | null> {
     sourceId: row.source_id,
     title: row.title,
     url: row.url,
+    feedContent: row.feed_content,
   };
 }
 
@@ -312,12 +320,23 @@ export async function uncategorized(
   }));
 }
 
+export type Prepended = {
+  /** Articles stored for the first time. */
+  inserted: number;
+  /** Articles we already had, for which this fetch supplied the feed's body. */
+  filled: number;
+};
+
 /**
  * Put `items` at the top of a source's list, demoting whatever was already
- * there. Items whose url is already stored are skipped. Runs under a row lock
- * so concurrent refreshes can't interleave. Returns how many rows it inserted.
+ * there. Items whose url is already stored are skipped, except that a feed
+ * body arriving for one stored without one is taken — see `feed_content`.
+ * Runs under a row lock so concurrent refreshes can't interleave.
  */
-export function prepend(sourceId: string, items: Article[]): Promise<number> {
+export function prepend(
+  sourceId: string,
+  items: Article[],
+): Promise<Prepended> {
   return withTransaction(async (client) => {
     await client.query("select 1 from sources where id = $1 for update", [
       sourceId,
@@ -328,20 +347,32 @@ export function prepend(sourceId: string, items: Article[]): Promise<number> {
       [sourceId, items.length],
     );
 
-    if (items.length === 0) return 0;
+    if (items.length === 0) return { inserted: 0, filled: 0 };
 
-    const { rowCount } = await client.query(
+    const { rows } = await client.query<{ filled: boolean }>(
       `insert into articles
            (source_id, position, title, url, image, published_at, description,
-            publisher, via_url)
+            publisher, via_url, feed_content)
          select $1, t.i - 1, t.title, t.url, t.image,
                 t.published_at, nullif(t.description, ''),
-                nullif(t.publisher, ''), nullif(t.via_url, '')
+                nullif(t.publisher, ''), nullif(t.via_url, ''),
+                nullif(t.feed_content, '')
          from unnest($2::text[], $3::text[], $4::text[], $5::timestamptz[],
-                     $6::text[], $7::text[], $8::text[])
+                     $6::text[], $7::text[], $8::text[], $9::text[])
            with ordinality as t(title, url, image, published_at, description,
-                                publisher, via_url, i)
-       on conflict (source_id, url) do nothing`,
+                                publisher, via_url, feed_content, i)
+       -- A row we already have keeps everything it has, except that a feed
+       -- body arriving for one stored without one is taken: for a publisher
+       -- whose pages refuse us, that text is the only copy of the article we
+       -- will ever hold. The content column is never touched here: that text
+       -- comes from the page, which is the better read.
+       on conflict (source_id, url) do update
+          set feed_content = excluded.feed_content
+        where articles.feed_content is null
+          and excluded.feed_content is not null
+      -- xmax is zero on a freshly inserted row and set on an updated one,
+      -- which is the only way postgres will tell the two apart
+      returning xmax <> 0 as filled`,
       [
         sourceId,
         items.map((a) => a.title),
@@ -351,8 +382,11 @@ export function prepend(sourceId: string, items: Article[]): Promise<number> {
         items.map((a) => a.description ?? ""),
         items.map((a) => a.publisher ?? ""),
         items.map((a) => a.viaUrl ?? ""),
+        items.map((a) => a.feedContent ?? ""),
       ],
     );
-    return rowCount ?? 0;
+
+    const filled = rows.filter((r) => r.filled).length;
+    return { inserted: rows.length - filled, filled };
   });
 }

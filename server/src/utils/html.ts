@@ -4,6 +4,14 @@
  * readable html of a page into something a modal can show.
  */
 
+/**
+ * The named entities that actually turn up in feeds and article html: the
+ * five xml ones, and the typography publishers write with. Everything else is
+ * numeric by the time it reaches us, and numeric is handled below.
+ *
+ * Not a complete html5 table on purpose — that is 2,231 names, nearly all of
+ * them for characters no newsroom has ever typed.
+ */
 const ENTITIES: Record<string, string> = {
   amp: "&",
   lt: "<",
@@ -11,6 +19,44 @@ const ENTITIES: Record<string, string> = {
   quot: '"',
   apos: "'",
   nbsp: " ",
+  // spaces, and the hyphen that is only a suggestion
+  ensp: " ",
+  emsp: " ",
+  thinsp: " ",
+  shy: "",
+  // dashes and dots
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  middot: "·",
+  bull: "•",
+  // quotes, including the guillemets russian-language sources quote with
+  lsquo: "‘",
+  rsquo: "’",
+  ldquo: "“",
+  rdquo: "”",
+  laquo: "«",
+  raquo: "»",
+  sbquo: "‚",
+  bdquo: "„",
+  // signs
+  deg: "°",
+  plusmn: "±",
+  times: "×",
+  minus: "−",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+  euro: "€",
+  pound: "£",
+  yen: "¥",
+  cent: "¢",
+  sect: "§",
+  para: "¶",
+  dagger: "†",
+  permil: "‰",
+  prime: "′",
+  Prime: "″",
 };
 
 /**
@@ -27,7 +73,9 @@ export function decodeEntities(text: string): string {
         ? String.fromCodePoint(code)
         : whole;
     }
-    return ENTITIES[body.toLowerCase()] ?? whole;
+    // exact first: `&Prime;` (″) is not `&prime;` (′), and html is one of the
+    // few places where the case of a name carries meaning
+    return ENTITIES[body] ?? ENTITIES[body.toLowerCase()] ?? whole;
   });
 }
 

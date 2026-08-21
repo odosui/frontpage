@@ -1,5 +1,5 @@
 import { Article } from "../../api/types";
-import { decodeEntities } from "../../utils/html";
+import { decodeEntities, htmlToText } from "../../utils/html";
 
 /**
  * A feed already says what a front page only implies: these are the articles,
@@ -17,6 +17,17 @@ const ITEM_RE = /<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
 /** A summary is context, not content — long enough to be useful, no more. */
 const DESCRIPTION_LIMIT = 1000;
 
+/** Longer than any real article; a runaway item shouldn't fill a text column. */
+const MAX_BODY_CHARS = 400_000;
+
+/**
+ * How much longer than the summary a body has to be before it is worth
+ * keeping. Plenty of publishers put the same sentence in `<description>` and
+ * `<content:encoded>`, and a second copy of the summary is no fallback at all.
+ */
+const BODY_MIN_CHARS = 200;
+const BODY_MIN_RATIO = 1.5;
+
 export function parseFeed(xml: string, feedUrl: string): Article[] {
   const articles: Article[] = [];
   const seen = new Set<string>();
@@ -32,12 +43,14 @@ export function parseFeed(xml: string, feedUrl: string): Article[] {
     if (!title || !url || seen.has(url)) continue;
     seen.add(url);
 
+    const summary = description(item);
     articles.push({
       title,
       url,
       image: image(item) ?? "",
       publishedAt: published(item),
-      description: description(item),
+      description: summary,
+      feedContent: body(item, summary),
     });
   }
 
@@ -105,6 +118,31 @@ function description(item: string): string {
   const cut = text.slice(0, DESCRIPTION_LIMIT);
   const space = cut.lastIndexOf(" ");
   return `${(space > 0 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
+/**
+ * The body the feed carried, if it carried one. `<content:encoded>` is where
+ * most publishers put it, Atom uses `<content>`, and RBC ships
+ * `<rbc_news:full-text>`.
+ *
+ * What comes back is not the article: The Verge and Ars Technica both send a
+ * couple of paragraphs and a "read the full story" line, and reading the page
+ * beats that every time. It is kept for the publishers whose pages refuse us —
+ * RBC's are behind a javascript challenge, and its feed is the only copy of
+ * those articles we can have.
+ *
+ * Returns null unless what is there is meaningfully more than the summary
+ * beside it; see BODY_MIN_RATIO.
+ */
+function body(item: string, summary: string): string | null {
+  const raw = tag(item, "full-text") || tag(item, "encoded") || tag(item, "content");
+  if (!raw) return null;
+
+  const text = htmlToText(raw).slice(0, MAX_BODY_CHARS);
+  if (text.length < BODY_MIN_CHARS) return null;
+  if (text.length < summary.length * BODY_MIN_RATIO) return null;
+
+  return text;
 }
 
 /** The text of the first `<name>` at any depth, CDATA unwrapped. */

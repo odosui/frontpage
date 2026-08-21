@@ -148,6 +148,20 @@ export async function fail(
   return rows[0]?.status ?? "failed";
 }
 
+/**
+ * Park a job without spending its remaining attempts: the failure is one the
+ * same request would hit again — a page behind a bot wall, a url that is gone.
+ */
+export async function abandon(jobId: string, message: string): Promise<void> {
+  await query(
+    `update jobs
+     set status = 'failed', error = $2, finished_at = now(),
+         locked_by = null, locked_at = null, updated_at = now()
+     where id = $1`,
+    [jobId, message],
+  );
+}
+
 /** Hand jobs abandoned by a crashed worker back to the queue. */
 export async function requeueStale(olderThanMs: number): Promise<number> {
   const { rowCount } = await query(

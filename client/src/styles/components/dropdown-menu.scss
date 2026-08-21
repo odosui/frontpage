@@ -1,15 +1,17 @@
 @use '../vars' as *;
 
 /**
- * The floating panel behind `<DropdownMenu>`. It positions itself against the
- * nearest positioned ancestor, so whatever opens one has to be `relative` —
- * the toggle and its menu belong to the same little block.
+ * The floating panel behind `<DropdownMenu>`. It is rendered at the end of the
+ * body and fixed to the viewport, with `top` and `left` measured from the
+ * control it belongs to — nesting it under that control put it inside the
+ * stories column's scrollbox, which clipped anything wider than the column.
+ *
+ * Above the page and its bars, below a modal: a menu should never be the thing
+ * covering a dialog.
  */
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + #{$unit0});
-  left: 0;
-  z-index: 30;
+  position: fixed;
+  z-index: 400;
   padding: $unit0;
   background-color: var(--surface-bg);
   border-radius: $unit1;

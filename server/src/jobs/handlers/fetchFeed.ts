@@ -63,7 +63,7 @@ export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
   // where the throw above deliberately does not
   const fresh = recentOnly(items, MAX_AGE_DAYS);
 
-  const added = await articles.prepend(sourceId, fresh);
+  const { inserted, filled } = await articles.prepend(sourceId, fresh);
 
   // only now is it safe to remember this feed as "already read"
   await sources.saveValidators(sourceId, {
@@ -74,11 +74,21 @@ export const fetchFeedHandler: JobHandler = async (payload, { log }) => {
 
   const stale = items.length - fresh.length;
   log(
-    `parsed ${items.length} items from ${source.url}, ${added} new` +
+    `parsed ${items.length} items from ${source.url}, ${inserted} new` +
+      // a feed that carries its articles in full backfills the ones we stored
+      // before it did, or before their body was there to take
+      (filled ? `, ${filled} filled in from the feed's own text` : "") +
       (stale ? `, ${stale} older than ${MAX_AGE_DAYS} days` : ""),
   );
 
   return {
-    result: { url: source.url, sourceId, parsed: items.length, stale, added },
+    result: {
+      url: source.url,
+      sourceId,
+      parsed: items.length,
+      stale,
+      added: inserted,
+      filled,
+    },
   };
 };

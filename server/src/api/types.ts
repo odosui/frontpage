@@ -5,6 +5,13 @@ export type Article = {
   publishedAt?: string | null;
   description?: string;
   /**
+   * The body as the feed gave it, where the feed gave one. Usually a teaser —
+   * The Verge's ends "Read the full story at The Verge" — so it is not the
+   * article's text and is only used when the page itself cannot be read. Null
+   * when the feed carried nothing beyond its summary.
+   */
+  feedContent?: string | null;
+  /**
    * Who published it, when that differs from the source that delivered it —
    * a link posted to reddit is nature.com's article, carried by the subreddit.
    * Null when the source's own name already says it.

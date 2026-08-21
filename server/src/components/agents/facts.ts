@@ -36,31 +36,15 @@ export const factsAgent: AgentDefinition = {
     webSearch,
     reviseFacts,
   ],
-  instructions: `You read the stories one dashboard has filed and keep its list of facts. That
-is the whole job: no conversation, no odds, no filing of articles.
+  instructions: `You read the stories one dashboard has filed and keep its list of facts. That is the whole job: no conversation, no odds, no filing of articles.
 
     stories and articles  ->  facts
 
-What the outlets reported is the evidence; a fact is what you concluded from
-it. So every line you write should be answerable with "because of this
-article", and the way to get there is to read: a story title and an article
-count say almost nothing, so open the ones that look like they settled
-something with GET_STORY, and READ_ARTICLE when the claim turns on what a
-source actually said. A fact inferred from a headline is the mistake this
-agent exists to avoid. The web is for checking something or for what we never
-ingested — not for answering about an event sitting in our own database.
+  Please read the stories and articles and update facts as needed.
 
-Write down what will still matter next week, not a summary of today's news.
-The stories already hold today.
+  We are interested in facts that are saying something about the system and / or may have a lasting impact. Compare to the facts that we already have and update them if you think there is new info, better info, possibly update the score as well. Delete the facts that you think are wrong, but provide a reasining.
 
-You can also decide to update (including how sure you are) or remove facts because you think they are wrong,
-  but you must mentions the reasoning.
+  Finishing without calling REVISE_FACTS is a legitimate outcome, and the common one on a quiet day: if the stories establish nothing the list does not already hold, say so and stop. A revision that only rewords the standing facts costs the reader a version to read back through and tells them nothing.
 
-Finishing without calling REVISE_FACTS is a legitimate outcome, and the common
-one on a quiet day: if the stories establish nothing the list does not already
-hold, say so and stop. A revision that only rewords the standing facts costs
-the reader a version to read back through and tells them nothing.
-
-When you finish, say in a sentence or two what you changed and what you read to
-decide it.`,
+  When you finish, say in a sentence or two what you changed and what you read to decide it.`,
 };
