@@ -26,6 +26,11 @@ export default {
   /** Only the display name moves; the id stays, so the url keeps working. */
   renameDashboard: (id: string, name: string) =>
     apiJson('patch', `/dashboards/${seg(id)}`, { name }),
+  /**
+   * The arc's standing instruction to its agents. An empty string clears it.
+   */
+  setDashboardPrompt: (id: string, prompt: string) =>
+    apiJson('patch', `/dashboards/${seg(id)}`, { prompt }),
 
   /** The whole arc: stories, facts, predictions, sources and the latest feed. */
   getDashboard: (dashboardId: string) =>
@@ -334,6 +339,11 @@ export type Dashboard = {
   id: string
   /** What the reader called it, spaces and punctuation intact. */
   name: string
+  /**
+   * The arc's own standing instruction, appended to the system message of
+   * every agent run and chat turn on it. Empty when none has been set.
+   */
+  prompt: string
   storyCount: number
   sourceCount: number
   createdAt: string

@@ -151,20 +151,43 @@ export const createApi = async () => {
     },
 
     /**
-     * Only the display name moves. The id is the url the reader may have kept
-     * and the key every story, fact and prediction hangs off.
+     * The two things about a dashboard that can be edited: what it is called,
+     * and what it tells its agents. Either may come on its own.
+     *
+     * The name only moves the label — the id is the url the reader may have
+     * kept and the key every story, fact and prediction hangs off, so it stays.
      */
-    renameDashboard: async (id: string, body: { name: string }) => {
+    updateDashboard: async (
+      id: string,
+      body: { name?: string; prompt?: string },
+    ) => {
       if (!id) return error(400, "dashboard id is required");
-      if (!body.name || typeof body.name !== "string") {
-        return error(400, "name is required");
-      }
-      const name = body.name.trim();
-      if (!name) return error(400, "invalid name");
 
-      const renamed = await dashboards.rename(id, name);
-      if (!renamed) return error(404, "dashboard not found");
-      return ok({ dashboard: renamed });
+      const hasName = body.name !== undefined;
+      const hasPrompt = body.prompt !== undefined;
+      if (!hasName && !hasPrompt) {
+        return error(400, "name or prompt is required");
+      }
+
+      let dashboard = await dashboards.get(id);
+      if (!dashboard) return error(404, "dashboard not found");
+
+      if (hasName) {
+        if (typeof body.name !== "string") return error(400, "invalid name");
+        const name = body.name.trim();
+        if (!name) return error(400, "invalid name");
+        dashboard = (await dashboards.rename(id, name)) ?? dashboard;
+      }
+
+      if (hasPrompt) {
+        if (typeof body.prompt !== "string") {
+          return error(400, "invalid prompt");
+        }
+        // an empty string is how the reader clears it, so it is not rejected
+        dashboard = (await dashboards.setPrompt(id, body.prompt)) ?? dashboard;
+      }
+
+      return ok({ dashboard });
     },
 
     /**

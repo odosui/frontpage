@@ -1,7 +1,7 @@
 import * as sessions from "../../models/agentSessions";
 import { ChatMessage, sendChat } from "../ai/OpenRouter";
-import { GENERAL } from "./general";
-import { describeTools, parseToolCalls } from "./protocol";
+import { parseToolCalls } from "./protocol";
+import { buildSystem } from "./system";
 import { AgentContext, AgentDefinition, ToolCall } from "./types";
 
 export type AgentRun = {
@@ -40,12 +40,9 @@ export async function runAgent(
   const log = options.log ?? (() => undefined);
   const started = Date.now();
 
-  // who the agent is, then what this one does, then what it can call
-  const system = [
-    GENERAL,
-    agent.instructions.trim(),
-    describeTools(agent.tools),
-  ].join("\n\n");
+  // who the agent is, then what this one does, then what the dashboard itself
+  // asks for, then what it can call
+  const system = await buildSystem(agent, dashboardId);
   const session = await sessions.start(agent.kind, model, dashboardId);
   // after the session exists: a tool that proposes a change files it here
   const ctx: AgentContext = { dashboardId, sessionId: session.id };

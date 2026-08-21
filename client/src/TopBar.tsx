@@ -82,6 +82,8 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
               isOpen={agentsOpen}
               onClose={() => setAgentsOpen(false)}
               dashboardId={tools.current}
+              prompt={tools.prompt}
+              onSavePrompt={tools.onSavePrompt}
             />
           </>
         )}

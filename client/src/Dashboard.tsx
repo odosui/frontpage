@@ -322,6 +322,22 @@ const Dashboard: React.FC = () => {
     [dashboardId, loadDashboards, load],
   )
 
+  /**
+   * The arc's standing instruction to its agents. Saved on the dashboard, so
+   * the next run and the next chat turn both pick it up.
+   */
+  const savePrompt = useCallback(
+    (prompt: string) =>
+      api
+        .setDashboardPrompt(dashboardId, prompt)
+        .then((data: { dashboard: Arc }) => {
+          setLoaded((prev) =>
+            prev ? { ...prev, dashboard: data.dashboard } : prev,
+          )
+        }),
+    [dashboardId],
+  )
+
   const renameStory = useCallback(
     (storyId: number, title: string) => {
       api
@@ -364,6 +380,8 @@ const Dashboard: React.FC = () => {
       onCreate: createDashboard,
       onDelete: deleteDashboard,
       onRename: renameDashboard,
+      prompt: loaded?.dashboard.prompt ?? '',
+      onSavePrompt: savePrompt,
       sources,
       refreshingSources: refreshing,
       sourceErrors,
@@ -392,6 +410,7 @@ const Dashboard: React.FC = () => {
     createDashboard,
     deleteDashboard,
     renameDashboard,
+    savePrompt,
     refreshSource,
     removeSource,
     refreshAll,

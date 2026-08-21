@@ -14,6 +14,11 @@ export type Dashboard = {
   id: string;
   /** What the reader called it, with its spaces and punctuation intact. */
   name: string;
+  /**
+   * The arc's own standing instruction to the agents, appended to the system
+   * message of every run and chat turn on it. Empty when none has been set.
+   */
+  prompt: string;
   storyCount: number;
   sourceCount: number;
   createdAt: string;
@@ -22,12 +27,13 @@ export type Dashboard = {
 type Row = {
   id: string;
   name: string;
+  prompt: string;
   story_count: string;
   source_count: string;
   created_at: Date;
 };
 
-const SELECT = `select d.id, d.name, d.created_at,
+const SELECT = `select d.id, d.name, d.prompt, d.created_at,
                        (select count(*) from stories s where s.dashboard_id = d.id)
                          as story_count,
                        (select count(*) from dashboard_sources ds
@@ -38,6 +44,7 @@ function toDashboard(row: Row): Dashboard {
   return {
     id: row.id,
     name: row.name,
+    prompt: row.prompt,
     storyCount: Number(row.story_count),
     sourceCount: Number(row.source_count),
     createdAt: row.created_at.toISOString(),
@@ -98,6 +105,21 @@ export async function create(id: string, name: string): Promise<Dashboard> {
 
 export async function remove(id: string) {
   await query("delete from dashboards where id = $1", [id]);
+}
+
+/**
+ * The arc's standing instruction to its agents. Stored trimmed, and stored
+ * empty rather than null when it is cleared, so every read is a plain string.
+ */
+export async function setPrompt(
+  id: string,
+  prompt: string,
+): Promise<Dashboard | null> {
+  const { rowCount } = await query(
+    "update dashboards set prompt = $2 where id = $1",
+    [id, prompt.trim()],
+  );
+  return rowCount === 1 ? get(id) : null;
 }
 
 /**

@@ -18,6 +18,12 @@ export interface DashboardTools {
   onCreate: (name: string) => void
   onDelete: (id: string) => void
   onRename: (id: string, name: string) => void
+  /**
+   * The arc's standing instruction to its agents, appended to every run and
+   * chat turn on it, and the way the Agents modal changes it.
+   */
+  prompt: string
+  onSavePrompt: (prompt: string) => Promise<void>
 
   /** The sources this dashboard reads — shared with whatever else reads them. */
   sources: Source[]

@@ -10,7 +10,9 @@ const AgentsModal: React.FC<{
   isOpen: boolean
   onClose: () => void
   dashboardId: string
-}> = ({ isOpen, onClose, dashboardId }) => (
+  prompt: string
+  onSavePrompt: (prompt: string) => Promise<void>
+}> = ({ isOpen, onClose, dashboardId, prompt, onSavePrompt }) => (
   <GenericModal
     isOpen={isOpen}
     onClose={onClose}
@@ -18,7 +20,11 @@ const AgentsModal: React.FC<{
     contentClass="agents-modal"
   >
     <Suspense fallback={<p className="agents-empty">Loading…</p>}>
-      <Agents dashboardId={dashboardId} />
+      <Agents
+        dashboardId={dashboardId}
+        prompt={prompt}
+        onSavePrompt={onSavePrompt}
+      />
     </Suspense>
   </GenericModal>
 )

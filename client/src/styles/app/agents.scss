@@ -68,6 +68,85 @@
   }
 }
 
+// The arc's standing instruction to its agents, under the run buttons: what
+// those runs will be told, in the place they are started from.
+.agents-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+  padding: $unit2;
+  border-bottom: 1px solid var(--borderColor);
+}
+
+.agents-prompt-label {
+  font-size: $text0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.agents-prompt-hint {
+  margin: 0;
+  font-size: $text0;
+  line-height: 1.4;
+  color: var(--lighter);
+}
+
+.agents-prompt-input {
+  width: 100%;
+  padding: $unit1;
+  font: inherit;
+  font-size: $text0;
+  line-height: 1.5;
+  color: var(--color-text);
+  border: 1px solid var(--borderColor);
+  border-radius: $unit0;
+  background-color: transparent;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.agents-prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $unit1;
+  min-height: $unit4;
+}
+
+.agents-prompt-state {
+  font-size: $text0;
+  color: var(--lighter);
+}
+
+.agents-prompt-save {
+  padding: $unit0 $unit1;
+  font-size: $text0;
+  font-weight: 500;
+  color: var(--color-text);
+  background-color: transparent;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit0;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
 .agents-sessions {
   list-style: none;
   margin: 0;

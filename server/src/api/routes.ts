@@ -58,7 +58,7 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     method: "patch",
     path: "/api/dashboards/:id",
     handler: async ({ pathParams, body }) =>
-      api.renameDashboard(pathParams.id ?? "", body),
+      api.updateDashboard(pathParams.id ?? "", body),
   },
 
   // One dashboard: the arc, its stories, what they establish and what they

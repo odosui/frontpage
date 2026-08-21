@@ -10,8 +10,8 @@
 import * as sessions from "../../models/agentSessions";
 import { ChatMessage } from "../ai/OpenRouter";
 import { sendChat } from "../ai/OpenRouter";
-import { GENERAL } from "./general";
-import { describeTools, parseToolCalls } from "./protocol";
+import { parseToolCalls } from "./protocol";
+import { buildSystem } from "./system";
 import { execute } from "./runner";
 import { AgentContext, AgentDefinition } from "./types";
 
@@ -42,14 +42,11 @@ export async function startChat(
   agent: AgentDefinition,
   options: StartChatOptions,
 ): Promise<{ sessionId: number }> {
-  const system = [
-    GENERAL,
-    agent.instructions.trim(),
+  const system = await buildSystem(
+    agent,
+    options.dashboardId,
     options.context ? `THIS CONVERSATION\n\n${options.context}` : "",
-    describeTools(agent.tools),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  );
 
   const session = await sessions.start(
     agent.kind,

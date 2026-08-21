@@ -6,13 +6,19 @@ import api, {
 } from './api'
 import { useJobs } from './contexts/JobsContext'
 import AgentTranscript from './ui/agent/AgentTranscript'
+import DashboardPrompt from './ui/agent/DashboardPrompt'
 
 /** While a session is running its transcript grows every few seconds. */
 const LIVE_POLL_MS = 1000
 const IDLE_POLL_MS = 6000
 
 /** The agents view: session list on the left, live transcript on the right. */
-const Agents: React.FC<{ dashboardId: string }> = ({ dashboardId }) => {
+const Agents: React.FC<{
+  dashboardId: string
+  /** The arc's standing instruction to its agents, and how to change it. */
+  prompt: string
+  onSavePrompt: (prompt: string) => Promise<void>
+}> = ({ dashboardId, prompt, onSavePrompt }) => {
   const { refresh: refreshJobs } = useJobs()
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [sessions, setSessions] = useState<AgentSession[]>([])
@@ -108,6 +114,9 @@ const Agents: React.FC<{ dashboardId: string }> = ({ dashboardId }) => {
           ))}
           {error && <p className="agents-error">{error}</p>}
         </div>
+
+        {/* right under the run buttons: it is what those runs will be told */}
+        <DashboardPrompt value={prompt} onSave={onSavePrompt} />
 
         <ul className="agents-sessions">
           {sessions.map((s) => (
