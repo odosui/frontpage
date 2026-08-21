@@ -122,18 +122,16 @@ const DashboardSwitcher = ({
                       >
                         <EditIcon />
                       </button>
-                      {id !== 'default' && (
-                        <button
-                          className="dash-switcher-action dash-switcher-action--danger"
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(id)
-                          }}
-                        >
-                          <TrashIcon />
-                        </button>
-                      )}
+                      <button
+                        className="dash-switcher-action dash-switcher-action--danger"
+                        title="Delete"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDelete(id)
+                        }}
+                      >
+                        <TrashIcon />
+                      </button>
                     </div>
                   </>
                 )}

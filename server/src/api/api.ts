@@ -28,7 +28,7 @@ import {
 dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
-const MAX_STORIES = 50;
+const MAX_STORIES = 100;
 
 /** Which job reads each kind of source; a kind with none cannot be fetched. */
 const FETCHERS: Partial<Record<SourceKind, string>> = {
@@ -38,8 +38,6 @@ const FETCHERS: Partial<Record<SourceKind, string>> = {
 };
 
 export const createApi = async () => {
-  await dashboards.ensureDefaultDashboard();
-
   return {
     health: () => ok({ status: "ok" }),
 
@@ -140,9 +138,7 @@ export const createApi = async () => {
     },
 
     deleteDashboard: async (id: string) => {
-      if (!id || dashboards.isDefault(id)) {
-        return error(400, "cannot delete default dashboard");
-      }
+      if (!id) return error(400, "dashboard id is required");
       if (!(await dashboards.exists(id))) {
         return error(404, "dashboard not found");
       }
@@ -195,8 +191,7 @@ export const createApi = async () => {
      * to establish, what they point to, the sources feeding it and the latest
      * headlines off them.
      */
-    getDashboard: async (dashboardId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    getDashboard: async (id: string) => {
       const dashboard = await dashboards.get(id);
       if (!dashboard) return error(404, "dashboard not found");
 
@@ -224,8 +219,7 @@ export const createApi = async () => {
       });
     },
 
-    getFeed: async (dashboardId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    getFeed: async (id: string) => {
       const [feed, uncategorized] = await Promise.all([
         articles.feed(id, MAX_ITEMS),
         articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
@@ -234,17 +228,15 @@ export const createApi = async () => {
     },
 
     /** The categorized view: stories with their articles, newest story first. */
-    getStories: async (dashboardId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    getStories: async (id: string) => {
       return ok({ stories: await stories.feed(id, MAX_STORIES) });
     },
 
     renameStory: async (
-      dashboardId: string,
+      id: string,
       storyId: string,
       body: { title?: string },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
       const numeric = Number(storyId);
       if (!Number.isFinite(numeric)) {
         return error(400, "story id must be a number");
@@ -259,8 +251,7 @@ export const createApi = async () => {
     },
 
     /** Unfiles the story; its articles go back into the dashboard's queue. */
-    deleteStory: async (dashboardId: string, storyId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    deleteStory: async (id: string, storyId: string) => {
       const numeric = Number(storyId);
       if (!Number.isFinite(numeric)) {
         return error(400, "story id must be a number");
@@ -273,8 +264,7 @@ export const createApi = async () => {
 
     // A dashboard's sources
 
-    listDashboardSources: async (dashboardId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    listDashboardSources: async (id: string) => {
       return ok({ sources: await sources.forDashboard(id) });
     },
 
@@ -285,10 +275,9 @@ export const createApi = async () => {
      * the two are combined.
      */
     assignSource: async (
-      dashboardId: string,
+      id: string,
       body: { sourceId?: string; name?: string; kind?: string; url?: string },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
       if (!(await dashboards.exists(id))) {
         return error(404, "dashboard not found");
       }
@@ -311,8 +300,7 @@ export const createApi = async () => {
      * — another dashboard may be reading them, and even where none is,
      * unassigning is not deleting.
      */
-    unassignSource: async (dashboardId: string, sourceId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    unassignSource: async (id: string, sourceId: string) => {
       if (!sourceId) return error(400, "source id is required");
       if (!(await sources.unassign(id, sourceId))) {
         return error(404, "this dashboard does not read that source");
@@ -327,10 +315,9 @@ export const createApi = async () => {
      * number on it is the analyst's job, through FORECAST.
      */
     createPrediction: async (
-      dashboardId: string,
+      id: string,
       body: { content?: string },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
       const content = (body?.content ?? "").trim();
       if (!content) return error(400, "content is required");
       if (!(await dashboards.exists(id))) {
@@ -341,11 +328,10 @@ export const createApi = async () => {
     },
 
     updatePrediction: async (
-      dashboardId: string,
+      id: string,
       predictionId: string,
       body: { content?: string },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
       const numeric = Number(predictionId);
       if (!Number.isFinite(numeric)) {
         return error(400, "prediction id must be a number");
@@ -358,8 +344,7 @@ export const createApi = async () => {
       return ok({ prediction: updated });
     },
 
-    deletePrediction: async (dashboardId: string, predictionId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    deletePrediction: async (id: string, predictionId: string) => {
       const numeric = Number(predictionId);
       if (!Number.isFinite(numeric)) {
         return error(400, "prediction id must be a number");
@@ -374,8 +359,7 @@ export const createApi = async () => {
     // Facts
 
     /** Every past version of this arc's facts, newest first, with its reasoning. */
-    getFactsHistory: async (dashboardId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    getFactsHistory: async (id: string) => {
       return ok({ versions: await facts.history(id) });
     },
 
@@ -446,8 +430,7 @@ export const createApi = async () => {
      * slow site cannot hold the request open, and so the ui follows it through
      * the same jobs poll as everything else.
      */
-    extractArticleContent: async (dashboardId: string, articleId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    extractArticleContent: async (id: string, articleId: string) => {
       const numeric = Number(articleId);
       if (!Number.isInteger(numeric) || numeric <= 0) {
         return error(400, "a numeric article id is required");
@@ -468,8 +451,7 @@ export const createApi = async () => {
     },
 
     /** The stored text, or a 404 if nothing has read this article yet. */
-    getArticleContent: async (dashboardId: string, articleId: string) => {
-      const id = dashboards.resolveId(dashboardId);
+    getArticleContent: async (id: string, articleId: string) => {
       const numeric = Number(articleId);
       if (!Number.isInteger(numeric) || numeric <= 0) {
         return error(400, "a numeric article id is required");
@@ -527,10 +509,9 @@ export const createApi = async () => {
       }),
 
     listAgentSessions: async (
-      dashboardId: string,
+      id: string,
       params: { kind?: string; limit?: string },
     ) => {
-      const id = dashboards.resolveId(dashboardId);
       const limit = Math.min(Math.max(Number(params.limit) || 30, 1), 200);
       return ok({ sessions: await agentSessions.list(id, params.kind, limit) });
     },
@@ -605,8 +586,7 @@ export const createApi = async () => {
      * Queues an agent run rather than running it here: the worker does the work
      * and writes each turn as it happens, so the ui can watch it unfold.
      */
-    runAgent: async (dashboardId: string, body: { kind?: string }) => {
-      const id = dashboards.resolveId(dashboardId);
+    runAgent: async (id: string, body: { kind?: string }) => {
       const kind = body?.kind || "";
       if (!AGENT_KINDS.includes(kind)) {
         return error(400, `kind must be one of ${AGENT_KINDS.join(", ")}`);
@@ -631,8 +611,7 @@ export const createApi = async () => {
      * here — nothing is asked until the first message arrives, so opening a
      * chat and never using it costs no model call.
      */
-    startChat: async (dashboardId: string, body: { kind?: string }) => {
-      const id = dashboards.resolveId(dashboardId);
+    startChat: async (id: string, body: { kind?: string }) => {
       const kind = body?.kind || "";
       if (!AGENT_KINDS.includes(kind)) {
         return error(400, `kind must be one of ${AGENT_KINDS.join(", ")}`);
@@ -827,10 +806,9 @@ async function carryOut(
  * current set: a 404, rather than a version recording that nothing happened.
  */
 async function reviseFacts(
-  dashboardId: string,
+  id: string,
   mutate: (current: facts.FactWithSource[]) => facts.FactDraft[] | null,
 ) {
-  const id = dashboards.resolveId(dashboardId);
   if (!(await dashboards.exists(id))) return error(404, "dashboard not found");
 
   const current = await facts.current(id);

@@ -47,7 +47,9 @@ const REFRESH_MS = 20_000
 const Dashboard: React.FC = () => {
   const { id: routeId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const dashboardId = routeId || 'default'
+  // No fallback arc: nothing is created for the reader, so a bare `/` shows
+  // whichever dashboard exists (see below) or the empty state when none does.
+  const dashboardId = routeId ?? ''
   // useNavigate hands back a fresh function every render; pinning it in a ref
   // keeps the callbacks below stable, so the toolbar effect doesn't re-fire
   // (setTools -> re-render -> new navigate -> setTools -> ...) forever.
@@ -70,6 +72,7 @@ const Dashboard: React.FC = () => {
   const { setTools } = useToolbar()
 
   const load = useCallback(() => {
+    if (!dashboardId) return Promise.resolve()
     return api
       .getDashboard(dashboardId)
       .then((data: Loaded) => {
@@ -91,6 +94,17 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     loadDashboards()
   }, [loadDashboards])
+
+  /**
+   * A bare `/` lands on the first arc there is. It used to land on a dashboard
+   * called "Default" that the server made whether or not anyone wanted it;
+   * with that gone, "first" means the oldest one the reader made, and no
+   * dashboards at all means the empty state below.
+   */
+  useEffect(() => {
+    if (dashboardId || dashboards.length === 0) return
+    goToDashboard(dashboards[0]!.id)
+  }, [dashboardId, dashboards, goToDashboard])
 
   useEffect(() => {
     setLoaded(null)
@@ -305,10 +319,15 @@ const Dashboard: React.FC = () => {
       }
       api.deleteDashboard(id).then(() => {
         loadDashboards()
-        if (dashboardId === id) goToDashboard('default')
+        // whatever is left, oldest first; `/` when that was the last one, which
+        // the effect above turns into the empty state
+        if (dashboardId === id) {
+          const next = dashboards.find((d) => d.id !== id)
+          navigateRef.current(next ? `/db/${next.id}` : '/')
+        }
       })
     },
-    [dashboardId, loadDashboards, goToDashboard],
+    [dashboardId, dashboards, loadDashboards],
   )
 
   /** Only the name moves — the id is the url, so the page stays where it is. */
@@ -372,10 +391,18 @@ const Dashboard: React.FC = () => {
   const feed = loaded?.feed ?? []
   const uncategorized = loaded?.uncategorized ?? 0
   useEffect(() => {
+    // with no arc on screen there is nothing for them to act on: an empty
+    // switcher and a "0 sources" menu beside it would be furniture. The empty
+    // state carries its own button.
+    if (!dashboardId) {
+      setTools(null)
+      return
+    }
+
     setTools({
       dashboards,
       current: dashboardId,
-      currentName: loaded?.dashboard.name ?? dashboardId,
+      currentName: loaded?.dashboard.name ?? dashboardId ?? '',
       onSelect: goToDashboard,
       onCreate: createDashboard,
       onDelete: deleteDashboard,
@@ -453,10 +480,35 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey)
   }, [dashboards, dashboardId, goToDashboard, refreshAll])
 
+  const createFirst = () => {
+    const name = window.prompt('Name this dashboard:')?.trim()
+    if (name) createDashboard(name)
+  }
+
   if (error) {
     return (
       <div className="arc">
         <p className="arc-error">{error}</p>
+      </div>
+    )
+  }
+
+  // nothing to show and nothing to show it for: the reader has no arcs yet, or
+  // has just deleted the last one
+  if (!dashboardId && dashboards.length === 0) {
+    return (
+      <div className="arc arc--empty">
+        <div className="arc-empty">
+          <h1 className="arc-empty-title">No dashboards yet</h1>
+          <p className="arc-empty-body">
+            A dashboard is one running arc — the stories filed under it, what
+            they establish, and what that points to. Name the one you want to
+            follow.
+          </p>
+          <button className="arc-empty-btn" onClick={createFirst}>
+            New dashboard
+          </button>
+        </div>
       </div>
     )
   }
@@ -470,6 +522,7 @@ const Dashboard: React.FC = () => {
       <aside className="arc-stories">
         <Stories
           stories={stories}
+          total={dashboard.storyCount}
           hasSources={sources.length > 0}
           hasArticles={feed.length > 0}
           extracting={extracting}

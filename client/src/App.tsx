@@ -28,7 +28,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<Fallback />}>
                   <Switch>
                     {/* before the dashboard route: `/db/:id` is the catch-all,
-                        and a bare `/` falls through to the default arc */}
+                        and a bare `/` lands on the first arc there is */}
                     <Route path="/settings" component={Settings} />
                     <Route path={['/db/:id', '/']} component={Dashboard} />
                   </Switch>

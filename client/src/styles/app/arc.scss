@@ -27,6 +27,49 @@
   min-width: 0;
 }
 
+// no arcs at all: the one screen in the app with nothing behind it, so it
+// says what a dashboard is rather than showing an empty four-column frame
+.arc--empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.arc-empty {
+  max-width: $unit13;
+  padding: $unit4;
+  text-align: center;
+}
+
+.arc-empty-title {
+  margin: 0 0 $unit2;
+  font-size: $text4;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.arc-empty-body {
+  margin: 0 0 $unit4;
+  font-size: $text1;
+  line-height: 1.5;
+  color: var(--lighter);
+}
+
+.arc-empty-btn {
+  padding: $unit1 $unit4;
+  font-size: $text1;
+  font-weight: 500;
+  color: #fff;
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: $unit1;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+}
+
 .arc-stories {
   overflow-y: auto;
   padding: $unit2 $unit1 $unit5;

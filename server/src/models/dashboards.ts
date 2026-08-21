@@ -1,8 +1,6 @@
 import { query } from "../db/pool";
 import { slugify } from "../utils/slug";
 
-const DEFAULT_DASHBOARD = "default";
-
 /**
  * A dashboard is the running arc — what used to be a storyline. It owns the
  * stories filed under it, the facts they establish, the predictions they point
@@ -51,14 +49,6 @@ function toDashboard(row: Row): Dashboard {
   };
 }
 
-export function resolveId(id: string): string {
-  return id || DEFAULT_DASHBOARD;
-}
-
-export function isDefault(id: string): boolean {
-  return id === DEFAULT_DASHBOARD;
-}
-
 /**
  * The url-safe id behind a name. Dashboards are arcs now, so the names carry
  * spaces and punctuation — "Russian-Ukrainian war" is addressed as
@@ -68,21 +58,13 @@ export function idFor(name: string): string {
   return slugify(name);
 }
 
-export async function ensureDefaultDashboard() {
-  await query(
-    `insert into dashboards (id, name) values ($1, 'Default')
-     on conflict (id) do nothing`,
-    [DEFAULT_DASHBOARD],
-  );
-}
-
-/** The default first, then whatever order they were made in. */
+/**
+ * In the order they were made. There is no dashboard that comes first by
+ * right any more — nothing is created for the reader, and the arcs on the page
+ * are the arcs they asked for.
+ */
 export async function listAll(): Promise<Dashboard[]> {
-  await ensureDefaultDashboard();
-  const { rows } = await query<Row>(
-    `${SELECT} order by (d.id = $1) desc, d.created_at, d.id`,
-    [DEFAULT_DASHBOARD],
-  );
+  const { rows } = await query<Row>(`${SELECT} order by d.created_at, d.id`);
   return rows.map(toDashboard);
 }
 

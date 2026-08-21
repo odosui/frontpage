@@ -11,6 +11,12 @@ import StoryMenu from './ui/StoryMenu'
 
 type Props = {
   stories: StoryFeedEntry[]
+  /**
+   * How many stories this dashboard holds, which is not how many are on
+   * screen: the page asks for the newest hundred. Shown as "100 of 214" so a
+   * capped column says so rather than looking like the whole arc.
+   */
+  total: number
   /** Whether this dashboard reads any source at all — for the empty state. */
   hasSources: boolean
   hasArticles: boolean
@@ -35,6 +41,7 @@ type Props = {
  */
 const Stories = ({
   stories,
+  total,
   hasSources,
   hasArticles,
   extracting,
@@ -52,7 +59,11 @@ const Stories = ({
       <h2 className="facts-heading">
         Stories
         {stories.length > 0 && (
-          <span className="facts-count">{stories.length}</span>
+          <span className="facts-count">
+            {total > stories.length
+              ? `${stories.length} of ${total}`
+              : stories.length}
+          </span>
         )}
       </h2>
       <button
@@ -95,7 +106,11 @@ const Stories = ({
         {stories.map((story) => (
           <article key={story.id} className="story">
             <h2 className="story-title">
-              <span className="story-title-text">{story.title}</span>
+              {/* one line, cut with an ellipsis; the whole of it is in the
+                  tooltip for the titles that do not fit */}
+              <span className="story-title-text" title={story.title}>
+                {story.title}
+              </span>
               {(onRename || onDelete) && (
                 <StoryMenu
                   title={story.title}
