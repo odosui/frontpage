@@ -50,15 +50,15 @@ const Predictions = ({ dashboardId, predictions, onChanged }: Props) => {
 
   return (
     <div className="predictions">
-      <header className="facts-head">
-        <h2 className="facts-heading">
+      <header className="col-head">
+        <h2 className="col-heading">
           Predictions
           {predictions.length > 0 && (
-            <span className="facts-count">{predictions.length}</span>
+            <span className="col-count">{predictions.length}</span>
           )}
         </h2>
         <button
-          className="facts-add"
+          className="col-btn"
           onClick={() => setAdding((was) => !was)}
           title="Make a prediction"
         >
@@ -66,7 +66,7 @@ const Predictions = ({ dashboardId, predictions, onChanged }: Props) => {
         </button>
       </header>
 
-      <div className="facts-body">
+      <div className="col-body">
         {adding && (
           <div className="prediction is-editing">
             <MarkdownTextarea

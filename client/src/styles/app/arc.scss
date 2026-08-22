@@ -18,13 +18,30 @@
 }
 
 // every column is a quarter, and none of them may push the others out: without
-// min-width a long headline or url would widen its own column past its share
+// min-width a long headline or url would widen its own column past its share.
+//
+// All four are the same shell: a header that stays put over a body that
+// scrolls under it. The column itself never scrolls — the body inside it does
+// — which is what keeps every heading on screen without a single
+// `position: sticky` or the stacking it drags in.
 .arc-stories,
 .arc-facts,
 .arc-predictions,
 .arc-chat {
   flex: 0 0 25%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// one rule between two columns. Stories used to draw its own on the right
+// while the other three drew one on the left, which put two lines in the first
+// gap and one in the others
+.arc-facts,
+.arc-predictions,
+.arc-chat {
+  border-left: 1px solid var(--borderColor);
 }
 
 // no arcs at all: the one screen in the app with nothing behind it, so it
@@ -70,23 +87,6 @@
   }
 }
 
-.arc-stories {
-  overflow-y: auto;
-  padding: $unit2 $unit1 $unit5;
-  border-right: 1px solid var(--borderColor);
-}
-
-// the three panes to the right of the stories are each a fixed header over
-// their own scroll, so their headings stay put while their contents move
-.arc-facts,
-.arc-predictions,
-.arc-chat {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-left: 1px solid var(--borderColor);
-}
-
 .arc-error {
   display: flex;
   flex-direction: column;
@@ -99,8 +99,10 @@
   color: var(--lighter);
 }
 
-// facts, predictions and chat are the same kind of column — a heading that stays put over a
-// pane that scrolls — so they share the shape and differ only in contents
+// stories, facts, predictions and chat are all one kind of column — a heading
+// that stays put over a pane that scrolls — so they share the shape and differ
+// only in contents
+.stories,
 .facts,
 .predictions,
 .chat {
@@ -110,19 +112,29 @@
   flex-direction: column;
 }
 
-.facts-head,
-.chat-head {
+// THE COLUMN HEAD
+//
+// One header for all four columns, so they line up across the page whatever
+// each of them carries: the stories column has a button that says what it
+// does, facts has two icons, predictions one, chat only its model. The
+// min-height is what holds the four baselines together — a header with no
+// button in it would otherwise sit shorter than its neighbours.
+.col-head {
   flex: none;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: $unit1;
-  padding: $unit3 $unit3 $unit2;
+  min-height: $unit6;
+  padding: $unit2 $unit3;
 }
 
-.facts-heading,
-.chat-heading {
+.col-heading {
   margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  min-width: 0;
   font-size: $text0;
   font-weight: 600;
   text-transform: uppercase;
@@ -130,18 +142,28 @@
   color: var(--lighter);
 }
 
-.facts-heading {
-  display: flex;
-  align-items: baseline;
-  gap: $unit1;
-}
-
-.facts-count {
+// whatever the column is counting, trailing its name: a version, a length, a
+// "100 of 175"
+.col-count {
   font-weight: 400;
   opacity: 0.7;
+  white-space: nowrap;
 }
 
-.facts-add {
+// THE COLUMN BODY
+//
+// The only thing on the page that scrolls, and the gutter every column is
+// measured from: $unit3 to the text on both sides, in all four. Rows that want
+// a hover highlight wider than their words bleed back into it rather than
+// pushing the text in — see .story-article-row.
+.col-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 $unit3 $unit5;
+}
+
+.col-btn {
   flex: none;
   width: $unit3;
   height: $unit3;
@@ -168,7 +190,7 @@
 
 // the history toggle sits beside the add button, same size and same weight:
 // looking back is as ordinary an act as writing something down
-.facts-tools {
+.col-tools {
   flex: none;
   display: flex;
   align-items: center;
@@ -444,13 +466,6 @@
   min-width: 0;
 }
 
-.facts-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 0 $unit3 $unit3;
-}
-
 .facts-placeholder {
   margin: 0;
   font-size: $text1;
@@ -467,8 +482,11 @@
   gap: $unit0;
 }
 
+// the words sit on the column's gutter and the box around them reaches back
+// into it, so a fact being edited is tinted a little wider than it is read
 .fact {
-  padding: $unit1 0;
+  margin: 0 (-$unit1);
+  padding: $unit1;
   border-radius: $unit1;
 
   &.is-editing {
@@ -685,8 +703,10 @@
   gap: $unit0;
 }
 
+// same bleed as a fact row: the claim lines up with the heading above it, and
+// the target around it is wider than the words
 .prediction {
-  padding: $unit1 0;
+  margin: 0 (-$unit1);
   border-radius: $unit1;
 
   &.is-editing {
@@ -702,7 +722,9 @@
   align-items: baseline;
   gap: $unit1;
   width: 100%;
-  padding: $unit0;
+  // the row's own inset: the claim lands on the column's gutter while the
+  // target the reader clicks reaches out past it
+  padding: $unit1;
   border: none;
   border-radius: $unit1;
   background: none;
@@ -772,7 +794,7 @@
 // folded away until asked for: the current number answers most questions, and
 // the history answers the one it cannot
 .prediction-history {
-  margin: $unit1 0 0 $unit1;
+  margin: $unit1 0 0 $unit2;
   padding-left: $unit2;
   border-left: 2px solid var(--borderColor);
 }
@@ -854,30 +876,27 @@
   color: var(--lighter);
 }
 
+// the scroll and the gutter come from .col-body, which this carries too; what
+// is left here is the stack the messages sit in
 .chat-transcript {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
 
-  // the transcript is the agents view's list, in a narrower column: it brings
-  // its own scrolling, so only the padding needs taking down
+  // the transcript is the agents view's list, in a narrower column: it sits in
+  // the column's own gutter rather than adding one of its own
   .agents-messages {
-    padding: 0 $unit3 $unit3;
+    padding: 0;
   }
 }
 
 .chat-placeholder {
   margin: 0;
-  padding: 0 $unit3;
   font-size: $text1;
   line-height: 1.45;
   color: var(--lighter);
 }
 
 .chat-error {
-  padding: 0 $unit3;
 }
 
 // a change the agent wants to make, and the only place it can be allowed.

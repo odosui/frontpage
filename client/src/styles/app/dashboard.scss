@@ -2,13 +2,9 @@
 
 $feed-width: $unit12;
 
-.stories {
-  max-width: $unit15;
-  margin: 0 auto;
-}
-
 // the stories themselves, held apart from the column's header so the gap
-// between two stories is not also the gap under the heading
+// between two stories is not also the gap under the heading. The scrolling and
+// the gutter are .col-body's, the same as the other three columns
 .stories-list {
   display: flex;
   flex-direction: column;
@@ -16,14 +12,6 @@ $feed-width: $unit12;
   // wider than the space between two articles inside one story — otherwise the
   // list reads as one flat run of headlines with occasional labels in it
   gap: $unit3;
-}
-
-// this column's heading borrows the facts pane's, minus its padding: the pane
-// headers sit against their own column edge, and this one has to line up with
-// the story titles under it instead
-.stories .facts-head {
-  align-items: center;
-  padding: 0 $unit1 $unit2;
 }
 
 // the one thing on this page that starts an agent, so unlike the icon buttons
@@ -81,8 +69,7 @@ $feed-width: $unit12;
 }
 
 .stories-placeholder {
-  max-width: $unit15;
-  margin: 0 auto;
+  margin: 0;
   color: var(--lighter);
   font-size: $text1;
   line-height: 1.4;
@@ -105,9 +92,9 @@ $feed-width: $unit12;
   // that cannot wrap cannot do that to it.
   display: flex;
   align-items: center;
-  // the same inset the article rows carry, so the header and the dots below it
-  // share one left edge
-  margin: 0 0 $unit0 $unit1;
+  // flush with the column's gutter: the rows beneath bleed their hover box
+  // outwards rather than pushing their text in, so the two share a left edge
+  margin: 0 0 $unit0;
   font-size: $text0;
   font-weight: 500;
   line-height: 1.4;
@@ -230,6 +217,10 @@ $feed-width: $unit12;
 // character, and the lines that wrap start at the row's own edge rather than
 // indenting to clear a column the dot only occupies on the first line.
 .story-article-row {
+  // the words sit on the column's gutter and the hover box reaches back into
+  // it — $unit1 out, $unit1 back — so the highlight is wider than the text
+  // without the text being indented past the heading above it
+  margin: 0 (-$unit1);
   padding: $unit0 $unit1;
   font-size: $text1;
   line-height: 1.35;

@@ -90,17 +90,17 @@ const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
 
   return (
     <div className="facts">
-      <header className="facts-head">
-        <h2 className="facts-heading">
+      <header className="col-head">
+        <h2 className="col-heading">
           Facts
-          {version > 0 && <span className="facts-count">v{version}</span>}
+          {version > 0 && <span className="col-count">v{version}</span>}
           {facts.length > 0 && (
-            <span className="facts-count">{facts.length}</span>
+            <span className="col-count">{facts.length}</span>
           )}
         </h2>
-        <div className="facts-tools">
+        <div className="col-tools">
           <button
-            className={`facts-add${showHistory ? ' is-on' : ''}`}
+            className={`col-btn${showHistory ? ' is-on' : ''}`}
             onClick={() => {
               const next = !showHistory
               setShowHistory(next)
@@ -112,7 +112,7 @@ const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
             ⟲
           </button>
           <button
-            className="facts-add"
+            className="col-btn"
             onClick={() => setAdding((was) => !was)}
             title="Write down a fact"
           >
@@ -121,7 +121,7 @@ const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
         </div>
       </header>
 
-      <div className="facts-body">
+      <div className="col-body">
         {showHistory && (
           <div className="facts-history">
             <FactsHistory versions={versions} onOpen={setReading} />

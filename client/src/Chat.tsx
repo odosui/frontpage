@@ -63,12 +63,12 @@ const Chat = ({ dashboardId, dashboardName, onChanged }: Props) => {
 
   return (
     <div className="chat">
-      <header className="chat-head">
-        <h2 className="chat-heading">Chat</h2>
+      <header className="col-head">
+        <h2 className="col-heading">Chat</h2>
         {session && <span className="chat-model">{session.model}</span>}
       </header>
 
-      <div className="chat-transcript">
+      <div className="col-body chat-transcript">
         {empty ? (
           <p className="chat-placeholder">
             Ask about {dashboardName} — what changed, what it follows from, who

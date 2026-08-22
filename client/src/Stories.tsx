@@ -52,14 +52,15 @@ const Stories = ({
   onRunFacts,
   runningFacts,
 }: Props) => {
-  // the same header the facts and predictions columns carry, so the three read
-  // as three panes of one page rather than a list with two panes beside it
+  // the shared column header, the same one facts, predictions and chat carry,
+  // so the four read as four panes of one page rather than a list with three
+  // panes beside it
   const head = (
-    <header className="facts-head">
-      <h2 className="facts-heading">
+    <header className="col-head">
+      <h2 className="col-heading">
         Stories
         {stories.length > 0 && (
-          <span className="facts-count">
+          <span className="col-count">
             {total > stories.length
               ? `${stories.length} of ${total}`
               : stories.length}
@@ -92,9 +93,11 @@ const Stories = ({
     return (
       <div className="stories">
         {head}
-        <p className="stories-placeholder">
-          {emptyState(hasSources, hasArticles)}
-        </p>
+        <div className="col-body">
+          <p className="stories-placeholder">
+            {emptyState(hasSources, hasArticles)}
+          </p>
+        </div>
       </div>
     )
   }
@@ -102,7 +105,7 @@ const Stories = ({
   return (
     <div className="stories">
       {head}
-      <div className="stories-list">
+      <div className="col-body stories-list">
         {stories.map((story) => (
           <article key={story.id} className="story">
             <h2 className="story-title">
