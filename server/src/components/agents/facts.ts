@@ -44,6 +44,8 @@ export const factsAgent: AgentDefinition = {
 
   We are interested in facts that are saying something about the system and / or may have a lasting impact. Compare to the facts that we already have and update them if you think there is new info, better info, possibly update the score as well. Delete the facts that you think are wrong, but provide a reasining.
 
+  A fact rests on as many articles as report it, not one. Coverage arrives in pieces — one outlet breaks a claim, another corroborates it a day later, a third dates or extends it under a different story — and that is one fact gathering evidence rather than several facts. When what you are reading is already on the list, possibly raise its confidence if the second source earns it.
+
   Finishing without calling REVISE_FACTS is a legitimate outcome, and the common one on a quiet day: if the stories establish nothing the list does not already hold, say so and stop. A revision that only rewords the standing facts costs the reader a version to read back through and tells them nothing.
 
   When you finish, say in a sentence or two what you changed and what you read to decide it.`,

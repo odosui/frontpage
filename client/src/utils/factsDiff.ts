@@ -18,7 +18,9 @@ export type FactDiffRow = {
  * the words that moved can be marked inside the line — two near-identical
  * paragraphs stacked one above the other are a diff the reader has to do by
  * eye. A fact whose confidence moved counts as rewritten too: the number is
- * part of the claim.
+ * part of the claim, and so is what it now rests on — picking up a second
+ * article is often the whole of a revision, and a version that showed no
+ * change for it would read as one where nothing happened.
  */
 export function diffFacts(previous: Fact[], current: Fact[]): FactDiffRow[] {
   const before = new Map(previous.map((fact) => [fact.id, fact]))
@@ -30,7 +32,8 @@ export function diffFacts(previous: Fact[], current: Fact[]): FactDiffRow[] {
       rows.push({ kind: 'added', fact, key: `+${fact.id}` })
     } else if (
       old.content !== fact.content ||
-      old.confidence !== fact.confidence
+      old.confidence !== fact.confidence ||
+      old.articleIds.join() !== fact.articleIds.join()
     ) {
       rows.push({
         kind: 'rewritten',

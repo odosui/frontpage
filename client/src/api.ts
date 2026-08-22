@@ -9,8 +9,7 @@
 const seg = (value: string | number) => encodeURIComponent(String(value))
 
 export default {
-  // Sources. Independent of any dashboard: created, edited and deleted here,
-  // and only *assigned* to a dashboard by the calls further down.
+  // Sources
   listSources: () => api('get', '/sources'),
   createSource: (source: NewSource) => apiJson('post', '/sources', source),
   updateSource: (id: string, patch: Partial<NewSource>) =>
@@ -18,17 +17,12 @@ export default {
   deleteSource: (id: string) => api('delete', `/sources/${seg(id)}`),
   refreshSource: (id: string) => api('post', `/sources/${seg(id)}/refresh`),
 
-  // Dashboard management. A dashboard is one running arc — what used to be a
-  // storyline — and owns the stories, facts and predictions under it.
+  // Dashboard management
   listDashboards: () => api('get', '/dashboards'),
   createDashboard: (name: string) => apiJson('post', '/dashboards', { name }),
   deleteDashboard: (id: string) => api('delete', `/dashboards/${seg(id)}`),
-  /** Only the display name moves; the id stays, so the url keeps working. */
   renameDashboard: (id: string, name: string) =>
     apiJson('patch', `/dashboards/${seg(id)}`, { name }),
-  /**
-   * The arc's standing instruction to its agents. An empty string clears it.
-   */
   setDashboardPrompt: (id: string, prompt: string) =>
     apiJson('patch', `/dashboards/${seg(id)}`, { prompt }),
 
@@ -40,7 +34,11 @@ export default {
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}/stories`),
   renameStory: (dashboardId: string, storyId: number, title: string) =>
-    apiJson('patch', `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`, { title }),
+    apiJson(
+      'patch',
+      `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`,
+      { title },
+    ),
   /** Unfiles the story; its articles go back into the dashboard's queue. */
   deleteStory: (dashboardId: string, storyId: number) =>
     api('delete', `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`),
@@ -48,14 +46,14 @@ export default {
   // Which sources this dashboard reads
   listDashboardSources: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}/sources`),
-  /** An existing source by id, or a new one described inline. */
-  assignSource: (dashboardId: string, source: { sourceId: string } | NewSource) =>
-    apiJson('post', `/dashboards/${seg(dashboardId)}/sources`, source),
+  assignSource: (
+    dashboardId: string,
+    source: { sourceId: string } | NewSource,
+  ) => apiJson('post', `/dashboards/${seg(dashboardId)}/sources`, source),
   unassignSource: (dashboardId: string, id: string) =>
     api('delete', `/dashboards/${seg(dashboardId)}/sources/${seg(id)}`),
 
-  // Facts: what a dashboard is taken to have established. Each of these writes
-  // a whole new version of the set — the rows are never edited in place
+  // Facts
   createFact: (dashboardId: string, fact: NewFact) =>
     apiJson('post', `/dashboards/${seg(dashboardId)}/facts`, fact),
   updateFact: (dashboardId: string, id: string, patch: FactPatch) =>
@@ -65,7 +63,7 @@ export default {
   factsHistory: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}/facts/history`),
 
-  // Predictions: the reader writes the claim, the analyst puts odds on it
+  // Predictions
   createPrediction: (dashboardId: string, content: string) =>
     apiJson('post', `/dashboards/${seg(dashboardId)}/predictions`, { content }),
   updatePrediction: (dashboardId: string, id: number, content: string) =>
@@ -75,11 +73,17 @@ export default {
   deletePrediction: (dashboardId: string, id: number) =>
     api('delete', `/dashboards/${seg(dashboardId)}/predictions/${seg(id)}`),
 
-  // One article's own text, read off its page by the extract_content job
+  // One article's own text
   extractArticleContent: (dashboardId: string, articleId: number) =>
-    api('post', `/dashboards/${seg(dashboardId)}/articles/${seg(articleId)}/content`),
+    api(
+      'post',
+      `/dashboards/${seg(dashboardId)}/articles/${seg(articleId)}/content`,
+    ),
   getArticleContent: (dashboardId: string, articleId: number) =>
-    api('get', `/dashboards/${seg(dashboardId)}/articles/${seg(articleId)}/content`),
+    api(
+      'get',
+      `/dashboards/${seg(dashboardId)}/articles/${seg(articleId)}/content`,
+    ),
 
   // Jobs
   listJobs: (limit = 50) => api('get', '/jobs', { limit }),
@@ -92,13 +96,11 @@ export default {
   runAgent: (dashboardId: string, kind: string) =>
     apiJson('post', `/dashboards/${seg(dashboardId)}/agents/run`, { kind }),
 
-  // Chat: a session that stays open, one queued turn per message. The server
-  // writes the dashboard's own state into the agent's opening context.
+  // Chat
   startChat: (dashboardId: string, kind: string) =>
     apiJson('post', `/dashboards/${seg(dashboardId)}/agents/chats`, { kind }),
   sendChatMessage: (sessionId: number, content: string) =>
     apiJson('post', `/agents/sessions/${seg(sessionId)}/messages`, { content }),
-  /** Approving is what actually performs the change the agent asked for. */
   decideProposal: (id: number, approve: boolean) =>
     apiJson('post', `/agents/proposals/${seg(id)}/decide`, { approve }),
 
@@ -335,14 +337,8 @@ export type NewSource = {
 
 /** A dashboard is one running arc — what used to be called a storyline. */
 export type Dashboard = {
-  /** The slug, and how it is addressed in a url. */
   id: string
-  /** What the reader called it, spaces and punctuation intact. */
   name: string
-  /**
-   * The arc's own standing instruction, appended to the system message of
-   * every agent run and chat turn on it. Empty when none has been set.
-   */
   prompt: string
   storyCount: number
   sourceCount: number
@@ -409,15 +405,8 @@ export type Fact = {
   content: string
   /** 1-5; see CONFIDENCE_LABELS. */
   confidence: number
-  /** The article it rests on, when it rests on one we hold. */
-  articleId: number | null
-  articleTitle: string | null
-  articleUrl: string | null
-  /**
-   * When it was first written down — not when the version holding it was, so
-   * a fact carried through later revisions keeps its own age. The list comes
-   * back newest first.
-   */
+  articleIds: number[]
+  sources: FactSource[]
   createdAt: string
 }
 
@@ -437,17 +426,25 @@ export type FactsVersion = {
   createdAt: string
 }
 
+/** One citation, resolved: the article behind it. */
+export type FactSource = {
+  id: number
+  title: string
+  url: string
+}
+
 export type NewFact = {
   content: string
   confidence?: number
-  articleId?: number | null
+  articleIds?: number[]
 }
 
 /** Only what changed; anything left out stays as it was. */
 export type FactPatch = {
   content?: string
   confidence?: number
-  articleId?: number | null
+  /** Left out, the fact keeps the articles it already cites. */
+  articleIds?: number[]
 }
 
 /** 1 highly unlikely, 5 highly likely — the same five rungs a fact's confidence uses. */

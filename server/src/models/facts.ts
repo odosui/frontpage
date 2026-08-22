@@ -24,8 +24,12 @@ export type Fact = {
   id: string;
   content: string;
   confidence: number;
-  /** The article it rests on, when it rests on one we hold. */
-  articleId: number | null;
+  /**
+   * The articles it rests on, oldest citation first — a claim is reported
+   * once and then corroborated, dated or extended elsewhere, and all of that
+   * is what the fact stands on. Empty when it rests on nothing we hold.
+   */
+  articleIds: number[];
   /**
    * When the fact was first written down, not when this version was: it rides
    * across every revision that keeps the fact, so the recent ones stay
@@ -34,10 +38,20 @@ export type Fact = {
   createdAt: string;
 };
 
-/** A fact with its citation resolved, for display. */
+/** One resolved citation: the article behind it, as far as we still hold it. */
+export type FactSource = {
+  id: number;
+  title: string;
+  url: string;
+};
+
+/**
+ * A fact with its citations resolved, for display. An article that has since
+ * been deleted simply drops out of `sources` — the fact keeps its ids either
+ * way, so losing an article never loses the fact or its other citations.
+ */
 export type FactWithSource = Fact & {
-  articleTitle: string | null;
-  articleUrl: string | null;
+  sources: FactSource[];
 };
 
 export type Author = "reader" | "analyst";
@@ -73,6 +87,8 @@ type StoredFact = {
   id?: string;
   content?: string;
   confidence?: number;
+  articleIds?: number[];
+  /** What versions written before facts could carry several articles used. */
   articleId?: number | null;
   createdAt?: string;
 };
@@ -123,7 +139,8 @@ export type FactDraft = {
   id?: string | undefined;
   content: string;
   confidence?: number | undefined;
-  articleId?: number | null | undefined;
+  /** Left out to keep whatever the fact already cites; given, it replaces it. */
+  articleIds?: number[] | undefined;
 };
 
 export type Revision = {
@@ -145,6 +162,11 @@ export type Revision = {
  * A kept fact keeps the date it was first written down too. Only what is
  * genuinely new is stamped now, which is what lets the list be read newest
  * first without a rewrite of the set shuffling everything to the top.
+ *
+ * Its citations carry across the same way when the draft says nothing about
+ * them. A revision that is only about the wording of a line should not quietly
+ * strip what the line rests on; dropping a citation is done by passing the
+ * ones that remain.
  */
 export async function revise(
   dashboardId: string,
@@ -157,7 +179,7 @@ export async function revise(
       dashboardId,
     ]);
 
-    // what each surviving fact was first written down, by id
+    // what each surviving fact was first written down and rests on, by id
     const { rows: previous } = await client.query<{ facts: StoredFact[] | null }>(
       `select facts from fact_versions
         where dashboard_id = $1
@@ -166,8 +188,11 @@ export async function revise(
       [dashboardId],
     );
     const born = new Map<string, string>();
+    const cited = new Map<string, number[]>();
     for (const fact of previous[0]?.facts ?? []) {
-      if (fact.id && fact.createdAt) born.set(fact.id, fact.createdAt);
+      if (!fact.id) continue;
+      if (fact.createdAt) born.set(fact.id, fact.createdAt);
+      cited.set(fact.id, stored(fact));
     }
 
     const { rows: maxRows } = await client.query<{ next: number }>(
@@ -197,7 +222,7 @@ export async function revise(
         id,
         content,
         confidence: clamp(draft.confidence ?? DEFAULT_CONFIDENCE),
-        articleId: draft.articleId ?? null,
+        articleIds: citations(draft.articleIds ?? cited.get(id) ?? []),
         createdAt: born.get(id) ?? now,
       });
     }
@@ -232,6 +257,30 @@ export async function revise(
   });
 }
 
+/**
+ * The citations on a stored fact, whichever shape it was written in: rows
+ * written before a fact could rest on several articles carry one `articleId`
+ * instead of the array, and they are never rewritten in place.
+ */
+function stored(fact: StoredFact): number[] {
+  if (Array.isArray(fact.articleIds)) return citations(fact.articleIds);
+  return typeof fact.articleId === "number" ? [fact.articleId] : [];
+}
+
+/**
+ * Citations as they are kept: whole numbers, in the order they were first
+ * cited, each of them once. The same article read twice under two stories is
+ * one citation, not two.
+ */
+function citations(ids: readonly unknown[]): number[] {
+  const seen = new Set<number>();
+  for (const id of ids) {
+    const value = Number(id);
+    if (Number.isSafeInteger(value) && value > 0) seen.add(value);
+  }
+  return [...seen];
+}
+
 /** Out-of-range confidence is pulled to the nearest rung rather than rejected. */
 export function clamp(confidence: number): number {
   if (!Number.isFinite(confidence)) return DEFAULT_CONFIDENCE;
@@ -246,14 +295,15 @@ export function clamp(confidence: number): number {
  * version being returned: the history panel shows a dozen at a time and each
  * of them would otherwise be a round trip of its own.
  *
- * An article that has since been deleted resolves to nothing, and the fact
- * keeps its number — losing the citation must not lose the fact.
+ * An article that has since been deleted drops out of `sources` while the fact
+ * keeps its number — losing the citation must lose neither the fact nor the
+ * rest of what it rests on.
  */
 async function hydrate(rows: Row[]): Promise<FactsVersion[]> {
   const ids = new Set<number>();
   for (const row of rows) {
     for (const fact of row.facts ?? []) {
-      if (typeof fact.articleId === "number") ids.add(fact.articleId);
+      for (const id of stored(fact)) ids.add(id);
     }
   }
 
@@ -279,18 +329,18 @@ async function hydrate(rows: Row[]): Promise<FactsVersion[]> {
     reasoning: row.reasoning,
     createdAt: row.created_at.toISOString(),
     facts: (row.facts ?? []).map((fact) => {
-      const articleId =
-        typeof fact.articleId === "number" ? fact.articleId : null;
-      const source = articleId === null ? undefined : sources.get(articleId);
+      const articleIds = stored(fact);
       return {
         id: fact.id ?? "",
         content: fact.content ?? "",
         confidence: clamp(fact.confidence ?? DEFAULT_CONFIDENCE),
-        articleId,
+        articleIds,
         // a fact written before facts were dated is as old as its version
         createdAt: fact.createdAt ?? row.created_at.toISOString(),
-        articleTitle: source?.title ?? null,
-        articleUrl: source?.url ?? null,
+        sources: articleIds.flatMap((id) => {
+          const source = sources.get(id);
+          return source ? [{ id, ...source }] : [];
+        }),
       };
     }),
   }));

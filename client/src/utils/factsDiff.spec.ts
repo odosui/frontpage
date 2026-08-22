@@ -6,13 +6,20 @@ const fact = (id: string, content: string, confidence = 3): Fact => ({
   id,
   content,
   confidence,
-  articleId: null,
-  articleTitle: null,
-  articleUrl: null,
+  articleIds: [],
+  sources: [],
   createdAt: '2026-08-17T09:00:00.000Z',
 })
 
 describe('diffFacts', () => {
+  it('counts a fact that picked up another source as rewritten', () => {
+    const before = fact('f1', 'one')
+    const after = { ...fact('f1', 'one'), articleIds: [9241] }
+    const rows = diffFacts([before], [after])
+    expect(rows.map((r) => r.kind)).toEqual(['rewritten'])
+    expect(diffCounts(rows)).toEqual({ added: 0, removed: 0, rewritten: 1 })
+  })
+
   it('marks a first version as all new', () => {
     const rows = diffFacts([], [fact('f1', 'one'), fact('f2', 'two')])
     expect(rows.map((r) => r.kind)).toEqual(['added', 'added'])

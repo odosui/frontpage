@@ -84,7 +84,6 @@ export type StoryFeedEntry = {
   id: number;
   title: string;
   slug: string;
-  /** The story's newest article — what the list is sorted by. */
-  updatedAt: string;
+  updatedAt: string; // the story's newest article
   articles: FeedArticle[];
 };

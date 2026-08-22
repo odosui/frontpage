@@ -13,7 +13,18 @@ describe("parseFacts", () => {
         id: "f3",
         content: "warehouses supply drone parts",
         confidence: 4,
-        articleId: 9241,
+        articleIds: [9241],
+      },
+    ]);
+  });
+
+  it("hangs every article id in a row on the fact before them", () => {
+    expect(parseFacts(["f3", "corroborated now", "4", "9241", "9310"])).toEqual([
+      {
+        id: "f3",
+        content: "corroborated now",
+        confidence: 4,
+        articleIds: [9241, 9310],
       },
     ]);
   });
@@ -49,7 +60,7 @@ describe("parseFacts", () => {
     });
     expect(parseFacts(["a claim", "6"])[0]).toEqual({
       content: "a claim",
-      articleId: 6,
+      articleIds: [6],
     });
   });
 
@@ -70,7 +81,7 @@ describe("parseFacts", () => {
         id: "f3",
         content: "**Wildberries** warehouses supply drone components",
         confidence: 4,
-        articleId: 9241,
+        articleIds: [9241],
       },
       { content: "The **Kaluga** plant reopened", confidence: 2 },
     ]);

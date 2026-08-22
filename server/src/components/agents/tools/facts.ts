@@ -19,10 +19,12 @@ import { AgentTool } from "../types";
 export const reviseFacts: AgentTool = {
   name: "REVISE_FACTS",
   usage:
-    '<|REVISE_FACTS "Reuters has now put a second source behind the July shipment, so the supply claim stops being a Ukrainian allegation" f3 "**Wildberries** warehouses have supplied drone components since **July 2026**, first reported by **Reuters** on **12 August 2026**" 4 9241 "The **Kaluga** plant reopened on **3 August**, per **Kommersant**" 2|>',
+    '<|REVISE_FACTS "Reuters has now put a second source behind the July shipment, so the supply claim stops being a Ukrainian allegation" f3 "**Wildberries** warehouses have supplied drone components since **July 2026**, first reported by **Reuters** on **12 August 2026**" 4 9241 9310 "The **Kaluga** plant reopened on **3 August**, per **Kommersant**" 2|>',
   description:
     "Rewrites what this dashboard has established, as a new version: one line saying why the set changed, then the facts. " +
-    "Each fact is its id (as given to you, e.g. f3) if it already exists and nothing if it is new, then the line in quotes, then how sure it is from 1 to 5 — 1 rumour, 2 one source, 3 reported, 4 corroborated, 5 certain — and optionally the id of the article it rests on, from GET_STORY. " +
+    "Each fact is its id (as given to you, e.g. f3) if it already exists and nothing if it is new, then the line in quotes, then how sure it is from 1 to 5 — 1 rumour, 2 one source, 3 reported, 4 corroborated, 5 certain — and then the ids of the articles it rests on, from GET_STORY. " +
+    "A fact can rest on several, so give every article that carries the claim: the one that broke it and the ones that corroborate, date or extend it. Citing the second article behind a standing claim is usually the point of a revision — it is what takes a fact from one source to corroborated. " +
+    "The ids you name are added to what the fact already cites, so you never retype a citation to keep it, and a fact you name no article for keeps the sources it has. " +
     "Pass the WHOLE list every time, including the facts you are not touching, keeping their ids: whatever you leave out is dropped, which is how a fact that turned out to be false is removed. " +
     "Keep a fact when it is merely shakier than it looked and lower its confidence instead. " +
     "Write each line so it stands on its own, record what will still matter next week rather than a summary of today's news, and wrap the load-bearing parts — figures, dates, the people and organisations acting — in **double asterisks**. Mark those, not whole clauses. " +
@@ -60,8 +62,22 @@ export const reviseFacts: AgentTool = {
       );
     }
 
+    // The analyst retypes the list from memory and cites what it has just
+    // read, so what it names is added to what the fact already rests on rather
+    // than put in its place: a revision about the wording of a line must not
+    // silently drop the article behind it.
+    const cited = new Map(before.map((fact) => [fact.id, fact.articleIds]));
+    const merged = drafts.map((draft) => {
+      const existing = (draft.id && cited.get(draft.id)) || [];
+      if (existing.length === 0 && !draft.articleIds) return draft;
+      return {
+        ...draft,
+        articleIds: [...existing, ...(draft.articleIds ?? [])],
+      };
+    });
+
     const version = await facts.revise(ctx.dashboardId, {
-      facts: drafts,
+      facts: merged,
       author: "analyst",
       reasoning,
     });
@@ -71,12 +87,16 @@ export const reviseFacts: AgentTool = {
 };
 
 /**
- * The facts as the model wrote them: `[id] "content" [confidence] [articleId]`,
- * repeated. They are told apart by shape rather than by position, the way
- * FORECAST tells a likelihood from its reasoning — an `fN` is an id, a quoted
- * line is content, a bare 1-5 is confidence, and a larger number is an article.
- * Nothing here is confusable with anything else, so the model never has to
- * remember an order.
+ * The facts as the model wrote them:
+ * `[id] "content" [confidence] [articleId...]`, repeated. They are told apart
+ * by shape rather than by position, the way FORECAST tells a likelihood from
+ * its reasoning — an `fN` is an id, a quoted line is content, a bare 1-5 is
+ * confidence, and a larger number is an article. Nothing here is confusable
+ * with anything else, so the model never has to remember an order.
+ *
+ * Several article ids in a row all attach to the fact before them: one claim
+ * commonly rests on the piece that broke it and the piece that corroborated
+ * it, and there is no reason to make the model choose between them.
  */
 export function parseFacts(args: string[]): facts.FactDraft[] {
   const drafts: facts.FactDraft[] = [];
@@ -97,7 +117,7 @@ export function parseFacts(args: string[]): facts.FactDraft[] {
       if (!last) continue;
       // the scale stops at 5, so anything bigger is the article it cites
       if (value <= facts.MAX_CONFIDENCE) last.confidence = value;
-      else last.articleId = value;
+      else last.articleIds = [...(last.articleIds ?? []), value];
       continue;
     }
 

@@ -114,20 +114,24 @@ const FactRow = ({ fact, onSave, onDelete }: Props) => {
           {fact.confidence}
         </span>
 
-        {/* the source is an icon: its headline is worth having on hover, not
-            worth a line of its own beneath every fact */}
-        {fact.articleUrl && (
+        {/* each source is an icon: the headline is worth having on hover, not
+            worth a line of its own beneath every fact. A fact commonly rests
+            on more than one article — the piece that broke the claim and the
+            ones that corroborated it — and they sit here side by side, in the
+            order they were cited */}
+        {fact.sources.map((source, i) => (
           <a
+            key={source.id}
             className="fact-icon"
-            href={fact.articleUrl}
+            href={source.url}
             target="_blank"
             rel="noreferrer"
-            title={fact.articleTitle ?? 'Open the source article'}
-            aria-label={fact.articleTitle ?? 'Open the source article'}
+            title={source.title}
+            aria-label={`Source ${i + 1} of ${fact.sources.length}: ${source.title}`}
           >
             <ExternalLinkIcon />
           </a>
-        )}
+        ))}
 
         <button
           className="fact-icon"

@@ -370,7 +370,7 @@ export const createApi = async () => {
      */
     createFact: async (
       dashboardId: string,
-      body: { content?: string; confidence?: number; articleId?: number | null },
+      body: { content?: string; confidence?: number; articleIds?: number[] },
     ) => {
       const content = (body?.content ?? "").trim();
       if (!content) return error(400, "content is required");
@@ -382,7 +382,9 @@ export const createApi = async () => {
           ...(body.confidence !== undefined
             ? { confidence: Number(body.confidence) }
             : {}),
-          ...(body.articleId !== undefined ? { articleId: body.articleId } : {}),
+          ...(body.articleIds !== undefined
+            ? { articleIds: body.articleIds }
+            : {}),
         },
       ]);
     },
@@ -390,7 +392,7 @@ export const createApi = async () => {
     updateFact: async (
       dashboardId: string,
       factId: string,
-      body: { content?: string; confidence?: number; articleId?: number | null },
+      body: { content?: string; confidence?: number; articleIds?: number[] },
     ) => {
       const content = body?.content?.trim();
       if (content !== undefined && !content) {
@@ -407,8 +409,9 @@ export const createApi = async () => {
                 ...(body?.confidence !== undefined
                   ? { confidence: Number(body.confidence) }
                   : {}),
-                ...(body?.articleId !== undefined
-                  ? { articleId: body.articleId }
+                // left out, the fact keeps whatever it already cites
+                ...(body?.articleIds !== undefined
+                  ? { articleIds: body.articleIds }
                   : {}),
               }
             : fact,
@@ -898,8 +901,15 @@ function factsContext(known: facts.FactWithSource[]): string {
 
   const lines = known.map((fact) => {
     const label = facts.CONFIDENCE_LABELS[fact.confidence] ?? "";
-    const source = fact.articleTitle ? `, from "${fact.articleTitle}"` : "";
-    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${source}`;
+    // every article it already rests on, with the id, so a citation can be
+    // left alone, added to, or dropped without going looking for it again
+    const sources =
+      fact.sources.length > 0
+        ? `, from ${fact.sources
+            .map((source) => `${source.id} "${source.title}"`)
+            .join("; ")}`
+        : "";
+    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${sources}`;
   });
 
   return [

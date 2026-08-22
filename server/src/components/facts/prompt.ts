@@ -46,8 +46,15 @@ function knownSection(known: facts.FactWithSource[]): string {
 
   const lines = known.map((fact) => {
     const label = facts.CONFIDENCE_LABELS[fact.confidence] ?? "";
-    const source = fact.articleTitle ? `, from "${fact.articleTitle}"` : "";
-    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${source}`;
+    // every article it already rests on, with the id, so a citation can be
+    // left alone, added to, or dropped without going looking for it again
+    const sources =
+      fact.sources.length > 0
+        ? `, from ${fact.sources
+            .map((source) => `${source.id} "${source.title}"`)
+            .join("; ")}`
+        : "";
+    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${sources}`;
   });
 
   return [
