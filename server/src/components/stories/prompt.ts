@@ -27,7 +27,11 @@ const SCHEMA = `{
  * is carried by tags.
  *
  * The examples matter more than the rules here — models otherwise write one
- * story per article, or one story per week of an arc.
+ * story per article, or one story per week of an arc. The over-merging end of
+ * that is the one worth watching: told to merge duplicates, a model will pull
+ * in the neighbouring incidents too — another drone attack, an arrest, an
+ * industry comment — because they share a subject with the event everyone is
+ * covering. The Samara example is a real batch it got wrong.
  *
  * Tags are attached to the article inside its story rather than listed
  * separately: a parallel id-keyed list makes models drop and duplicate ids.
@@ -60,6 +64,38 @@ Articles from different outlets about the same event MUST be merged into a
 single story carrying several articles. A story is an event, not a day: a
 strike and the response to it a week later are two stories, and five outlets
 covering the strike are one.
+
+THE SAME KIND OF EVENT IS NOT THE SAME EVENT
+
+This is the mistake to watch for, and it is the common one. An incident draws
+heavy coverage, and articles about *other incidents of the same kind* drift
+into it because they share a country, a weapon, a company or a week. They are
+separate stories however similar they read.
+
+    That story: five outlets on the drone strike that set the Ozon warehouse
+    in Samara region alight today.
+    Not that story: eight people arrested a day earlier over a drone attack on
+    a plant outside Moscow. A foreigner detained in Moscow with a
+    reconnaissance drone. A bank's view on how marketplaces are learning to
+    protect warehouses in general.
+
+Each of those is its own story, or unassigned, or a story of one article. None
+of them belongs under the Samara strike.
+
+So before you put an article into a story, name the incident that story is
+about — the specific thing, in one place, at one time — and check that the
+article reports THAT incident. An article about the trend, the pattern, the
+wider response or a different incident of the same type does not go in it,
+however neatly it sits beside it.
+
+Time is evidence here, though not proof. Coverage of one incident clusters
+within hours of it, so an article filed the day before an event cannot be
+reporting it. Analysis and follow-ups do arrive later, but they still have to
+be about that same incident.
+
+A story carrying a single article is a perfectly good story, and far better
+than an article filed under an event it does not report. Merge duplicates, not
+neighbours.
 
 WHAT DOES NOT BELONG
 
@@ -114,7 +150,8 @@ RULES
 - Every article id appears exactly once, either in a story or in "unassigned".
 - Every article in a story carries both "importance" and "tags".
 - Merge duplicates aggressively: same event means same story, however differently
-  the outlets worded it.
+  the outlets worded it. Same subject does not mean same event — two incidents
+  of the same kind stay two stories.
 - Write all story titles in English, sentence case, no final period, at most 10
   words, no clickbait. Transliterate proper nouns the usual English way
   (Novorossiysk, Zelensky, Yandex).
