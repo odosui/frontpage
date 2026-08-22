@@ -62,10 +62,15 @@ function toFeedArticle(row: FeedRow, tags: string[] = []): FeedArticle {
  * or when we first saw it for the sources that never tell us. Articles sharing
  * a timestamp — a whole scraped page lands on one `created_at` — fall back to
  * `position`, the order the source listed them in.
+ *
+ * `offset` is how the reader walks past the first page. The order is total —
+ * `sorted_at`, then `position`, then the id — so no two pages can show the
+ * same article or step over one, however many rows share a timestamp.
  */
 export async function feed(
   dashboardId: string,
   limit: number,
+  offset = 0,
 ): Promise<FeedArticle[]> {
   const { rows } = await query<FeedRow>(
     `select a.id, a.title, a.url, a.image, a.source_id, a.publisher,
@@ -78,8 +83,8 @@ export async function feed(
          on f.article_id = a.id and f.dashboard_id = $1
       where ${OF_DASHBOARD}
       order by a.sorted_at desc, a.position, a.id
-      limit $2`,
-    [dashboardId, limit],
+      limit $2 offset $3`,
+    [dashboardId, limit, offset],
   );
 
   // the narrow latest column does not render tags; the story feed fills them
@@ -249,6 +254,19 @@ export async function tagsFor(
 }
 
 /** How many articles are waiting for this dashboard's categorizing agent. */
+/**
+ * How many articles this dashboard can see in total, so the ui knows whether
+ * there is another page behind the one it is showing and how much of the
+ * backlog is still below the fold.
+ */
+export async function count(dashboardId: string): Promise<number> {
+  const { rows } = await query<{ count: string }>(
+    `select count(*) from articles a where ${OF_DASHBOARD}`,
+    [dashboardId],
+  );
+  return Number(rows[0]?.count ?? 0);
+}
+
 export async function uncategorizedCount(
   dashboardId: string,
   days: number,

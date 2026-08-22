@@ -23,6 +23,8 @@ type Loaded = {
   dashboard: Arc
   sources: Source[]
   feed: FeedArticle[]
+  /** Everything the dashboard holds, not just the page above. */
+  feedTotal: number
   stories: StoryFeedEntry[]
   facts: Fact[]
   /** Which revision of the facts the page is looking at; 0 when there is none. */
@@ -68,6 +70,11 @@ const Dashboard: React.FC = () => {
   const [sourceErrors, setSourceErrors] = useState<Map<string, string>>(
     new Map(),
   )
+  // Pages of the feed past the first, which `load` alone brings back. They are
+  // held apart from `loaded` so the twenty-second re-read refreshes the top of
+  // the list without throwing away what the reader walked down to.
+  const [moreFeed, setMoreFeed] = useState<FeedArticle[]>([])
+  const [loadingMoreFeed, setLoadingMoreFeed] = useState(false)
   const { jobs, refresh: refreshJobs, onJobFinished } = useJobs()
   const { setTools } = useToolbar()
 
@@ -109,6 +116,8 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     setLoaded(null)
     setError(null)
+    // another arc's feed is another list; the pages walked down this one go
+    setMoreFeed([])
     load()
   }, [load])
 
@@ -388,8 +397,38 @@ const Dashboard: React.FC = () => {
   // the arc's controls, its sources and its latest headlines are all rendered
   // by the top bar
   const isRefreshing = refreshing.size > 0
-  const feed = loaded?.feed ?? []
+
+  // the first page, freshly re-read, with the pages walked down after it. An
+  // article can appear in both — anything published since the last click has
+  // pushed the window down by one — so the id decides, and the newer copy of a
+  // row wins by being first
+  const feed = dedupe(loaded?.feed ?? [], moreFeed)
+  const feedTotal = loaded?.feedTotal ?? feed.length
   const uncategorized = loaded?.uncategorized ?? 0
+
+  // where the list currently ends, for the click below. Read from a ref rather
+  // than closed over, so the callback stays stable across the twenty-second
+  // re-read and the toolbar it is handed to does not churn
+  const feedLengthRef = useRef(0)
+  feedLengthRef.current = feed.length
+
+  /**
+   * The next page of headlines, appended. Nothing is thrown away and nothing
+   * re-reads the pages already on screen: this asks only for what comes after
+   * what is showing.
+   */
+  const loadMoreFeed = useCallback(() => {
+    if (!dashboardId) return
+    setLoadingMoreFeed(true)
+    api
+      .getFeed(dashboardId, { offset: feedLengthRef.current })
+      .then((data: { feed: FeedArticle[] }) =>
+        setMoreFeed((was) => dedupe(was, data.feed ?? [])),
+      )
+      .catch(() => undefined)
+      .finally(() => setLoadingMoreFeed(false))
+  }, [dashboardId])
+
   useEffect(() => {
     // with no arc on screen there is nothing for them to act on: an empty
     // switcher and a "0 sources" menu beside it would be furniture. The empty
@@ -418,6 +457,9 @@ const Dashboard: React.FC = () => {
       onAddSource: () => setShowAddSource(true),
       onRefreshAll: refreshAll,
       feed,
+      feedTotal,
+      onLoadMoreFeed: loadMoreFeed,
+      loadingMoreFeed,
       uncategorized,
       agentRunning,
       onRunAgent: runAgent,
@@ -446,6 +488,9 @@ const Dashboard: React.FC = () => {
     isRefreshing,
     sourceErrors,
     agentRunning,
+    loadMoreFeed,
+    loadingMoreFeed,
+    moreFeed,
     jobs,
   ])
 
@@ -575,6 +620,25 @@ const Dashboard: React.FC = () => {
       />
     </div>
   )
+}
+
+/**
+ * Two runs of articles as one list, in order, each id once. The pages of a
+ * feed being walked down overlap whenever something is published mid-walk —
+ * every row below it shifts by one — and the same headline twice reads as a
+ * duplicate rather than as a window that moved.
+ */
+function dedupe(...pages: FeedArticle[][]): FeedArticle[] {
+  const seen = new Set<number>()
+  const all: FeedArticle[] = []
+  for (const page of pages) {
+    for (const article of page) {
+      if (seen.has(article.id)) continue
+      seen.add(article.id)
+      all.push(article)
+    }
+  }
+  return all
 }
 
 export default Dashboard

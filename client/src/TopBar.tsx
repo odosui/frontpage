@@ -51,6 +51,9 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
             {/* the raw feed, which used to be a column of its own */}
             <LatestMenu
               articles={tools.feed}
+              total={tools.feedTotal}
+              onLoadMore={tools.onLoadMoreFeed}
+              loadingMore={tools.loadingMoreFeed}
               hasSources={tools.sources.length > 0}
               uncategorized={tools.uncategorized}
               running={tools.agentRunning}

@@ -3,7 +3,6 @@ import { forecast } from "./tools/forecast";
 import { getStories } from "./tools/getStories";
 import { getStory } from "./tools/getStory";
 import { getTags } from "./tools/getTags";
-import { grepStories } from "./tools/grepStories";
 import { mergeStories } from "./tools/mergeStories";
 import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
@@ -21,7 +20,6 @@ export const analyzingAgent: AgentDefinition = {
   maxSteps: 10,
   tools: [
     getStories,
-    grepStories,
     getStory,
     readArticle,
     getTags,

@@ -37,6 +37,11 @@ export interface DashboardTools {
 
   /** The Latest dropdown: everything collected, filed or not. */
   feed: FeedArticle[]
+  /** How many the dashboard holds in all, so the list knows if more remain. */
+  feedTotal: number
+  /** Walks one page further down the feed and appends it. */
+  onLoadMoreFeed: () => void
+  loadingMoreFeed: boolean
   uncategorized: number
   agentRunning: boolean
   onRunAgent: () => void

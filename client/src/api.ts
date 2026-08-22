@@ -29,8 +29,17 @@ export default {
   /** The whole arc: stories, facts, predictions, sources and the latest feed. */
   getDashboard: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}`),
-  getFeed: (dashboardId: string) =>
-    api('get', `/dashboards/${seg(dashboardId)}/feed`),
+  /**
+   * One page of the latest headlines. `offset` is what the list's own "load
+   * more" walks forward with; the reply carries `total`, which is what says
+   * whether there is another page behind this one.
+   */
+  getFeed: (dashboardId: string, page: { limit?: number; offset?: number } = {}) =>
+    api(
+      'get',
+      `/dashboards/${seg(dashboardId)}/feed` +
+        `?limit=${page.limit ?? 100}&offset=${page.offset ?? 0}`,
+    ),
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}/stories`),
   renameStory: (dashboardId: string, storyId: number, title: string) =>

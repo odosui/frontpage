@@ -555,6 +555,44 @@ $feed-width: $unit12;
   }
 }
 
+// the foot of the latest list. Full width and quiet — it is the end of the
+// list rather than an action competing with the Run button above, and the
+// count on it is what says whether walking further down is worth the click
+.feed-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $unit1;
+  width: 100%;
+  margin-top: $unit1;
+  padding: $unit1;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit0;
+  background: none;
+  font-size: $text0;
+  font-weight: 500;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.feed-more-spin {
+  animation: spin 1s linear infinite;
+}
+
 // flows inline right after the title, continuing its last line. Same rule as
 // the story rows: the source is uppercased, the relative time is not.
 .feed-meta {

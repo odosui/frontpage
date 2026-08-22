@@ -195,20 +195,30 @@ export const createApi = async () => {
       const dashboard = await dashboards.get(id);
       if (!dashboard) return error(404, "dashboard not found");
 
-      const [assigned, feed, storyFeed, known, claims, uncategorized] =
-        await Promise.all([
-          sources.forDashboard(id),
-          articles.feed(id, MAX_ITEMS),
-          stories.feed(id, MAX_STORIES),
-          facts.current(id),
-          predictions.forDashboard(id),
-          articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
-        ]);
+      const [
+        assigned,
+        feed,
+        feedTotal,
+        storyFeed,
+        known,
+        claims,
+        uncategorized,
+      ] = await Promise.all([
+        sources.forDashboard(id),
+        articles.feed(id, MAX_ITEMS),
+        articles.count(id),
+        stories.feed(id, MAX_STORIES),
+        facts.current(id),
+        predictions.forDashboard(id),
+        articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
+      ]);
 
       return ok({
         dashboard,
         sources: assigned,
         feed,
+        // how many there are behind the page above, for the "load more" foot
+        feedTotal,
         stories: storyFeed,
         facts: known?.facts ?? [],
         // which revision the page is looking at, so the history panel can say
@@ -219,12 +229,23 @@ export const createApi = async () => {
       });
     },
 
-    getFeed: async (id: string) => {
-      const [feed, uncategorized] = await Promise.all([
-        articles.feed(id, MAX_ITEMS),
+    /**
+     * A page of the latest headlines. `offset` is what the "load more" button
+     * at the foot of the list walks forward with; `total` is what tells it
+     * whether to be there at all.
+     */
+    getFeed: async (id: string, params: { limit?: string; offset?: string } = {}) => {
+      const limit = Math.min(
+        Math.max(Number(params.limit) || MAX_ITEMS, 1),
+        MAX_ITEMS,
+      );
+      const offset = Math.max(Number(params.offset) || 0, 0);
+      const [feed, total, uncategorized] = await Promise.all([
+        articles.feed(id, limit, offset),
+        articles.count(id),
         articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
       ]);
-      return ok({ feed, uncategorized });
+      return ok({ feed, total, uncategorized });
     },
 
     /** The categorized view: stories with their articles, newest story first. */

@@ -5,6 +5,10 @@ import ArticleTime from './ui/ArticleTime'
 
 type Props = {
   articles: FeedArticle[]
+  /** How many the dashboard holds in all, against how many are showing. */
+  total: number
+  onLoadMore: () => void
+  loadingMore: boolean
   hasSources: boolean
   uncategorized: number
   running: boolean
@@ -22,6 +26,9 @@ type Props = {
  */
 const Feed = ({
   articles,
+  total,
+  onLoadMore,
+  loadingMore,
   hasSources,
   uncategorized,
   running,
@@ -90,6 +97,25 @@ const Feed = ({
               />
             </div>
           ))}
+
+          {/* the foot of the list: what is showing against what there is, and
+              the click that fetches the next page. It sits inside the scroll
+              rather than under it, so reaching the end of the list is what
+              puts it in front of the reader */}
+          {articles.length < total && (
+            <button
+              className="feed-more"
+              onClick={onLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? (
+                <SyncIcon size={12} className="feed-more-spin" />
+              ) : null}
+              {loadingMore
+                ? 'Loading…'
+                : `Load more · ${total - articles.length} older`}
+            </button>
+          )}
         </div>
       )}
     </div>

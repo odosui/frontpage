@@ -3,10 +3,10 @@ import { parseToolCalls } from "./protocol";
 
 describe("parseToolCalls", () => {
   it("reads a call and its quoted arguments", () => {
-    const calls = parseToolCalls('<|GREP_STORIES "united states" 10|>');
+    const calls = parseToolCalls('<|GET_STORIES "united states" 10|>');
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]!.name).toBe("GREP_STORIES");
+    expect(calls[0]!.name).toBe("GET_STORIES");
     expect(calls[0]!.args).toEqual(["united states", "10"]);
   });
 
@@ -29,7 +29,7 @@ describe("parseToolCalls", () => {
 
   it("keeps the same tool called with different arguments", () => {
     const calls = parseToolCalls(
-      '<|GREP_STORIES "kyiv"|> <|GREP_STORIES "moscow"|>',
+      '<|GET_STORIES "kyiv"|> <|GET_STORIES "moscow"|>',
     );
 
     expect(calls.map((c) => c.args[0])).toEqual(["kyiv", "moscow"]);
@@ -50,12 +50,12 @@ describe("parseToolCalls", () => {
   });
 
   it("unescapes a backslash inside a quoted argument", () => {
-    const calls = parseToolCalls('<|GREP_STORIES "a\\\\b"|>');
+    const calls = parseToolCalls('<|GET_STORIES "a\\\\b"|>');
     expect(calls[0]!.args).toEqual(["a\\b"]);
   });
 
   it("leaves a backslash in a bare argument as typed", () => {
-    const calls = parseToolCalls("<|GREP_STORIES a\\b|>");
+    const calls = parseToolCalls("<|GET_STORIES a\\b|>");
     expect(calls[0]!.args).toEqual(["a\\b"]);
   });
 

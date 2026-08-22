@@ -11,7 +11,7 @@ export const getStory: AgentTool = {
   usage: '<|GET_STORY "Drone attack sets Wildberries warehouse ablaze" 50|>',
   description:
     "One story's articles, newest first: headline, source, the date it was published, how important the categorizer thought it was, its tags, and its id. Up to 50 unless you ask for a different number. " +
-    "GET_STORIES and GREP_STORIES only tell you a story exists and how many articles are under it — this is how you find out what they actually say. " +
+    "GET_STORIES only tells you a story exists and how many articles are under it — this is how you find out what they actually say. " +
     "Use it before answering anything about what was reported, and use the ids it gives you with READ_ARTICLE when a headline is not enough. " +
     "'not read yet' is not a refusal — READ_ARTICLE will fetch the page; it just costs a moment longer than one already stored.",
   run: async (args, ctx) => {

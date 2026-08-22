@@ -5,6 +5,10 @@ import Feed from './Feed'
 
 type Props = {
   articles: FeedArticle[]
+  /** How many the dashboard holds in all, against how many are showing. */
+  total: number
+  onLoadMore: () => void
+  loadingMore: boolean
   hasSources: boolean
   /** How many the categorizing agent has not looked at yet. */
   uncategorized: number
@@ -26,6 +30,9 @@ type Props = {
  */
 const LatestMenu = ({
   articles,
+  total,
+  onLoadMore,
+  loadingMore,
   hasSources,
   uncategorized,
   running,
@@ -81,6 +88,9 @@ const LatestMenu = ({
         <div className="latest-dropdown">
           <Feed
             articles={articles}
+            total={total}
+            onLoadMore={onLoadMore}
+            loadingMore={loadingMore}
             hasSources={hasSources}
             uncategorized={uncategorized}
             running={running}

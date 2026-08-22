@@ -1,7 +1,6 @@
 import { reviseFacts } from "./tools/facts";
 import { getStories } from "./tools/getStories";
 import { getStory } from "./tools/getStory";
-import { grepStories } from "./tools/grepStories";
 import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
@@ -30,7 +29,6 @@ export const factsAgent: AgentDefinition = {
   maxSteps: 14,
   tools: [
     getStories,
-    grepStories,
     getStory,
     readArticle,
     webSearch,

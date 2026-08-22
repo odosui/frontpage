@@ -259,45 +259,25 @@ export type StoryMatch = {
 };
 
 /**
- * Stories whose title contains the given text, newest first. This is what lets
- * one run attach to an event another run already filed: reusing a story's exact
- * title matches its slug on save, so the article joins that story instead of
- * starting a near-identical one.
+ * The stories filed here, newest first, optionally narrowed to those whose
+ * title contains `term`.
+ *
+ * Listing and grepping are one read because they were always one query with an
+ * `ilike` on or off. What the caller wants either way is the same thing: the
+ * titles already in use, so a run attaches to an event another run filed
+ * rather than forking it — reusing a title exactly matches its slug on save,
+ * and the article joins that story.
+ *
+ * The unfiltered call is the one that matters most, and is the reason grepping
+ * alone was never enough: a search only finds an event whose wording you can
+ * already guess, while the whole list shows the run a story it would have
+ * named differently.
  */
-export async function search(
+export async function list(
   dashboardId: string,
-  term: string,
-  limit: number,
+  { term = "", limit }: { term?: string; limit: number },
 ): Promise<StoryMatch[]> {
-  const { rows } = await query<{ title: string; articles: string }>(
-    `select s.title, count(f.article_id) as articles
-       from stories s
-       left join article_filings f
-         on f.story_id = s.id and f.dashboard_id = $1
-       left join articles a on a.id = f.article_id
-      where s.dashboard_id = $1 and s.title ilike '%' || $2 || '%'
-      group by s.id
-      order by max(a.sorted_at) desc nulls last, s.id desc
-      limit $3`,
-    [dashboardId, term, limit],
-  );
-
-  return rows.map((r) => ({
-    title: r.title,
-    articleCount: Number(r.articles),
-  }));
-}
-
-/**
- * Every story in the dashboard, newest first. Grepping by title only finds an
- * event when the run already guesses its wording; listing what is actually
- * there shows the run the whole arc, so a story that was named differently the
- * first time still gets found instead of forked.
- */
-export async function latest(
-  dashboardId: string,
-  limit: number,
-): Promise<StoryMatch[]> {
+  const filtered = term.trim().length > 0;
   const { rows } = await query<{ title: string; articles: string }>(
     `select s.title, count(f.article_id) as articles
        from stories s
@@ -305,10 +285,11 @@ export async function latest(
          on f.story_id = s.id and f.dashboard_id = $1
        left join articles a on a.id = f.article_id
       where s.dashboard_id = $1
+        ${filtered ? "and s.title ilike '%' || $3 || '%'" : ""}
       group by s.id
       order by max(a.sorted_at) desc nulls last, s.id desc
       limit $2`,
-    [dashboardId, limit],
+    filtered ? [dashboardId, limit, term] : [dashboardId, limit],
   );
 
   return rows.map((r) => ({
