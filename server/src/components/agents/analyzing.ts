@@ -1,6 +1,7 @@
 import { reviseFacts } from "./tools/facts";
 import { forecast } from "./tools/forecast";
 import { getStories } from "./tools/getStories";
+import { getSources } from "./tools/getSources";
 import { getStory } from "./tools/getStory";
 import { getTags } from "./tools/getTags";
 import { mergeStories } from "./tools/mergeStories";
@@ -23,6 +24,7 @@ export const analyzingAgent: AgentDefinition = {
     getStory,
     readArticle,
     getTags,
+    getSources,
     webSearch,
     reviseFacts,
     forecast,

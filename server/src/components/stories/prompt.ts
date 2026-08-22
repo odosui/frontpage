@@ -21,21 +21,6 @@ const SCHEMA = `{
   "unassigned": [{ "article_id": 7, "reason": "horoscope, not news" }]
 }`;
 
-/**
- * One level: the story. The arc above it is the dashboard, which is already
- * decided before the model is asked anything, and the broad subject below it
- * is carried by tags.
- *
- * The examples matter more than the rules here — models otherwise write one
- * story per article, or one story per week of an arc. The over-merging end of
- * that is the one worth watching: told to merge duplicates, a model will pull
- * in the neighbouring incidents too — another drone attack, an arrest, an
- * industry comment — because they share a subject with the event everyone is
- * covering. The Samara example is a real batch it got wrong.
- *
- * Tags are attached to the article inside its story rather than listed
- * separately: a parallel id-keyed list makes models drop and duplicate ids.
- */
 export const categorizeStoriesPrompt = (
   dashboard: string,
   articles: PromptArticle[],
@@ -51,6 +36,29 @@ Everything you file goes under one running arc, and this is it:
 That arc is already decided. You are not naming it, choosing between arcs, or
 filing anything outside it — you are saying which of these headlines belong to
 it, and which events they make up.
+
+WHAT IS ALREADY FILED
+
+This batch is only part of the coverage. The same event has very often already
+been filed by an earlier run, and if you write a new title for it you fork it
+into two near-duplicate stories that nothing will ever merge back.
+
+So look before you name anything. GET_STORIES is how you look:
+
+    <|GET_STORIES|>                     everything filed here, newest first
+    <|GET_STORIES "novorossiysk"|>      only titles containing that word
+    <|GET_STORIES "samsung" 200|>       ...and raise the row cap
+
+Call it bare first, to see how this dashboard words its titles, then grep for
+the specific names, places and companies in this batch — one call per message
+is fine, and several in one message is fine too. An earlier run may have
+worded an event differently than you would search for it, so a grep that finds
+nothing is not proof it is new; the bare listing is what catches those.
+
+When the event is already there, copy that story's title EXACTLY, character for
+character, and the article joins the existing story. Anything else — a reworded
+title, different capitalisation, an added detail — creates a second story
+beside the first.
 
 THE STORY
 
@@ -124,7 +132,8 @@ Every article carries its own tags — two articles in the same story may differ
   where it reads naturally (drone strike, not drone strikes).
 - Reuse tags relentlessly. The same idea MUST get the exact same string every
   time it appears — never "us election" in one article and "u.s. elections" in
-  the next. Prefer a tag you have already used over a new near-duplicate.
+  the next. Call <|GET_TAGS|> to see the vocabulary already in use here, and
+  prefer a tag from that list over a new near-duplicate.
 - Do not restate the story headline as a tag, and do not tag the outlet name.
 
 IMPORTANCE
@@ -147,6 +156,8 @@ significantly more. Use the whole range — most articles are not 8s, and a batc
 where everything scores 6 or 7 is wrong.
 
 RULES
+- Check GET_STORIES before you write any story title. A title that reuses an
+  existing one must match it exactly; otherwise it starts a new story.
 - Every article id appears exactly once, either in a story or in "unassigned".
 - Every article in a story carries both "importance" and "tags".
 - Merge duplicates aggressively: same event means same story, however differently
@@ -160,8 +171,13 @@ RULES
 - Put the newest story first.
 
 OUTPUT
-Return ONLY a JSON object, with no prose and no markdown fences, shaped exactly
-like this:
+Do your lookups first: a message containing function calls is a lookup turn,
+and the results come back before you have to decide anything. The JSON is your
+LAST message, once GET_STORIES has told you which of these events are already
+filed.
+
+That final message is ONLY a JSON object, with no prose and no markdown fences,
+shaped exactly like this:
 ${SCHEMA}
 
 ARTICLES

@@ -1,5 +1,6 @@
 import { reviseFacts } from "./tools/facts";
 import { getStories } from "./tools/getStories";
+import { getSources } from "./tools/getSources";
 import { getStory } from "./tools/getStory";
 import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
@@ -31,6 +32,7 @@ export const factsAgent: AgentDefinition = {
     getStories,
     getStory,
     readArticle,
+    getSources,
     webSearch,
     reviseFacts,
   ],

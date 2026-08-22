@@ -1,4 +1,5 @@
 import { getStories } from "./tools/getStories";
+import { getSources } from "./tools/getSources";
 import { getTags } from "./tools/getTags";
 import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
@@ -7,7 +8,7 @@ export const categorizingAgent: AgentDefinition = {
   kind: "categorizing_agent",
   name: "CategorizingAgent",
   maxSteps: 12,
-  tools: [getStories, getTags, webSearch],
+  tools: [getStories, getTags, getSources, webSearch],
   instructions: `You are given a batch of fresh headlines — some carrying the outlet's own
 summary, some not — pulled from the sources one dashboard reads. You group them
 into stories, tag every article, and say which ones do not belong here at all.
@@ -37,7 +38,8 @@ vocabulary, not to start a parallel one:
 
 A source can feed several dashboards, so a headline landing in this batch is
 not a promise that it belongs to this arc — it only means we pull from an
-outlet that published it. Judging that is the other half of your job:
+outlet that published it. GET_SOURCES lists those outlets, which is worth a
+look when a headline's provenance is what makes it hard to place. Judging that is the other half of your job:
 
 - An article that has nothing to do with this arc goes in "unassigned", with
   the reason. That is the normal fate of much of a general outlet's front page,
