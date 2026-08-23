@@ -13,7 +13,12 @@ export type RunFactsPayload = {
   model?: string;
 };
 
-const MAX_STORIES = 50;
+/**
+ * The run reads through GET_STORIES and GET_FACTS rather than being handed
+ * either list, so all this needs to know is whether the arc has anything filed
+ * at all: one row is enough to answer that.
+ */
+const ENOUGH_TO_KNOW_IT_IS_NOT_EMPTY = 1;
 
 /**
  * One pass of the facts agent over an arc's stories.
@@ -30,25 +35,20 @@ export const runFactsHandler: JobHandler = async (payload, { log }) => {
   const dashboard = await dashboards.get(dashboardId);
   if (!dashboard) throw new Error(`dashboard ${dashboardId} no longer exists`);
 
-  const [storyFeed, known] = await Promise.all([
-    stories.feed(dashboardId, MAX_STORIES),
-    facts.forDashboard(dashboardId),
-  ]);
-
   // an arc with nothing filed under it has nothing to read, and asking the
   // model to confirm that costs a call to be told what we already know
-  if (storyFeed.length === 0) {
+  const filed = await stories.list(dashboardId, {
+    limit: ENOUGH_TO_KNOW_IT_IS_NOT_EMPTY,
+  });
+  if (filed.length === 0) {
     log(`nothing filed under ${dashboardId} yet — nothing to establish`);
     return { result: { skipped: true, stories: 0 } };
   }
-  log(
-    `reading ${storyFeed.length} stories in ${dashboardId} against ` +
-      `${known.length} standing facts`,
-  );
+  log(`reading ${dashboardId}`);
 
   const run = await runAgent(factsAgent, {
     model: model || BIG_MODEL,
-    task: establishFactsPrompt(dashboard.name, storyFeed, known),
+    task: establishFactsPrompt(dashboard.name),
     dashboardId,
     log,
   });

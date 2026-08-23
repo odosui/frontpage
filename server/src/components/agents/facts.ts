@@ -1,4 +1,5 @@
 import { reviseFacts } from "./tools/facts";
+import { getFacts } from "./tools/getFacts";
 import { getStories } from "./tools/getStories";
 import { getSources } from "./tools/getSources";
 import { getStory } from "./tools/getStory";
@@ -32,6 +33,7 @@ export const factsAgent: AgentDefinition = {
     getStories,
     getStory,
     readArticle,
+    getFacts,
     getSources,
     webSearch,
     reviseFacts,
@@ -42,7 +44,7 @@ export const factsAgent: AgentDefinition = {
 
   Please read the stories and articles and update facts as needed.
 
-  We are interested in facts that are saying something about the system and / or may have a lasting impact. Compare to the facts that we already have and update them if you think there is new info, better info, possibly update the score as well. Delete the facts that you think are wrong, but provide a reasining.
+  We are interested in facts that are saying something about the system and / or may have a lasting impact. Compare to the facts GET_FACTS returns and update them if you think there is new info, better info, possibly update the score as well. Delete the facts that you think are wrong, but provide a reasining.
 
   A fact rests on as many articles as report it, not one. Coverage arrives in pieces — one outlet breaks a claim, another corroborates it a day later, a third dates or extends it under a different story — and that is one fact gathering evidence rather than several facts. When what you are reading is already on the list, possibly raise its confidence if the second source earns it.
 

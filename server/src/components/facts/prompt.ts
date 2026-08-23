@@ -1,66 +1,38 @@
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import * as facts from "../../models/facts";
-import { StoryFeedEntry } from "../../api/types";
 
-dayjs.extend(relativeTime);
-
-export const establishFactsPrompt = (
-  dashboard: string,
-  storyFeed: StoryFeedEntry[],
-  known: facts.FactWithSource[],
-): string =>
+/**
+ * What one facts run is asked to do.
+ *
+ * The stories and the standing facts used to be written out here, both lists
+ * in full, and the agent read them without calling anything. That put the two
+ * things it reasons over into the task and left the tools describing a
+ * database it had already been handed — so a run spent its context on stories
+ * it was never going to open, and the fact ids it needed for REVISE_FACTS
+ * arrived as prose rather than from the tool that defines them.
+ *
+ * Now the task says only what to do, and GET_STORIES and GET_FACTS say what is
+ * there. The run pays for what it actually reads, the two lists cannot drift
+ * from what the tools would return, and the same wording works for an arc with
+ * three stories and one with three hundred.
+ */
+export const establishFactsPrompt = (dashboard: string): string =>
   [
     `Today is ${dayjs().format("dddd, D MMMM YYYY")}.`,
     "",
     `Please read the latest stories for ${dashboard} and update the facts.`,
     "",
-    storiesSection(storyFeed),
+    "Start by reading both sides of that: GET_STORIES for what has been filed",
+    "here, newest first, and GET_FACTS for what the arc is already taken to",
+    "have established. You need both before you can tell a new claim from one",
+    "that is already on the list gathering its second source.",
     "",
-    knownSection(known),
-  ].join("\n");
-
-function storiesSection(storyFeed: StoryFeedEntry[]): string {
-  if (storyFeed.length === 0) {
-    return `Nothing has been filed under this dashboard yet, so there is nothing to read. Say so and stop.`;
-  }
-
-  const lines = storyFeed.map((story) => {
-    const when = dayjs(story.updatedAt).fromNow();
-    const count = story.articles.length;
-    return `- ${story.title} (${count} article${count === 1 ? "" : "s"}, newest ${when})`;
-  });
-
-  return [
-    `The stories filed under it, newest first. Those titles are exact — pass`,
-    `one to GET_STORY to read the articles under it.`,
+    "Then open what looks like it moved something. GET_STORY takes a title",
+    "from GET_STORIES exactly as it was given and returns the articles under",
+    "it; READ_ARTICLE gives you the full text of any of them. A story title",
+    "and an article count are not evidence — where a fact turns on what was",
+    "actually reported, read it.",
     "",
-    lines.join("\n"),
+    "The ids matter in both directions: the fact ids from GET_FACTS are what",
+    "REVISE_FACTS edits in place, and the article ids from GET_STORY are what",
+    "a fact comes to rest on.",
   ].join("\n");
-}
-
-function knownSection(known: facts.FactWithSource[]): string {
-  if (known.length === 0) {
-    return `Nothing has been established as fact for this dashboard yet, so whatever you write is the first version.`;
-  }
-
-  const lines = known.map((fact) => {
-    const label = facts.CONFIDENCE_LABELS[fact.confidence] ?? "";
-    // every article it already rests on, with the id, so a citation can be
-    // left alone, added to, or dropped without going looking for it again
-    const sources =
-      fact.sources.length > 0
-        ? `, from ${fact.sources
-            .map((source) => `${source.id} "${source.title}"`)
-            .join("; ")}`
-        : "";
-    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${sources}`;
-  });
-
-  return [
-    `What it is already taken to have established, newest first. These are the`,
-    `ids REVISE_FACTS takes.`,
-    "",
-    lines.join("\n"),
-  ].join("\n");
-}

@@ -647,16 +647,15 @@ export const createApi = async () => {
       // message: the first question is nearly always about something already
       // there, and a turn spent looking it up is a turn they wait through for
       // nothing.
-      const [storyFeed, known, claims] = await Promise.all([
+      const [storyFeed, claims] = await Promise.all([
         stories.feed(id, MAX_STORIES),
-        facts.forDashboard(id),
         predictions.forDashboard(id),
       ]);
 
       const { sessionId } = await startChat(getAgent(kind), {
         model: BIG_MODEL,
         dashboardId: id,
-        context: dashboardContext(dashboard.name, storyFeed, known, claims),
+        context: dashboardContext(dashboard.name, storyFeed, claims),
       });
       return ok({ session: await agentSessions.get(sessionId) });
     },
@@ -852,7 +851,6 @@ async function reviseFacts(
 function dashboardContext(
   name: string,
   storyFeed: StoryFeedEntry[],
-  known: facts.FactWithSource[],
   claims: predictions.Prediction[],
 ): string {
   const lines = storyFeed.map((story) => {
@@ -873,8 +871,11 @@ function dashboardContext(
     `Those titles are exact — pass one to GET_STORY to read the articles under`,
     `it. The arc may also have older stories not listed here.`,
     "",
-    factsContext(known),
-    "",
+    // The standing facts were written out here too, until GET_FACTS existed to
+    // return them. A copy in the system message is a copy that stops moving: it
+    // is stale the moment the analyst revises the list, and REVISE_FACTS
+    // rewriting from a stale copy drops whatever was established after the
+    // conversation opened. One reachable list cannot disagree with itself.
     predictionsContext(claims),
   ].join("\n");
 }
@@ -910,35 +911,3 @@ function predictionsContext(claims: predictions.Prediction[]): string {
   ].join("\n");
 }
 
-/**
- * The standing knowledge, written into the system message rather than left to
- * a tool call: it is what the agent knows before it looks at anything, and a
- * question about the arc should not have to be paid for with a lookup first.
- */
-function factsContext(known: facts.FactWithSource[]): string {
-  if (known.length === 0) {
-    return `Nothing has been established as fact for this dashboard yet. Write down what you settle.`;
-  }
-
-  const lines = known.map((fact) => {
-    const label = facts.CONFIDENCE_LABELS[fact.confidence] ?? "";
-    // every article it already rests on, with the id, so a citation can be
-    // left alone, added to, or dropped without going looking for it again
-    const sources =
-      fact.sources.length > 0
-        ? `, from ${fact.sources
-            .map((source) => `${source.id} "${source.title}"`)
-            .join("; ")}`
-        : "";
-    return `- ${fact.id} [${fact.confidence}/5 ${label}] ${fact.content}${sources}`;
-  });
-
-  return [
-    `Established facts for this dashboard, newest first. The number is how far`,
-    `each can be trusted: 1 rumour, 2 one source, 3 reported, 4 corroborated,`,
-    `5 certain. The ids are what REVISE_FACTS takes: carry across the ones you`,
-    `are keeping, with their ids, and leave out only what you mean to drop.`,
-    "",
-    lines.join("\n"),
-  ].join("\n");
-}

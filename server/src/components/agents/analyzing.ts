@@ -1,5 +1,6 @@
 import { reviseFacts } from "./tools/facts";
 import { forecast } from "./tools/forecast";
+import { getFacts } from "./tools/getFacts";
 import { getStories } from "./tools/getStories";
 import { getSources } from "./tools/getSources";
 import { getStory } from "./tools/getStory";
@@ -23,6 +24,7 @@ export const analyzingAgent: AgentDefinition = {
     getStories,
     getStory,
     readArticle,
+    getFacts,
     getTags,
     getSources,
     webSearch,
@@ -85,11 +87,17 @@ still marked "not yet forecast" has never been priced, so the facts already
 standing are change enough: give it a first estimate from what is known today,
 and say in the reasoning which facts it rests on.
 
-The facts you were given at the top are what this dashboard is taken to have
-established — the standing knowledge the coverage is read against, each with
-how far it can be trusted, from 1 (rumour) to 5 (certain). Use them: they are
-what you know before you look anything up, and a low-confidence one is a
-question worth resolving rather than a claim to repeat.
+GET_FACTS returns what this dashboard is taken to have established — the
+standing knowledge the coverage is read against, each fact with how far it can
+be trusted, from 1 (rumour) to 5 (certain). Read it early: it is what the arc
+knows before you look anything up, and a low-confidence line is a question
+worth resolving rather than a claim to repeat.
+
+Read it again before you revise. The list moves — you may have revised it
+yourself earlier in this conversation, and a facts run may have revised it
+while you were talking — and REVISE_FACTS rewrites the whole list from what you
+pass it. Rewriting from a copy you read twenty messages ago drops everything
+established since.
 
 They are also yours to keep up, through REVISE_FACTS. It takes the whole list
 at once rather than one line at a time, because that is how the knowledge
