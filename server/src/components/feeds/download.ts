@@ -20,11 +20,17 @@ export async function fetchFeed(
   validators?: FetchValidators,
 ): Promise<FetchFeedResult> {
   const res = await requestDocument(url, {
+    // The trailing wildcard is not a preference, it is a workaround:
+    // kommersant.ru answers 406 to any Accept it cannot find */* in — even
+    // "text/xml" alone, which is what it then serves. Weighted to 0.1 so a
+    // server doing real negotiation still hears the xml types first.
     accept:
-      "application/rss+xml, application/atom+xml, application/xml, text/xml",
+      "application/rss+xml, application/atom+xml, application/xml, text/xml, " +
+      "*/*;q=0.1",
     // text/html is deliberately not accepted: a feed url that starts answering
     // html is a misconfigured channel, and parsing it as a feed would quietly
-    // find zero items instead of saying so
+    // find zero items instead of saying so. The wildcard above widens only
+    // what we ask for; this is still what we agree to parse.
     allowedTypes: /xml|text\/plain/i,
     validators,
   });
