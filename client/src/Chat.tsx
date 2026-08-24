@@ -69,12 +69,7 @@ const Chat = ({ dashboardId, dashboardName, onChanged }: Props) => {
       </header>
 
       <div className="col-body chat-transcript">
-        {empty ? (
-          <p className="chat-placeholder">
-            Ask about {dashboardName} — what changed, what it follows from, who
-            someone is. The agent can read this dashboard and search the web.
-          </p>
-        ) : (
+        {!empty && (
           <>
             <AgentTranscript
               messages={visible}

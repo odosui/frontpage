@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 type Props = {
   disabled?: boolean
@@ -12,6 +12,16 @@ type Props = {
  */
 const ChatComposer = ({ disabled = false, placeholder, onSend }: Props) => {
   const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useLayoutEffect(() => {
+    const input = inputRef.current
+    if (!input) return
+    input.style.height = 'auto'
+    const maxHeight = 160
+    input.style.height = `${Math.min(input.scrollHeight, maxHeight)}px`
+    input.style.overflowY = input.scrollHeight > maxHeight ? 'auto' : 'hidden'
+  }, [value])
 
   const send = () => {
     const message = value.trim()
@@ -29,6 +39,7 @@ const ChatComposer = ({ disabled = false, placeholder, onSend }: Props) => {
       }}
     >
       <textarea
+        ref={inputRef}
         className="chat-input"
         rows={2}
         value={value}

@@ -14,10 +14,12 @@ import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AddSourceModal from './AddSourceModal'
 import ArticleContentModal from './ArticleContentModal'
-import Chat from './Chat'
+import DashboardEmptyState from './DashboardEmptyState'
 import Facts from './Facts'
+import FloatingChat from './FloatingChat'
 import Predictions from './Predictions'
 import Stories from './Stories'
+import { dedupeById } from './utils/dedupeById'
 
 type Loaded = {
   dashboard: Arc
@@ -402,7 +404,7 @@ const Dashboard: React.FC = () => {
   // article can appear in both — anything published since the last click has
   // pushed the window down by one — so the id decides, and the newer copy of a
   // row wins by being first
-  const feed = dedupe(loaded?.feed ?? [], moreFeed)
+  const feed = dedupeById(loaded?.feed ?? [], moreFeed)
   const feedTotal = loaded?.feedTotal ?? feed.length
   const uncategorized = loaded?.uncategorized ?? 0
 
@@ -423,7 +425,7 @@ const Dashboard: React.FC = () => {
     api
       .getFeed(dashboardId, { offset: feedLengthRef.current })
       .then((data: { feed: FeedArticle[] }) =>
-        setMoreFeed((was) => dedupe(was, data.feed ?? [])),
+        setMoreFeed((was) => dedupeById(was, data.feed ?? [])),
       )
       .catch(() => undefined)
       .finally(() => setLoadingMoreFeed(false))
@@ -525,11 +527,6 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey)
   }, [dashboards, dashboardId, goToDashboard, refreshAll])
 
-  const createFirst = () => {
-    const name = window.prompt('Name this dashboard:')?.trim()
-    if (name) createDashboard(name)
-  }
-
   if (error) {
     return (
       <div className="arc">
@@ -538,24 +535,8 @@ const Dashboard: React.FC = () => {
     )
   }
 
-  // nothing to show and nothing to show it for: the reader has no arcs yet, or
-  // has just deleted the last one
   if (!dashboardId && dashboards.length === 0) {
-    return (
-      <div className="arc arc--empty">
-        <div className="arc-empty">
-          <h1 className="arc-empty-title">No dashboards yet</h1>
-          <p className="arc-empty-body">
-            A dashboard is one running arc — the stories filed under it, what
-            they establish, and what that points to. Name the one you want to
-            follow.
-          </p>
-          <button className="arc-empty-btn" onClick={createFirst}>
-            New dashboard
-          </button>
-        </div>
-      </div>
-    )
+    return <DashboardEmptyState onCreate={createDashboard} />
   }
 
   if (!loaded) return null
@@ -580,8 +561,6 @@ const Dashboard: React.FC = () => {
         />
       </aside>
 
-      {/* facts before predictions, the way they are derived: what the arc has
-          established, then what that implies about what happens next */}
       <aside className="arc-facts">
         <Facts
           dashboardId={dashboardId}
@@ -599,13 +578,11 @@ const Dashboard: React.FC = () => {
         />
       </section>
 
-      <aside className="arc-chat">
-        <Chat
-          dashboardId={dashboardId}
-          dashboardName={dashboard.name}
-          onChanged={load}
-        />
-      </aside>
+      <FloatingChat
+        dashboardId={dashboardId}
+        dashboardName={dashboard.name}
+        onChanged={load}
+      />
 
       <AddSourceModal
         isOpen={showAddSource}
@@ -613,6 +590,7 @@ const Dashboard: React.FC = () => {
         onClose={() => setShowAddSource(false)}
         onAdd={addSource}
       />
+
       <ArticleContentModal
         dashboardId={dashboardId}
         articleId={openArticle}
@@ -620,25 +598,6 @@ const Dashboard: React.FC = () => {
       />
     </div>
   )
-}
-
-/**
- * Two runs of articles as one list, in order, each id once. The pages of a
- * feed being walked down overlap whenever something is published mid-walk —
- * every row below it shifts by one — and the same headline twice reads as a
- * duplicate rather than as a window that moved.
- */
-function dedupe(...pages: FeedArticle[][]): FeedArticle[] {
-  const seen = new Set<number>()
-  const all: FeedArticle[] = []
-  for (const page of pages) {
-    for (const article of page) {
-      if (seen.has(article.id)) continue
-      seen.add(article.id)
-      all.push(article)
-    }
-  }
-  return all
 }
 
 export default Dashboard
