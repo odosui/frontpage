@@ -1,5 +1,6 @@
-import { formatResults, search } from "../../websearch/Brave";
-import { AgentTool } from "../types";
+import { formatResults, search } from "../../../websearch/Brave";
+import { AgentTool } from "../../types";
+import { LANGS } from "./langs";
 
 /** Enough to see the shape of the coverage without flooding the context. */
 const RESULT_COUNT = 8;
@@ -8,62 +9,6 @@ const RESULT_COUNT = 8;
 const WINDOWS = new Set(["pd", "pw", "pm", "py"]);
 
 const RANGE_RE = /^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/;
-
-/**
- * The two-letter subset of Brave's `search_lang` values. A code Brave does not
- * know is a 422 for the whole request, so a plausible-looking `zz` has to be
- * caught here rather than turned into "search is down". Note `jp`, not `ja`.
- */
-const LANGS = new Set([
-  "ar",
-  "bg",
-  "bn",
-  "ca",
-  "cs",
-  "da",
-  "de",
-  "el",
-  "en",
-  "es",
-  "et",
-  "eu",
-  "fi",
-  "fr",
-  "gl",
-  "gu",
-  "he",
-  "hi",
-  "hr",
-  "hu",
-  "is",
-  "it",
-  "jp",
-  "kn",
-  "ko",
-  "lt",
-  "lv",
-  "ml",
-  "mr",
-  "ms",
-  "nb",
-  "nl",
-  "pa",
-  "pl",
-  "pt",
-  "ro",
-  "ru",
-  "sk",
-  "sl",
-  "sr",
-  "sv",
-  "ta",
-  "te",
-  "th",
-  "tr",
-  "uk",
-  "vi",
-  "zh",
-]);
 
 export const webSearch: AgentTool = {
   name: "WEB_SEARCH",
