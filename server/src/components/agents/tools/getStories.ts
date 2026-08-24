@@ -18,7 +18,7 @@ export const getStories: AgentTool = {
   name: "GET_STORIES",
   usage: '<|GET_STORIES|> or <|GET_STORIES "novorossiysk" 200|>',
   description:
-    "The stories already filed under this dashboard, newest first, with how many articles each holds. " +
+    "The stories already filed under this dashboard, newest first, with how many articles each holds and when the newest of them was published. " +
     "Called bare it lists them; given a word in quotes it returns only the stories whose title contains it, and a number caps how many come back. " +
     "Use it before writing a story title: if the event is in this list, reuse that story's title exactly and the article joins it instead of starting a near duplicate beside it. " +
     "Search when you already know the wording to look for; list when you do not — a story someone named differently is one a search will miss and the list will not.",
@@ -32,7 +32,12 @@ export const getStories: AgentTool = {
         : "(no stories filed here yet)";
     }
     return rows
-      .map((s) => `${s.title} — ${s.articleCount} articles`)
+      .map((s) => {
+        const when = s.updatedAt
+          ? `, last ${s.updatedAt.toISOString().slice(0, 16).replace("T", " ")} UTC`
+          : "";
+        return `${s.title} — ${s.articleCount} articles${when}`;
+      })
       .join("\n");
   },
 };

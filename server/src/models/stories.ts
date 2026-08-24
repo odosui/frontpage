@@ -256,6 +256,8 @@ export async function merge(
 export type StoryMatch = {
   title: string;
   articleCount: number;
+  /** When the story's newest article was filed under it, by publisher date. */
+  updatedAt: Date | null;
 };
 
 /**
@@ -278,8 +280,13 @@ export async function list(
   { term = "", limit }: { term?: string; limit: number },
 ): Promise<StoryMatch[]> {
   const filtered = term.trim().length > 0;
-  const { rows } = await query<{ title: string; articles: string }>(
-    `select s.title, count(f.article_id) as articles
+  const { rows } = await query<{
+    title: string;
+    articles: string;
+    updated_at: Date | null;
+  }>(
+    `select s.title, count(f.article_id) as articles,
+            max(a.sorted_at) as updated_at
        from stories s
        left join article_filings f
          on f.story_id = s.id and f.dashboard_id = $1
@@ -295,6 +302,7 @@ export async function list(
   return rows.map((r) => ({
     title: r.title,
     articleCount: Number(r.articles),
+    updatedAt: r.updated_at,
   }));
 }
 
