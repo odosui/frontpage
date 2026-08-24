@@ -1,14 +1,13 @@
-import { getStories } from "./tools/getStories";
 import { getSources } from "./tools/getSources";
+import { getStories } from "./tools/getStories";
 import { getTags } from "./tools/getTags";
-import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
 
 export const categorizingAgent: AgentDefinition = {
   kind: "categorizing_agent",
   name: "CategorizingAgent",
   maxSteps: 12,
-  tools: [getStories, getTags, getSources, webSearch],
+  tools: [getStories, getTags, getSources],
   instructions: `You are given a batch of fresh headlines — some carrying the outlet's own
 summary, some not — pulled from the sources one dashboard reads. You group them
 into stories, tag every article, and say which ones do not belong here at all.
