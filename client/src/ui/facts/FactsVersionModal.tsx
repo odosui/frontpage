@@ -93,14 +93,20 @@ const FactsVersionModal = ({ version, previous, onClose }: Props) => {
                     {MARKS[row.kind]}
                   </span>
                   <Confidence row={row} />
-                  <span className="facts-diff-text">
-                    {row.previous ? (
-                      <FactDiffText
-                        diff={wordDiff(row.previous.content, row.fact.content)}
-                      />
-                    ) : (
-                      <InlineBold text={row.fact.content} />
-                    )}
+                  <span className="facts-diff-content">
+                    <span className="facts-diff-text">
+                      {row.previous ? (
+                        <FactDiffText
+                          diff={wordDiff(
+                            row.previous.content,
+                            row.fact.content,
+                          )}
+                        />
+                      ) : (
+                        <InlineBold text={row.fact.content} />
+                      )}
+                    </span>
+                    {row.previous && <SourceChanges row={row} />}
                   </span>
                 </li>
               ))}
@@ -142,6 +148,47 @@ const Confidence = ({ row }: { row: FactDiffRow }) => {
     <span className="facts-diff-confidence-move">
       {badge(row.previous, ' is-was')}
       {badge(row.fact)}
+    </span>
+  )
+}
+
+/** The evidence that moved even when the wording and confidence did not. */
+const SourceChanges = ({ row }: { row: FactDiffRow }) => {
+  if (!row.previous) return null
+
+  const before = new Set(row.previous.articleIds)
+  const after = new Set(row.fact.articleIds)
+  const added = row.fact.sources.filter((source) => !before.has(source.id))
+  const removed = row.previous.sources.filter(
+    (source) => !after.has(source.id),
+  )
+
+  if (added.length === 0 && removed.length === 0) return null
+
+  return (
+    <span className="facts-diff-sources">
+      {removed.map((source) => (
+        <a
+          key={`-${source.id}`}
+          className="facts-diff-source is-removed"
+          href={source.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          − source: {source.title}
+        </a>
+      ))}
+      {added.map((source) => (
+        <a
+          key={`+${source.id}`}
+          className="facts-diff-source is-added"
+          href={source.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          + source: {source.title}
+        </a>
+      ))}
     </span>
   )
 }

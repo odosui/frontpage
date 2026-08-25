@@ -20,6 +20,15 @@ describe('diffFacts', () => {
     expect(diffCounts(rows)).toEqual({ added: 0, removed: 0, rewritten: 1 })
   })
 
+  it('does not treat reordered or repeated source ids as a rewrite', () => {
+    const before = { ...fact('f1', 'one'), articleIds: [12, 34] }
+    const after = { ...fact('f1', 'one'), articleIds: [34, 12, 12] }
+
+    expect(diffFacts([before], [after]).map((row) => row.kind)).toEqual([
+      'context',
+    ])
+  })
+
   it('marks a first version as all new', () => {
     const rows = diffFacts([], [fact('f1', 'one'), fact('f2', 'two')])
     expect(rows.map((r) => r.kind)).toEqual(['added', 'added'])
@@ -32,6 +41,15 @@ describe('diffFacts', () => {
       { kind: 'context', fact: fact('f1', 'one'), key: ' f1' },
     ])
     expect(diffCounts(rows)).toEqual({ added: 0, removed: 0, rewritten: 0 })
+  })
+
+  it('does not call emphasis-only changes a rewrite', () => {
+    const before = fact('f1', '**On 24 August**, something happened')
+    const after = fact('f1', 'On **24 August**, something happened')
+
+    expect(diffFacts([before], [after]).map((row) => row.kind)).toEqual([
+      'context',
+    ])
   })
 
   it('keeps a rewording on one row, carrying both versions', () => {

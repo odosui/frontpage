@@ -1,4 +1,5 @@
 import { type Fact } from '../api'
+import { hasWordChanges, wordDiff } from './wordDiff'
 
 export type FactDiffRow = {
   kind: 'added' | 'removed' | 'rewritten' | 'context'
@@ -31,9 +32,9 @@ export function diffFacts(previous: Fact[], current: Fact[]): FactDiffRow[] {
     if (!old) {
       rows.push({ kind: 'added', fact, key: `+${fact.id}` })
     } else if (
-      old.content !== fact.content ||
+      hasWordChanges(wordDiff(old.content, fact.content)) ||
       old.confidence !== fact.confidence ||
-      old.articleIds.join() !== fact.articleIds.join()
+      !sameIds(old.articleIds, fact.articleIds)
     ) {
       rows.push({
         kind: 'rewritten',
@@ -55,6 +56,13 @@ export function diffFacts(previous: Fact[], current: Fact[]): FactDiffRow[] {
   }
 
   return rows
+}
+
+/** Citation order is presentation, not a change to what supports the fact. */
+function sameIds(left: number[], right: number[]): boolean {
+  const a = new Set(left)
+  const b = new Set(right)
+  return a.size === b.size && [...a].every((id) => b.has(id))
 }
 
 export type FactDiffCounts = {

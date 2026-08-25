@@ -549,6 +549,42 @@
   min-width: 0;
 }
 
+.facts-diff-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.facts-diff-sources {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: $text0;
+  line-height: 1.35;
+}
+
+.facts-diff-source {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-decoration: none;
+
+  &.is-added {
+    color: $green;
+  }
+
+  &.is-removed {
+    color: $red;
+    text-decoration: line-through;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .facts-placeholder {
   margin: 0;
   font-size: $text1;
