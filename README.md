@@ -16,7 +16,9 @@ Frontpage uses LLMs to scrape front pages, extract articles, group them into the
 
 ## How it works
 
-A **dashboard** is one running arc — "Russian-Ukrainian war", "AI chip race", "Bird flu outbreak". Everything hangs off it:
+The flow goes like this. Sources -> Articles -> (Aggregated) Stories -> Facts -> Predictions. You can also chat with the agent in the context of the arc you are following.
+
+A **dashboard** is one running arc — "AI chip race", "Bird flu outbreak". Everything hangs off it:
 
 ```
 dashboard   the arc you are following
@@ -44,10 +46,7 @@ dashboard   the arc you are following
 
 - `Alt` + `←` / `→` — switch to previous / next dashboard (wraps around)
 - `Alt` + `R` — refresh every source the current dashboard reads
-
-## Motivation
-
-Modern LLMs have become powerful enough and, more importantly, cheap enough to digest a website's front page and extract a list of articles — like an RSS feed, which many websites no longer provide. This project aggregates those results into a nice dashboard.
+- `Alt` + `C` — to toggle the chat panel
 
 ## Running with Docker
 

@@ -34,7 +34,7 @@
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
     "types": [
       "node"
-    ] /* ts-node does not auto-include @types/node the way tsc does: without this, an entry point that touches `process` but pulls in no typed dependency fails to compile. */,
+    ] /* running the sources directly (tsx) does not auto-include @types/node the way tsc does: without this, an entry point that touches `process` but pulls in no typed dependency fails to compile. */,
     // "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
     // "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
     // "allowImportingTsExtensions": true,               /* Allow imports to include TypeScript file extensions. Requires '--moduleResolution bundler' and either '--noEmit' or '--emitDeclarationOnly' to be set. */
