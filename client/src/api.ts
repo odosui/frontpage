@@ -9,6 +9,12 @@
 const seg = (value: string | number) => encodeURIComponent(String(value))
 
 export default {
+  // Auth. There is no sign-up; accounts are made from the server's cli.
+  login: (email: string, password: string) =>
+    apiJson('post', '/auth/login', { email, password }),
+  logout: () => apiJson('post', '/auth/logout', {}),
+  me: () => api('get', '/auth/me'),
+
   // Sources
   listSources: () => api('get', '/sources'),
   createSource: (source: NewSource) => apiJson('post', '/sources', source),
@@ -506,6 +512,26 @@ export type StoryFeedEntry = {
 
 type FetchParams = Parameters<typeof fetch>[1]
 
+/** Fired on any 401, so one listener can react wherever the call was made. */
+export const UNAUTHORIZED_EVENT = 'frontpage:unauthorized'
+
+/** A failed request, with the status so a 401 can be told from the rest. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+export type User = {
+  id: number
+  email: string
+  createdAt: string
+}
+
 async function apiJson(method: string, url: string, data: any) {
   return api(method, url, data)
 }
@@ -519,6 +545,9 @@ async function api(method: string, url: string, data?: Record<string, any>) {
      * Access-Control-Allow-Methods list does not contain.
      */
     method: method.toUpperCase(),
+    // the session is an httpOnly cookie, and in development the client is
+    // served from a different origin than the api
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -547,7 +576,12 @@ async function api(method: string, url: string, data?: Record<string, any>) {
   return fetch(`${base}/api${url}`, attrs).then((x) => {
     if (!x.ok) {
       return x.json().then((body: { error?: string }) => {
-        throw new Error(body.error || `Request failed (${x.status})`)
+        // a session can expire mid-visit; whoever is holding the signed-in
+        // state listens for this and puts the login screen back up
+        if (x.status === 401) {
+          window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+        }
+        throw new ApiError(body.error || `Request failed (${x.status})`, x.status)
       })
     }
     return x.json()

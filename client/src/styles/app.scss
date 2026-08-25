@@ -10,6 +10,7 @@
 @use './app/jobs';
 @use './app/settings';
 @use './app/agents';
+@use './app/login';
 
 // The reset puts `font: inherit` on every element, emphasis included, so these
 // carry no weight or slant of their own until they are given them back.

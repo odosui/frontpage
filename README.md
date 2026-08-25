@@ -64,11 +64,37 @@ To run the container against a database you already have:
 docker run -d \
   -p 3043:3043 \
   -e FRONTPAGE_DATABASE_URL=postgres://user:pass@host:5432/frontpage \
+  -e FRONTPAGE_SECRET=a-long-random-string \
   -e OPENROUTER_API_KEY=your-key \
   -e FRONTPAGE_MODEL_SMALL=google/gemini-3.1-flash-lite \
   -e FRONTPAGE_MODEL_BIG=anthropic/claude-opus-5 \
   hiquest/frontpage:latest
 ```
+
+## Accounts
+
+The api is behind a login, and there is no sign-up page — accounts are made from the command line. Set `FRONTPAGE_SECRET` to a long random string first: it signs the session cookies, and the server refuses to start in production without it.
+
+```bash
+FRONTPAGE_SECRET=$(openssl rand -hex 32)     # keep it; changing it signs everyone out
+npm run user:create --prefix server -- me@example.com my-long-password
+```
+
+The other commands, same shape:
+
+```bash
+npm run user:list --prefix server
+npm run user:passwd --prefix server -- me@example.com a-new-password
+npm run user:delete --prefix server -- me@example.com
+```
+
+Inside the production container the compiled entrypoint is `npm run user`:
+
+```bash
+docker exec -it frontpage npm run user --prefix server -- create me@example.com my-long-password
+```
+
+Sessions are a signed, httpOnly cookie that lasts 30 days; signing out drops it, and rotating `FRONTPAGE_SECRET` invalidates every session at once.
 
 ## Storage
 

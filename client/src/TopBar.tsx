@@ -1,6 +1,13 @@
-import { GearIcon, ZapIcon, DependabotIcon } from '@primer/octicons-react'
+import {
+  GearIcon,
+  HomeIcon,
+  SignOutIcon,
+  ZapIcon,
+  DependabotIcon,
+} from '@primer/octicons-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'slim-react-router'
+import { useAuth } from './contexts/AuthContext'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import AgentsModal from './AgentsModal'
@@ -17,11 +24,22 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
   const location = useLocation()
   const { activeCount } = useJobs()
   const { tools } = useToolbar()
+  const { user, signOut } = useAuth()
   const [agentsOpen, setAgentsOpen] = useState(false)
 
   return (
     <header className="topbar">
       <nav className="topbar-nav">
+        <Link
+          to="/"
+          className={`topbar-item${
+            location.pathname.startsWith('/settings') ? '' : ' active'
+          }`}
+          title="Home"
+          aria-label="Home"
+        >
+          <HomeIcon size={18} />
+        </Link>
         <Link
           to="/settings"
           className={`topbar-item${
@@ -108,6 +126,15 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
             </span>
             <span className="topbar-jobs-value">{jobsLabel(activeCount)}</span>
           </span>
+        </button>
+
+        <button
+          className="topbar-item"
+          onClick={signOut}
+          title={`Sign out (${user?.email ?? ''})`}
+          aria-label="Sign out"
+        >
+          <SignOutIcon size={16} />
         </button>
       </div>
     </header>

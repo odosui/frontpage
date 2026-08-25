@@ -24,8 +24,10 @@ services:
     environment:
       - NODE_ENV=production
       - FRONTPAGE_DATABASE_URL=postgres://frontpage:frontpage@db:5432/frontpage
+      # signs the session cookies — change it, and keep it
+      - FRONTPAGE_SECRET=change-me-to-a-long-random-string
       - FRONTPAGE_MODEL_SMALL=google/gemini-3.1-flash-lite
-      - FRONTPAGE_MODEL_BIG=anthropic/claude-opus-5
+      - FRONTPAGE_MODEL_BIG=openai/gpt-5.6-sol
       - OPENROUTER_API_KEY=yourkey
     depends_on:
       db:
@@ -40,7 +42,7 @@ services:
       - NODE_ENV=production
       - FRONTPAGE_DATABASE_URL=postgres://frontpage:frontpage@db:5432/frontpage
       - FRONTPAGE_MODEL_SMALL=google/gemini-3.1-flash-lite
-      - FRONTPAGE_MODEL_BIG=anthropic/claude-opus-5
+      - FRONTPAGE_MODEL_BIG=openai/gpt-5.6-sol
       - FRONTPAGE_WORKER_CONCURRENCY=2
       # Must match the API key set on the frontpage service:
       - OPENROUTER_API_KEY=yourkey

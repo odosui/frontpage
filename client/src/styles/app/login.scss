@@ -1,0 +1,83 @@
+@use '../vars' as *;
+
+.login {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: $unit4;
+  background-color: var(--color-bg);
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: $unit2;
+  width: 100%;
+  max-width: $unit12;
+  padding: $unit5;
+  background-color: var(--surface-bg);
+  border-radius: $unit2;
+  box-shadow: var(--surface-shadow);
+}
+
+.login-title {
+  font-size: $text5;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.login-hint {
+  margin-bottom: $unit2;
+  font-size: $text1;
+  color: var(--lighter);
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: $unit0;
+}
+
+.login-label {
+  font-size: $text0;
+  font-weight: 500;
+  color: var(--lighter);
+}
+
+.login-input {
+  padding: $unit1 $unit2;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background-color: transparent;
+  font-size: $text2;
+  color: var(--color-text);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+}
+
+.login-error {
+  font-size: $text1;
+  color: $red;
+}
+
+.login-submit {
+  margin-top: $unit2;
+  padding: $unit1 $unit3;
+  border: none;
+  border-radius: $unit1;
+  background-color: var(--color-accent);
+  font-size: $text2;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}

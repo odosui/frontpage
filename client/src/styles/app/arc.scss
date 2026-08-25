@@ -835,7 +835,8 @@
 }
 
 // the claim and its odds: one target, because opening the history is what a
-// reader wants from it and there is nothing else to click
+// reader wants from it and there is nothing else to click. the claim leads and
+// the badge closes the row, right-aligned down the column
 .prediction-body {
   display: flex;
   align-items: baseline;
@@ -856,11 +857,11 @@
   }
 }
 
-// a badge, on a red-to-green ramp: the rung is a judgement and reads as one at
-// a glance, before the claim beside it has been read at all. it carries the
-// number rather than the word — five of them stacked down a list, the colour
-// says which way it leans and the claim is what deserves the width. the label
-// itself is on the title, a hover away.
+// a badge, on a red-to-green ramp: the claim is what is read, and the rung is
+// the judgement it lands on, so it sits at the end of the row where the eye
+// arrives last. it carries the number rather than the word — five of them
+// stacked down a list, the colour says which way it leans and the claim is
+// what deserves the width. the label itself is on the title, a hover away.
 //
 // the tint is mixed from the badge's own colour rather than written out five
 // times, so a rung's fill and its text can never drift apart — and the mix
@@ -904,6 +905,8 @@
 }
 
 .prediction-content {
+  // takes what the badge leaves, so the badges line up down the column
+  flex: 1;
   min-width: 0;
   font-size: $text1;
   line-height: 1.4;

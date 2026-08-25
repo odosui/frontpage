@@ -1,17 +1,55 @@
 import { Api } from "./api";
+import { authApi } from "./auth";
 
 export type RouteConfig = {
   method: "get" | "post" | "patch" | "put" | "delete";
   path: string;
+  /**
+   * Everything needs a session except the few routes marked `public`. A new
+   * route is behind the gate unless it says otherwise, which is the way round
+   * that fails safe.
+   */
+  public?: boolean;
   handler: (params: {
     pathParams: Record<string, string>;
     query: Record<string, string>;
     body: any;
-  }) => Promise<{ status: number; json: unknown }>;
+    /** The signed-in account. Zero on a public route, where there is none. */
+    userId: number;
+  }) => Promise<{
+    status: number;
+    json: unknown;
+    /** Set-Cookie for the reply: how logging in and out carry the session. */
+    cookie?: string;
+  }>;
 };
 
 export const createRoutes = (api: Api): RouteConfig[] => [
-  { method: "get", path: "/api/health", handler: async () => api.health() },
+  {
+    method: "get",
+    path: "/api/health",
+    public: true,
+    handler: async () => api.health(),
+  },
+
+  // Auth. There is no sign-up: accounts are made with `npm run user:create`.
+  {
+    method: "post",
+    path: "/api/auth/login",
+    public: true,
+    handler: async ({ body }) => authApi.login(body),
+  },
+  {
+    method: "post",
+    path: "/api/auth/logout",
+    public: true,
+    handler: async () => authApi.logout(),
+  },
+  {
+    method: "get",
+    path: "/api/auth/me",
+    handler: async ({ userId }) => authApi.me(userId),
+  },
 
   // Sources. Independent of any dashboard: they are created, edited and
   // deleted here, and only *assigned* to a dashboard further down.

@@ -96,6 +96,9 @@ const PredictionRow = ({ prediction, onSave, onDelete }: Props) => {
         aria-expanded={open}
         title={history.length > 0 ? 'Show how this moved' : 'Not forecast yet'}
       >
+        <span className="prediction-content">
+          <InlineBold text={prediction.content} />
+        </span>
         <span
           className={`prediction-odds${band(prediction.likelihood)}`}
           title={
@@ -105,9 +108,6 @@ const PredictionRow = ({ prediction, onSave, onDelete }: Props) => {
           }
         >
           {prediction.likelihood === null ? '—' : `${prediction.likelihood}/5`}
-        </span>
-        <span className="prediction-content">
-          <InlineBold text={prediction.content} />
         </span>
       </button>
 

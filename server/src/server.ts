@@ -2,7 +2,9 @@ import bodyParser from "body-parser";
 import express, { Express, Request, Response } from "express";
 import path from "path";
 import { createApi } from "./api/api";
+import { authenticate } from "./api/auth";
 import { createRoutes } from "./api/routes";
+import { sessionSecret } from "./components/auth/session";
 import { describeDatabase } from "./db/config";
 import { migrateUp } from "./db/migrator";
 
@@ -13,6 +15,9 @@ export async function startServer() {
   const app = express();
 
   app.use(bodyParser.json());
+
+  // fail at boot rather than on the first login attempt
+  sessionSecret();
 
   console.log(`Using database ${describeDatabase()}`);
   if (process.env.FRONTPAGE_AUTO_MIGRATE !== "false") {
@@ -31,11 +36,25 @@ export async function startServer() {
     const method = m.method.toLowerCase() as keyof Express;
 
     app[method](m.path, async (req: Request, res: Response) => {
-      const { status, json } = await m.handler({
+      // the gate: a route says `public` or it needs a session, and there is
+      // nothing in between
+      let userId = 0;
+      if (!m.public) {
+        const user = await authenticate(req.headers.cookie);
+        if (!user) {
+          res.status(401).json({ error: "not signed in" });
+          return;
+        }
+        userId = user.id;
+      }
+
+      const { status, json, cookie } = await m.handler({
         pathParams: req.params as Record<string, string>,
         query: req.query as Record<string, string>,
         body: req.body,
+        userId,
       });
+      if (cookie) res.setHeader("Set-Cookie", cookie);
       res.status(status).json(json);
     });
   }
