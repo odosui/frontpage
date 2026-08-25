@@ -36,14 +36,9 @@ COPY --from=client-builder /app/client/dist ./client/dist
 # Set environment variables
 ENV NODE_ENV=production
 ENV FRONTPAGE_PORT=3043
-# only used by the one-shot `import-json` script; storage itself is postgres
-ENV FRONTPAGE_HOME=/data/frontpage
 
 # Expose the port
 EXPOSE 3043
-
-# Create data directory
-RUN mkdir -p /data/frontpage
 
 # Start the server
 WORKDIR /app/server
