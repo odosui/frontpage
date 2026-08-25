@@ -16,6 +16,8 @@ type Props = {
    * know they are stale by any other means.
    */
   onChanged?: () => void
+  /** Whether the chat is on screen; opening it puts the cursor in the composer. */
+  active?: boolean
 }
 
 /** In a conversation the roles are people, not job descriptions. */
@@ -30,7 +32,7 @@ const CHAT_LABEL: Partial<Record<AgentMessage['role'], string>> = {
  * session that stays open between questions, and the proposals it needs
  * answered before it can change anything.
  */
-const Chat = ({ dashboardId, dashboardName, onChanged }: Props) => {
+const Chat = ({ dashboardId, dashboardName, onChanged, active }: Props) => {
   const { session, messages, proposals, thinking, error, send, decide } =
     useAgentChat({ dashboardId, kind: 'analyzing_agent' })
 
@@ -95,6 +97,7 @@ const Chat = ({ dashboardId, dashboardName, onChanged }: Props) => {
 
       <ChatComposer
         disabled={thinking}
+        focused={active}
         placeholder={`Ask about ${dashboardName}…`}
         onSend={send}
       />

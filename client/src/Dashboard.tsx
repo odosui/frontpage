@@ -17,6 +17,7 @@ import ArticleContentModal from './ArticleContentModal'
 import DashboardEmptyState from './DashboardEmptyState'
 import Facts from './Facts'
 import FloatingChat from './FloatingChat'
+import { HOTKEYS, useHotkey } from './hotkeys'
 import Predictions from './Predictions'
 import Stories from './Stories'
 import { dedupeById } from './utils/dedupeById'
@@ -498,34 +499,17 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => () => setTools(null), [setTools])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!e.altKey) return
-      const target = e.target as HTMLElement | null
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable)
-      ) {
-        return
-      }
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        if (dashboards.length < 2) return
-        const idx = dashboards.findIndex((d) => d.id === dashboardId)
-        if (idx === -1) return
-        const delta = e.key === 'ArrowLeft' ? -1 : 1
-        const next = (idx + delta + dashboards.length) % dashboards.length
-        e.preventDefault()
-        goToDashboard(dashboards[next]!.id)
-      } else if (e.code === 'KeyR') {
-        e.preventDefault()
-        refreshAll()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [dashboards, dashboardId, goToDashboard, refreshAll])
+  const step = (delta: number) => {
+    if (dashboards.length < 2) return
+    const idx = dashboards.findIndex((d) => d.id === dashboardId)
+    if (idx === -1) return
+    const next = (idx + delta + dashboards.length) % dashboards.length
+    goToDashboard(dashboards[next]!.id)
+  }
+
+  useHotkey(HOTKEYS.prevDashboard, () => step(-1))
+  useHotkey(HOTKEYS.nextDashboard, () => step(1))
+  useHotkey(HOTKEYS.refreshAll, () => refreshAll())
 
   if (error) {
     return (

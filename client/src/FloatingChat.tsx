@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Chat from './Chat'
+import { HOTKEYS, useHotkey } from './hotkeys'
 
 type Props = {
   dashboardId: string
@@ -11,17 +12,24 @@ type Props = {
 const FloatingChat = ({ dashboardId, dashboardName, onChanged }: Props) => {
   const [open, setOpen] = useState(false)
 
+  // both from the page and from inside the composer: the same key that opened
+  // the panel has to close it again without the cursor having to leave it
+  useHotkey(HOTKEYS.toggleChat, () => setOpen((current) => !current), {
+    allowInInput: true,
+  })
+  useHotkey('escape', () => setOpen(false), {
+    enabled: open,
+    allowInInput: true,
+  })
+
   return (
     <div className="floating-chat">
-      <aside
-        className="floating-chat-panel"
-        id="dashboard-chat"
-        hidden={!open}
-      >
+      <aside className="floating-chat-panel" id="dashboard-chat" hidden={!open}>
         <Chat
           dashboardId={dashboardId}
           dashboardName={dashboardName}
           onChanged={onChanged}
+          active={open}
         />
       </aside>
 
