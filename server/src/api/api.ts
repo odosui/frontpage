@@ -8,6 +8,7 @@ import { startChat } from "../components/agents/chat";
 import { BIG_MODEL } from "../components/ai/models";
 import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
 import { DEFAULT_MIN_SCORE } from "../components/reddit/parse";
+import { queueFetch } from "../components/sources/refresh";
 import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as dashboards from "../models/dashboards";
@@ -29,13 +30,6 @@ dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
 const MAX_STORIES = 100;
-
-/** Which job reads each kind of source; a kind with none cannot be fetched. */
-const FETCHERS: Partial<Record<SourceKind, string>> = {
-  web: "fetch_page",
-  rss: "fetch_feed",
-  reddit: "fetch_reddit",
-};
 
 export const createApi = async () => {
   return {
@@ -101,24 +95,14 @@ export const createApi = async () => {
       if (!id) return error(400, "source id is required");
       const source = await sources.get(id);
       if (!source) return error(404, "source not found");
-      if (!source.url) return error(400, "source has no url configured");
 
-      // a feed and a subreddit both say what their articles are, so they skip
-      // the page-analysis chain entirely and go straight to a single
-      // parse-and-store job. Only a web page needs a model to read it.
-      const type = FETCHERS[source.kind] ?? null;
-      if (!type) {
-        return error(400, `${source.kind} sources cannot be fetched yet`);
-      }
+      const result = await queueFetch(source);
+      if ("error" in result) return error(400, result.error);
+      console.log(`[refresh] ${id} queued as job ${result.job.id}`);
 
-      const job = await queue.enqueue({
-        type,
-        payload: { sourceId: id, url: source.url },
-      });
-      console.log(`[refresh] ${id} queued as job ${job.id}`);
-
-      return ok({ job });
+      return ok({ job: result.job });
     },
+
 
     // Dashboards
 

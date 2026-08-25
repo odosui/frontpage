@@ -13,6 +13,7 @@
     "rollback": "tsx src/db/cli.ts down",
     "migrate:status": "tsx src/db/cli.ts status",
     "migrate:new": "tsx src/db/cli.ts new",
+    "refresh": "tsx src/sources/cli.ts refresh",
     "user:create": "tsx src/users/cli.ts create",
     "user:passwd": "tsx src/users/cli.ts passwd",
     "user:list": "tsx src/users/cli.ts list",
@@ -20,6 +21,7 @@
     "search": "tsx src/components/websearch/cli.ts",
     "db": "node dist/db/cli.js",
     "user": "node dist/users/cli.js",
+    "sources": "node dist/sources/cli.js",
     "test:watch": "vitest",
     "test": "vitest run",
     "check-types": "tsc --noEmit"
