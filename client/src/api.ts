@@ -121,6 +121,39 @@ export default {
 
   // Settings
   getDatabaseStats: () => api('get', '/stats/database'),
+  getSettings: () => api('get', '/settings'),
+  /** An empty value clears the slot and puts it back on its default. */
+  setModel: (key: string, value: string) =>
+    apiJson('patch', '/settings', { key, value }),
+  /** OpenRouter's catalogue, filtered by what has been typed. */
+  searchModels: (q: string, limit = 20) => api('get', '/models', { q, limit }),
+}
+
+/** One model OpenRouter serves, as the autocomplete lists it. */
+export type CatalogModel = {
+  id: string
+  name: string
+  contextLength: number | null
+  /** USD per token, as OpenRouter quotes it. Null when it does not say. */
+  promptPrice: number | null
+  completionPrice: number | null
+}
+
+/** One of the two model slots the instance runs on. */
+export type ModelSetting = {
+  key: string
+  label: string
+  description: string
+  /** What the slot resolves to right now. */
+  value: string
+  /** Where it would land if cleared — the env override, or the built-in. */
+  fallback: string
+  builtIn: string
+  envVar: string | null
+  /** Set when the environment pins this slot; the stored choice still wins. */
+  envValue: string | null
+  /** False while the slot is still on its fallback. */
+  isSet: boolean
 }
 
 export type TableStat = { name: string; rows: number; bytes: number }

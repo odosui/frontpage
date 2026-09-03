@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api, { type DatabaseStats, type ServerStats } from './api'
 import RefreshIcon from './icons/RefreshIcon'
+import ModelsSettings from './ModelsSettings'
 import SourcesSettings from './SourcesSettings'
 
 const Settings: React.FC = () => {
@@ -38,6 +39,16 @@ const Settings: React.FC = () => {
           </span>
         </header>
         <SourcesSettings />
+      </section>
+
+      <section className="settings-section">
+        <header className="settings-section-head">
+          <h2 className="settings-section-title">Models</h2>
+          <span className="settings-muted">
+            Every model call this instance makes
+          </span>
+        </header>
+        <ModelsSettings />
       </section>
 
       <section className="settings-section">

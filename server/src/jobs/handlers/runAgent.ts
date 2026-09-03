@@ -8,7 +8,7 @@ import {
 } from "../../components/stories/categorize";
 import { persistTree } from "../../components/stories/persist";
 import { categorizeStoriesPrompt } from "../../components/stories/prompt";
-import { BIG_MODEL } from "../../components/ai/models";
+import { bigModel } from "../../components/ai/models";
 import { JobHandler } from "../types";
 
 export type RunAgentPayload = {
@@ -57,7 +57,7 @@ export const runAgentHandler: JobHandler = async (payload, { log }) => {
   );
 
   const run = await runAgent(agent, {
-    model: model || BIG_MODEL,
+    model: model || (await bigModel()),
     task: categorizeStoriesPrompt(dashboard.name, articles),
     dashboardId,
     log,

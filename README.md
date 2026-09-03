@@ -129,6 +129,10 @@ Many websites have stopped providing RSS feeds, because, khmm, ads. Other times,
 
 Everything goes through [OpenRouter](https://openrouter.ai), so both settings take an OpenRouter model id. Set `OPENROUTER_API_KEY` to your key.
 
+Pick them under **Settings → Models**, where the field autocompletes against OpenRouter's live catalogue — an id it does not serve cannot be saved. The choice is stored in the database and applies to the whole instance, api and worker alike, within a few seconds of saving.
+
+The environment variables below still work, as the default an unset slot falls back to; a model chosen in the ui overrides them. Clearing a slot on that page puts it back on its environment value, or on the built-in default if there is none.
+
 There are two of them, because the app does two different jobs:
 
 - `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every source refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)

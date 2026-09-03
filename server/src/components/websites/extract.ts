@@ -1,6 +1,5 @@
 import { Article } from "../../api/types";
 import { sendMessage } from "../ai/OpenRouter";
-import { SMALL_MODEL } from "../ai/models";
 import { PageSnapshot } from "./download";
 import { extractArticlesPrompt } from "./prompt";
 
@@ -8,11 +7,12 @@ import { extractArticlesPrompt } from "./prompt";
 export async function extractArticles(
   url: string,
   snapshot: PageSnapshot,
+  model: string,
 ): Promise<Article[]> {
   const baseUrl = new URL(url);
 
   const aiResp = await sendMessage(
-    SMALL_MODEL,
+    model,
     extractArticlesPrompt(baseUrl.origin, snapshot.html),
   );
 

@@ -1,6 +1,6 @@
 import * as articles from "../../models/articles";
 import * as sources from "../../models/sources";
-import { SMALL_MODEL } from "../../components/ai/models";
+import { smallModel } from "../../components/ai/models";
 import { extractArticles } from "../../components/websites/extract";
 import { deleteSnapshot, loadSnapshot } from "../../models/snapshots";
 import { JobHandler } from "../types";
@@ -28,8 +28,9 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
     throw new Error(`page snapshot ${snapshotId} is gone — re-fetch the page`);
   }
 
-  log(`analyzing ${snapshot.url} with ${SMALL_MODEL}`);
-  const extracted = await extractArticles(snapshot.url, snapshot);
+  const model = await smallModel();
+  log(`analyzing ${snapshot.url} with ${model}`);
+  const extracted = await extractArticles(snapshot.url, snapshot, model);
 
   // drop duplicates within the response; the insert filters against what is
   // already stored
@@ -58,7 +59,7 @@ export const extractArticlesHandler: JobHandler = async (payload, { log }) => {
     result: {
       url: snapshot.url,
       sourceId,
-      model: SMALL_MODEL,
+      model,
       extracted: extracted.length,
       added: inserted,
     },

@@ -274,4 +274,20 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     path: "/api/stats/database",
     handler: async () => api.databaseStats(),
   },
+  {
+    method: "get",
+    path: "/api/settings",
+    handler: async () => api.getSettings(),
+  },
+  {
+    method: "patch",
+    path: "/api/settings",
+    handler: async ({ body }) => api.updateSetting(body),
+  },
+  // OpenRouter's catalogue, for the model autocomplete
+  {
+    method: "get",
+    path: "/api/models",
+    handler: async ({ query }) => api.listModels(query),
+  },
 ];

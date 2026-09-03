@@ -1,7 +1,7 @@
 import { runAgent } from "../../components/agents/runner";
 import { factsAgent } from "../../components/agents/facts";
 import { establishFactsPrompt } from "../../components/facts/prompt";
-import { BIG_MODEL } from "../../components/ai/models";
+import { bigModel } from "../../components/ai/models";
 import * as dashboards from "../../models/dashboards";
 import * as facts from "../../models/facts";
 import * as stories from "../../models/stories";
@@ -47,7 +47,7 @@ export const runFactsHandler: JobHandler = async (payload, { log }) => {
   log(`reading ${dashboardId}`);
 
   const run = await runAgent(factsAgent, {
-    model: model || BIG_MODEL,
+    model: model || (await bigModel()),
     task: establishFactsPrompt(dashboard.name),
     dashboardId,
     log,

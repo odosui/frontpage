@@ -5,7 +5,14 @@ import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/registry";
 import { factsAgent } from "../components/agents/facts";
 import { startChat } from "../components/agents/chat";
-import { BIG_MODEL } from "../components/ai/models";
+import {
+  bigModel,
+  isModelKey,
+  modelSlots,
+  setModel,
+  smallModel,
+} from "../components/ai/models";
+import { searchModels } from "../components/ai/catalog";
 import { DEFAULT_WINDOW_DAYS } from "../components/stories/categorize";
 import { DEFAULT_MIN_SCORE } from "../components/reddit/parse";
 import { queueFetch } from "../components/sources/refresh";
@@ -30,6 +37,9 @@ dayjs.extend(relativeTime);
 
 const MAX_ITEMS = 100;
 const MAX_STORIES = 100;
+/** How many models the autocomplete asks for per keystroke. */
+const MODEL_SUGGESTIONS = 20;
+const MODEL_KEYS = modelSlots().map((s) => s.key);
 
 export const createApi = async () => {
   return {
@@ -637,7 +647,7 @@ export const createApi = async () => {
       ]);
 
       const { sessionId } = await startChat(getAgent(kind), {
-        model: BIG_MODEL,
+        model: await bigModel(),
         dashboardId: id,
         context: dashboardContext(dashboard.name, storyFeed, claims),
       });
@@ -673,10 +683,67 @@ export const createApi = async () => {
     // Settings
 
     databaseStats: async () => ok({ stats: await stats.collect() }),
+
+    /**
+     * The two model slots: what each is set to now, and what it would fall
+     * back to if cleared. The page renders the fallback as the placeholder, so
+     * an unset slot still shows what is actually running.
+     */
+    getSettings: async () => ok(await settingsPayload()),
+
+    /**
+     * Sets one model slot. Refuses an id OpenRouter does not serve — the
+     * autocomplete only ever offers real ones, but the endpoint is what has to
+     * hold the line, since nothing stops a request being made by hand.
+     */
+    updateSetting: async (body: { key?: string; value?: string }) => {
+      const key = (body?.key ?? "").trim();
+      if (!isModelKey(key)) {
+        return error(400, `key must be one of ${MODEL_KEYS.join(", ")}`);
+      }
+      const result = await setModel(key, body?.value ?? "");
+      if ("error" in result) return error(400, result.error);
+      return ok(await settingsPayload());
+    },
+
+    /**
+     * What the model autocomplete reads: OpenRouter's own catalogue, filtered
+     * by whatever has been typed so far.
+     */
+    listModels: async (queryParams: { q?: string; limit?: string }) => {
+      const limit = Math.min(
+        Math.max(Number(queryParams.limit) || MODEL_SUGGESTIONS, 1),
+        50,
+      );
+      try {
+        return ok({ models: await searchModels(queryParams.q ?? "", limit) });
+      } catch (e) {
+        // The list lives at OpenRouter; being unable to reach it is a 502 on
+        // their behalf, not a broken request.
+        return error(502, (e as Error).message);
+      }
+    },
   };
 };
 
 export type Api = Awaited<ReturnType<typeof createApi>>;
+
+/**
+ * The model slots as the settings page reads them: what each resolves to right
+ * now, and whether that came from a stored choice or from the fallback.
+ */
+async function settingsPayload() {
+  const [small, big] = await Promise.all([smallModel(), bigModel()]);
+  const resolved = [small, big];
+  return {
+    models: modelSlots().map((slot, i) => ({
+      ...slot,
+      value: resolved[i]!,
+      /** False while the slot is still on its fallback. */
+      isSet: resolved[i] !== slot.fallback,
+    })),
+  };
+}
 
 /**
  * Validates a source described inline and writes it. Shared by the two ways
