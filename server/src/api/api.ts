@@ -924,9 +924,9 @@ function dashboardContext(
     "",
     // The standing facts were written out here too, until GET_FACTS existed to
     // return them. A copy in the system message is a copy that stops moving: it
-    // is stale the moment the analyst revises the list, and REVISE_FACTS
-    // rewriting from a stale copy drops whatever was established after the
-    // conversation opened. One reachable list cannot disagree with itself.
+    // is stale the moment the analyst revises the list, and the ids it would
+    // name from a stale copy are ids REVISE_FACTS refuses. One reachable list
+    // cannot disagree with itself.
     predictionsContext(claims),
   ].join("\n");
 }

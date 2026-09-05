@@ -33,6 +33,7 @@ export const establishFactsPrompt = (dashboard: string): string =>
     "actually reported, read it.",
     "",
     "The ids matter in both directions: the fact ids from GET_FACTS are what",
-    "REVISE_FACTS edits in place, and the article ids from GET_STORY are what",
-    "a fact comes to rest on.",
+    "REVISE_FACTS edits in place — name only the facts that moved, and leave",
+    "the rest alone — and the article ids from GET_STORY are what a fact comes",
+    "to rest on.",
   ].join("\n");

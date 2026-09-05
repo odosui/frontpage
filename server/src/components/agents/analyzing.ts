@@ -95,17 +95,16 @@ worth resolving rather than a claim to repeat.
 
 Read it again before you revise. The list moves — you may have revised it
 yourself earlier in this conversation, and a facts run may have revised it
-while you were talking — and REVISE_FACTS rewrites the whole list from what you
-pass it. Rewriting from a copy you read twenty messages ago drops everything
-established since.
+while you were talking — and the ids you name have to be the ids as they stand
+now. An id that is no longer there is refused, and nothing is written.
 
-They are also yours to keep up, through REVISE_FACTS. It takes the whole list
-at once rather than one line at a time, because that is how the knowledge
-actually moves: what you have newly established, what firmed up or was
-undercut, and what turned out to be false all belong to the same revision, and
-the reasoning you give covers the change you made rather than three edits filed
-apart. Whatever you leave out of the list is dropped, so carry the facts you
-are not touching across unchanged, with the ids they were given.
+They are also yours to keep up, through REVISE_FACTS. It takes the facts that
+moved, each named by its id, and leaves every fact you do not mention exactly
+as it is — so never retype the list to keep it. What you have newly
+established, what firmed up or was undercut, and what turned out to be false
+still belong in one call: that is how the knowledge actually moves, and the
+reasoning you give covers the change you made rather than three edits filed
+apart.
 
 Add what will still matter next week; cite the article it rests on where there
 is one. Mark the load-bearing parts of a fact in **double asterisks** — the

@@ -150,9 +150,162 @@ export type Revision = {
 };
 
 /**
- * Writes the set as it now stands, as the next version. The whole list is
- * given every time: what is left out is dropped, which is how a fact is
- * deleted.
+ * One change to one fact. A revision is a list of these rather than a fresh
+ * copy of the set: the analyst says what moved, and everything it does not
+ * name is carried across untouched.
+ *
+ * `set` names a fact that exists and gives only the parts that changed — a
+ * line, a confidence, further articles it now rests on — so raising a
+ * confidence costs a token, not a retyped sentence. `add` files a new one.
+ * `drop` removes one that turned out to be false.
+ */
+export type FactEdit =
+  | {
+      op: "set";
+      id: string;
+      content?: string | undefined;
+      confidence?: number | undefined;
+      /** Added to what the fact already cites; a citation is never retyped to keep it. */
+      articleIds?: number[] | undefined;
+    }
+  | {
+      op: "add";
+      content: string;
+      confidence?: number | undefined;
+      articleIds?: number[] | undefined;
+    }
+  | { op: "drop"; id: string };
+
+export type Amendment = {
+  edits: FactEdit[];
+  author: Author;
+  reasoning?: string | null | undefined;
+};
+
+/**
+ * What an amendment did. `version` is null when nothing was written, which
+ * happens only when an edit named a fact this dashboard does not have: the
+ * whole amendment is refused rather than half-applied, so `unknown` is the
+ * one thing to say back to whoever wrote it.
+ */
+export type AmendResult = {
+  version: FactsVersion | null;
+  /** The set as it stood before, for reporting what the amendment changed. */
+  before: Fact[];
+  unknown: string[];
+};
+
+/**
+ * Writes the set as it now stands, as the next version, from the whole list.
+ * What is left out is dropped. This is the reader's path — the pane beside the
+ * chat edits the list it is displaying — where the whole set is genuinely in
+ * hand; the analyst amends instead.
+ */
+export async function revise(
+  dashboardId: string,
+  revision: Revision,
+): Promise<FactsVersion> {
+  const { version } = await commit(
+    dashboardId,
+    revision.author,
+    revision.reasoning,
+    () => revision.facts,
+  );
+  return version!;
+}
+
+/**
+ * Writes the next version from a list of changes rather than a list of facts.
+ *
+ * The current set is read inside the same transaction that writes the new one,
+ * so an amendment applies to what stands at the moment it lands rather than to
+ * whatever the caller last read. Two runs touching one dashboard both keep
+ * their work: with a whole-list rewrite the second silently erased the first.
+ *
+ * It stays one version in the history either way. The unit of the record is
+ * the change the analyst made — several facts moving together for one reason —
+ * and that is unchanged by naming the facts instead of retyping them.
+ */
+export async function amend(
+  dashboardId: string,
+  amendment: Amendment,
+): Promise<AmendResult> {
+  return commit(dashboardId, amendment.author, amendment.reasoning, (before) =>
+    applyEdits(before, amendment.edits),
+  );
+}
+
+/**
+ * The set an amendment leaves behind: every standing fact, changed where it
+ * was named and carried across untouched where it was not, then whatever is
+ * new.
+ *
+ * An edit naming a fact that is not there stops the whole amendment. It means
+ * the analyst is working from a list it has misread or misremembered, and the
+ * silent alternative — filing the edit as a new fact — writes a duplicate of
+ * something it meant to correct.
+ */
+function applyEdits(
+  before: Fact[],
+  edits: FactEdit[],
+): FactDraft[] | { unknown: string[] } {
+  const standing = new Map(before.map((fact) => [fact.id, fact]));
+
+  const unknown = edits
+    .filter((edit) => edit.op !== "add" && !standing.has(edit.id))
+    .map((edit) => (edit.op === "add" ? "" : edit.id));
+  if (unknown.length > 0) return { unknown: [...new Set(unknown)] };
+
+  const dropped = new Set(
+    edits.flatMap((edit) => (edit.op === "drop" ? [edit.id] : [])),
+  );
+  // two edits to one fact in a call are one intention written twice; the
+  // later one is what the analyst settled on
+  const changes = new Map<string, Extract<FactEdit, { op: "set" }>>();
+  for (const edit of edits) {
+    if (edit.op === "set") changes.set(edit.id, edit);
+  }
+
+  const kept: FactDraft[] = before
+    .filter((fact) => !dropped.has(fact.id))
+    .map((fact) => {
+      const edit = changes.get(fact.id);
+      if (!edit) {
+        return {
+          id: fact.id,
+          content: fact.content,
+          confidence: fact.confidence,
+          articleIds: fact.articleIds,
+        };
+      }
+      return {
+        id: fact.id,
+        content: edit.content?.trim() || fact.content,
+        confidence: edit.confidence ?? fact.confidence,
+        // named citations are added to what it already rests on: an edit
+        // about the wording of a line must not strip the article behind it
+        articleIds: [...fact.articleIds, ...(edit.articleIds ?? [])],
+      };
+    });
+
+  const added: FactDraft[] = edits.flatMap((edit) =>
+    edit.op === "add"
+      ? [
+          {
+            content: edit.content,
+            confidence: edit.confidence,
+            articleIds: edit.articleIds,
+          },
+        ]
+      : [],
+  );
+
+  return [...kept, ...added];
+}
+
+/**
+ * The transaction both paths share: lock the arc, read what stands, let the
+ * caller say what the set should now be, and write it as the next version.
  *
  * Drafts carrying an id keep it, so the fact stays the same fact across the
  * revision; the ones without get a fresh one, counted past every id this
@@ -168,10 +321,12 @@ export type Revision = {
  * strip what the line rests on; dropping a citation is done by passing the
  * ones that remain.
  */
-export async function revise(
+async function commit(
   dashboardId: string,
-  revision: Revision,
-): Promise<FactsVersion> {
+  author: Author,
+  reasoning: string | null | undefined,
+  build: (before: Fact[]) => FactDraft[] | { unknown: string[] },
+): Promise<AmendResult> {
   return withTransaction(async (client) => {
     // serializes concurrent revisions of the same arc: the second waits, then
     // numbers itself off the first rather than colliding with it
@@ -180,19 +335,26 @@ export async function revise(
     ]);
 
     // what each surviving fact was first written down and rests on, by id
-    const { rows: previous } = await client.query<{ facts: StoredFact[] | null }>(
-      `select facts from fact_versions
+    const { rows: previous } = await client.query<{
+      facts: StoredFact[] | null;
+      created_at: Date;
+    }>(
+      `select facts, created_at from fact_versions
         where dashboard_id = $1
         order by version desc
         limit 1`,
       [dashboardId],
     );
-    const born = new Map<string, string>();
-    const cited = new Map<string, number[]>();
-    for (const fact of previous[0]?.facts ?? []) {
-      if (!fact.id) continue;
-      if (fact.createdAt) born.set(fact.id, fact.createdAt);
-      cited.set(fact.id, stored(fact));
+    const before = normalize(
+      previous[0]?.facts ?? [],
+      previous[0]?.created_at?.toISOString() ?? new Date().toISOString(),
+    );
+    const born = new Map(before.map((fact) => [fact.id, fact.createdAt]));
+    const cited = new Map(before.map((fact) => [fact.id, fact.articleIds]));
+
+    const built = build(before);
+    if ("unknown" in built) {
+      return { version: null, before, unknown: built.unknown };
     }
 
     const { rows: maxRows } = await client.query<{ next: number }>(
@@ -208,7 +370,7 @@ export async function revise(
     const now = new Date().toISOString();
     const taken = new Set<string>();
     const facts: Fact[] = [];
-    for (const draft of revision.facts) {
+    for (const draft of built) {
       const content = draft.content.trim();
       if (!content) continue;
 
@@ -249,12 +411,34 @@ export async function revise(
       [
         dashboardId,
         JSON.stringify(facts),
-        revision.author,
-        revision.reasoning?.trim() || null,
+        author,
+        reasoning?.trim() || null,
       ],
     );
-    return (await hydrate(rows))[0]!;
+    return {
+      version: (await hydrate(rows))[0]!,
+      before,
+      unknown: [],
+    };
   });
+}
+
+/** Stored facts as facts, whichever shape the version was written in. */
+function normalize(rows: StoredFact[], versionDate: string): Fact[] {
+  return rows.flatMap((fact) =>
+    fact.id
+      ? [
+          {
+            id: fact.id,
+            content: fact.content ?? "",
+            confidence: clamp(fact.confidence ?? DEFAULT_CONFIDENCE),
+            articleIds: stored(fact),
+            // a fact written before facts were dated is as old as its version
+            createdAt: fact.createdAt ?? versionDate,
+          },
+        ]
+      : [],
+  );
 }
 
 /**
