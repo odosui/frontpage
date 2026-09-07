@@ -68,7 +68,7 @@ const Stories = ({
         )}
       </h2>
       <button
-        className={`stories-run${runningFacts ? ' is-busy' : ''}`}
+        className={`col-run${runningFacts ? ' is-busy' : ''}`}
         onClick={onRunFacts}
         disabled={runningFacts || stories.length === 0}
         title={
@@ -80,11 +80,11 @@ const Stories = ({
         }
       >
         {runningFacts ? (
-          <SyncIcon size={12} className="stories-run-spin" />
+          <SyncIcon size={12} className="col-run-spin" />
         ) : (
           <PlayIcon size={12} />
         )}
-        {runningFacts ? 'Running' : 'Run Facts'}
+        {runningFacts ? 'Running' : 'Facts'}
       </button>
     </header>
   )

@@ -148,6 +148,28 @@
   white-space: nowrap;
 }
 
+// the facts version is the only count you can press: it is the name of a
+// revision, so it opens the ones before it. Styled as the count it already is
+// rather than as a button — the underline on hover is the whole affordance
+.col-count-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover,
+  // stays lit while the history it opened is on screen
+  &.is-on {
+    opacity: 1;
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+}
+
 // THE COLUMN BODY
 //
 // The only thing on the page that scrolls, and the gutter every column is
@@ -182,6 +204,61 @@
   &.is-on {
     background-color: var(--color-bg-hover);
     color: var(--color-accent);
+  }
+}
+
+// the two buttons on this page that start an agent — facts, in the stories
+// header, and predictions, in the facts one. Unlike the icon buttons beside
+// them they say what they do: small and outlined rather than filled, since
+// starting a run is a deliberate act, not the column's primary one.
+.col-run {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: $unit0 + 2px;
+  padding: $unit0 $unit1;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit0;
+  background: none;
+  font-size: $text0;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent);
+  }
+
+  // nothing to read yet, or nothing to forecast from
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  // a run in flight: lit and still disabled, since the spin is the only thing
+  // on the column saying the agent is working
+  &.is-busy:disabled {
+    opacity: 1;
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+}
+
+.col-run-spin {
+  animation: col-run-spin 1.2s linear infinite;
+}
+
+@keyframes col-run-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

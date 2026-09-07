@@ -4,6 +4,7 @@ import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/definitions";
 import { factsAgent } from "../components/agents/definitions/facts";
+import { predictionsAgent } from "../components/agents/definitions/predictions";
 import { dashboardContext } from "../components/agents/runtime/context";
 import { startChat } from "../components/agents/runtime/chat";
 import {
@@ -626,7 +627,9 @@ export const createApi = async () => {
       const job = await queue.enqueue(
         kind === factsAgent.kind
           ? { type: "run_facts", payload: { dashboardId: id } }
-          : { type: "run_agent", payload: { kind, dashboardId: id } },
+          : kind === predictionsAgent.kind
+            ? { type: "run_predictions", payload: { dashboardId: id } }
+            : { type: "run_agent", payload: { kind, dashboardId: id } },
       );
       return ok({ job });
     },

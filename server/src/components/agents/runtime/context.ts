@@ -52,7 +52,7 @@ export function dashboardContext(
  * last reasoning: the whole history is on the reader's screen, and what the
  * analyst needs is what it thought last time, not every time.
  */
-function predictionsContext(claims: predictions.Prediction[]): string {
+export function predictionsContext(claims: predictions.Prediction[]): string {
   if (claims.length === 0) {
     return `The reader has made no predictions on this dashboard yet.`;
   }

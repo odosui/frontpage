@@ -1,3 +1,4 @@
+import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { useCallback, useEffect, useState } from 'react'
 import api, {
   DEFAULT_CONFIDENCE,
@@ -18,6 +19,14 @@ type Props = {
   version: number
   /** Called after any change, so the page reloads what it holds. */
   onChanged: () => void
+  /** Queues the predictions agent over these facts. */
+  onRunPredictions: () => void
+  /** Whether that run is in flight right now. */
+  runningPredictions: boolean
+  /** Whether there is anything to forecast — no predictions, nothing to run. */
+  hasPredictions: boolean
+  /** What went wrong starting or running that agent, if anything. */
+  predictionsError: string | null
 }
 
 /**
@@ -32,7 +41,16 @@ type Props = {
  * panel possible: what stood before is still there, next to the reason it
  * stopped standing.
  */
-const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
+const Facts = ({
+  dashboardId,
+  facts,
+  version,
+  onChanged,
+  onRunPredictions,
+  runningPredictions,
+  hasPredictions,
+  predictionsError,
+}: Props) => {
   const [adding, setAdding] = useState(false)
   const [content, setContent] = useState('')
   const [confidence, setConfidence] = useState(DEFAULT_CONFIDENCE)
@@ -93,23 +111,49 @@ const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
       <header className="col-head">
         <h2 className="col-heading">
           Facts
-          {version > 0 && <span className="col-count">v{version}</span>}
+          {version > 0 && (
+            <button
+              className={`col-count col-count-btn${
+                showHistory ? ' is-on' : ''
+              }`}
+              onClick={() => {
+                const next = !showHistory
+                setShowHistory(next)
+                if (next) loadHistory()
+              }}
+              aria-expanded={showHistory}
+              title="How this list got here"
+            >
+              v{version}
+            </button>
+          )}
           {facts.length > 0 && (
             <span className="col-count">{facts.length}</span>
           )}
         </h2>
         <div className="col-tools">
           <button
-            className={`col-btn${showHistory ? ' is-on' : ''}`}
-            onClick={() => {
-              const next = !showHistory
-              setShowHistory(next)
-              if (next) loadHistory()
-            }}
-            aria-expanded={showHistory}
-            title="How this list got here"
+            className={`col-run${runningPredictions ? ' is-busy' : ''}`}
+            onClick={onRunPredictions}
+            disabled={
+              runningPredictions || facts.length === 0 || !hasPredictions
+            }
+            title={
+              facts.length === 0
+                ? 'Establish facts first'
+                : !hasPredictions
+                  ? 'Add a prediction to forecast first'
+                  : runningPredictions
+                    ? 'Forecasting from the facts…'
+                    : 'Forecast the predictions from the established facts'
+            }
           >
-            ⟲
+            {runningPredictions ? (
+              <SyncIcon size={12} className="col-run-spin" />
+            ) : (
+              <PlayIcon size={12} />
+            )}
+            {runningPredictions ? 'Predicting' : 'Predictions'}
           </button>
           <button
             className="col-btn"
@@ -163,6 +207,11 @@ const Facts = ({ dashboardId, facts, version, onChanged }: Props) => {
         )}
 
         {error && <p className="fact-error">{error}</p>}
+        {predictionsError && (
+          <p className="fact-error" role="alert">
+            {predictionsError}
+          </p>
+        )}
 
         {facts.length === 0 && !adding ? (
           <p className="facts-placeholder">

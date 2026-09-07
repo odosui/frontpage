@@ -263,6 +263,55 @@ const Dashboard: React.FC = () => {
       .catch(() => undefined)
   }, [dashboardId, refreshJobs])
 
+  const [startingPredictions, setStartingPredictions] = useState(false)
+  const [predictionJob, setPredictionJob] = useState<{
+    id: string
+    dashboardId: string
+  } | null>(null)
+  const [predictionsError, setPredictionsError] = useState<string | null>(null)
+  const predictionRequest = useRef(false)
+  const predictionsRunning =
+    startingPredictions ||
+    (predictionJob?.dashboardId === dashboardId &&
+      !jobs.some((job) => job.id === predictionJob.id)) ||
+    jobs.some(
+      (job) =>
+        job.type === 'run_predictions' &&
+        job.payload.dashboardId === dashboardId &&
+        (job.status === 'queued' || job.status === 'running'),
+    )
+
+  const runPredictions = useCallback(async () => {
+    if (predictionRequest.current || predictionsRunning) return
+    predictionRequest.current = true
+    setStartingPredictions(true)
+    setPredictionsError(null)
+    try {
+      const { job } = await api.runAgent(dashboardId, 'predictions_agent')
+      setPredictionJob({ id: job.id, dashboardId })
+      refreshJobs()
+    } catch (err) {
+      setPredictionsError((err as Error).message)
+    } finally {
+      predictionRequest.current = false
+      setStartingPredictions(false)
+    }
+  }, [dashboardId, predictionsRunning, refreshJobs])
+
+  // A short run may finish before the job poll first observes it running.
+  useEffect(() => {
+    if (predictionJob?.dashboardId !== dashboardId) return
+    const job = jobs.find((item) => item.id === predictionJob.id)
+    if (job?.status === 'succeeded' || job?.status === 'failed') {
+      setPredictionJob(null)
+      if (job.status === 'failed')
+        setPredictionsError(job.error || 'Prediction run failed')
+      load()
+    }
+  }, [jobs, predictionJob, dashboardId, load])
+
+  useEffect(() => setPredictionsError(null), [dashboardId])
+
   const factsRunning = jobs.some(
     (job) =>
       job.type === 'run_facts' &&
@@ -282,7 +331,11 @@ const Dashboard: React.FC = () => {
     return onJobFinished((job) => {
       // a facts run rewrites the list the pane beside it is showing, so it
       // reloads on the same terms as a categorizing run does
-      if (job.type === 'run_agent' || job.type === 'run_facts') {
+      if (
+        job.type === 'run_agent' ||
+        job.type === 'run_facts' ||
+        job.type === 'run_predictions'
+      ) {
         if (
           job.payload.dashboardId === dashboardId &&
           job.status === 'succeeded'
@@ -557,6 +610,10 @@ const Dashboard: React.FC = () => {
           facts={loaded.facts ?? []}
           version={loaded.factsVersion ?? 0}
           onChanged={load}
+          onRunPredictions={runPredictions}
+          runningPredictions={predictionsRunning}
+          hasPredictions={loaded.predictions.length > 0}
+          predictionsError={predictionsError}
         />
       </aside>
 

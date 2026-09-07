@@ -2,11 +2,13 @@ import { AgentDefinition } from "../types";
 import { analyzingAgent } from "./analyzing";
 import { categorizingAgent } from "./categorizing";
 import { factsAgent } from "./facts";
+import { predictionsAgent } from "./predictions";
 
 const AGENTS: Record<string, AgentDefinition> = {
   [categorizingAgent.kind]: categorizingAgent,
   [analyzingAgent.kind]: analyzingAgent,
   [factsAgent.kind]: factsAgent,
+  [predictionsAgent.kind]: predictionsAgent,
 };
 
 export const AGENT_KINDS = Object.keys(AGENTS);
