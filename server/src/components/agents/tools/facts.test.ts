@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseEdits } from "./facts";
-import { parseToolCalls } from "../protocol";
+import { parseToolCalls } from "../runtime/protocol";
 
 /**
  * The changes arrive as one flat run of arguments, so what keeps them readable

@@ -1,11 +1,12 @@
-import { getSources } from "./tools/getSources";
-import { getStories } from "./tools/getStories";
-import { getTags } from "./tools/getTags";
-import { AgentDefinition } from "./types";
+import { getSources } from "../tools/getSources";
+import { getStories } from "../tools/getStories";
+import { getTags } from "../tools/getTags";
+import { AgentDefinition } from "../types";
 
 export const categorizingAgent: AgentDefinition = {
   kind: "categorizing_agent",
   name: "CategorizingAgent",
+  runTitle: "Categorize stories",
   maxSteps: 12,
   tools: [getStories, getTags, getSources],
   instructions: `You are given a batch of fresh headlines — some carrying the outlet's own

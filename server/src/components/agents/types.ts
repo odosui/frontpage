@@ -33,6 +33,8 @@ export type AgentTool = {
 export type AgentDefinition = {
   kind: string;
   name: string;
+  /** Title used for automated runs; defaults to the agent's name. */
+  runTitle?: string;
   tools: AgentTool[];
   instructions: string;
   maxSteps: number;

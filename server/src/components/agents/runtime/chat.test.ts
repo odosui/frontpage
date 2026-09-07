@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, startChat } from "./chat";
-import * as sessions from "../../models/agentSessions";
-import { sendChat } from "../ai/OpenRouter";
+import * as sessions from "../../../models/agentSessions";
+import { sendChat } from "../../ai/OpenRouter";
 import { buildSystem } from "./system";
-import { AgentDefinition } from "./types";
+import { AgentDefinition } from "../types";
 
-vi.mock("../../models/agentSessions", () => ({
+vi.mock("../../../models/agentSessions", () => ({
   get: vi.fn(),
   messages: vi.fn(),
   start: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("../../models/agentSessions", () => ({
   finish: vi.fn(),
   fail: vi.fn(),
 }));
-vi.mock("../ai/OpenRouter", () => ({ sendChat: vi.fn() }));
+vi.mock("../../ai/OpenRouter", () => ({ sendChat: vi.fn() }));
 vi.mock("./system", () => ({ buildSystem: vi.fn() }));
 vi.mock("./context", () => ({
   currentContext: vi.fn(async () => "Current dashboard context"),

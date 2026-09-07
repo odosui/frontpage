@@ -1,4 +1,4 @@
-import { AgentDefinition } from "./types";
+import { AgentDefinition } from "../types";
 import { analyzingAgent } from "./analyzing";
 import { categorizingAgent } from "./categorizing";
 import { factsAgent } from "./facts";

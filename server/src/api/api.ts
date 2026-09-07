@@ -2,10 +2,10 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
-import { AGENT_KINDS, getAgent } from "../components/agents/registry";
-import { factsAgent } from "../components/agents/facts";
-import { dashboardContext } from "../components/agents/context";
-import { startChat } from "../components/agents/chat";
+import { AGENT_KINDS, getAgent } from "../components/agents/definitions";
+import { factsAgent } from "../components/agents/definitions/facts";
+import { dashboardContext } from "../components/agents/runtime/context";
+import { startChat } from "../components/agents/runtime/chat";
 import {
   bigModel,
   isModelKey,

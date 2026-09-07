@@ -1,5 +1,5 @@
-import { runAgent } from "../../components/agents/runner";
-import { factsAgent } from "../../components/agents/facts";
+import { runAgent } from "../../components/agents/runtime/runner";
+import { factsAgent } from "../../components/agents/definitions/facts";
 import { establishFactsPrompt } from "../../components/facts/prompt";
 import { bigModel } from "../../components/ai/models";
 import * as dashboards from "../../models/dashboards";

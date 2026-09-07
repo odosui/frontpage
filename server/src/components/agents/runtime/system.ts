@@ -1,7 +1,7 @@
-import * as dashboards from "../../models/dashboards";
-import { GENERAL } from "./general";
+import * as dashboards from "../../../models/dashboards";
+import { GENERAL } from "../definitions/shared";
 import { describeTools } from "./protocol";
-import { AgentDefinition } from "./types";
+import { AgentDefinition } from "../types";
 
 /**
  * The system message every agent starts from: who it is, what this one does,

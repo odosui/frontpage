@@ -1,15 +1,16 @@
-import { reviseFacts } from "./tools/facts";
-import { getFacts } from "./tools/getFacts";
-import { getStories } from "./tools/getStories";
-import { getSources } from "./tools/getSources";
-import { getStory } from "./tools/getStory";
-import { readArticle } from "./tools/readArticle";
-import { webSearch } from "./tools/webSearch";
-import { AgentDefinition } from "./types";
+import { reviseFacts } from "../tools/facts";
+import { getFacts } from "../tools/getFacts";
+import { getStories } from "../tools/getStories";
+import { getSources } from "../tools/getSources";
+import { getStory } from "../tools/getStory";
+import { readArticle } from "../tools/readArticle";
+import { webSearch } from "../tools/webSearch";
+import { AgentDefinition } from "../types";
 
 export const factsAgent: AgentDefinition = {
   kind: "facts_agent",
   name: "FactsAgent",
+  runTitle: "Facts update",
   maxSteps: 14,
   tools: [
     getStories,

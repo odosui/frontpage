@@ -1,6 +1,6 @@
 import * as sessions from "../../models/agentSessions";
-import { reply } from "../../components/agents/chat";
-import { getAgent } from "../../components/agents/registry";
+import { reply } from "../../components/agents/runtime/chat";
+import { getAgent } from "../../components/agents/definitions";
 import { JobHandler } from "../types";
 
 export type AgentReplyPayload = {

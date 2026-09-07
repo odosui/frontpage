@@ -1,5 +1,5 @@
-import { runAgent } from "../../components/agents/runner";
-import { getAgent } from "../../components/agents/registry";
+import { runAgent } from "../../components/agents/runtime/runner";
+import { getAgent } from "../../components/agents/definitions";
 import * as dashboards from "../../models/dashboards";
 import {
   DEFAULT_WINDOW_DAYS,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { execute } from "./runner";
-import { AgentDefinition, AgentTool } from "./types";
+import { AgentDefinition, AgentTool } from "../types";
 
 const reader: AgentTool = {
   name: "READ_IT",

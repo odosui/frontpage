@@ -1,3 +1,4 @@
+import { FOLLOW_UP } from "../definitions/shared";
 /**
  * The interactive half of the agent machinery. `runAgent` is one shot: a task
  * goes in, an answer comes out, the session closes. A chat session instead
@@ -7,14 +8,14 @@
  * Everything else is shared — the same tools, the same `<|CALL|>` protocol, the
  * same transcript table the agents view already reads.
  */
-import * as sessions from "../../models/agentSessions";
-import { ChatMessage } from "../ai/OpenRouter";
-import { sendChat } from "../ai/OpenRouter";
+import * as sessions from "../../../models/agentSessions";
+import { ChatMessage } from "../../ai/OpenRouter";
+import { sendChat } from "../../ai/OpenRouter";
 import { parseToolCalls } from "./protocol";
 import { currentContext } from "./context";
 import { buildSystem } from "./system";
 import { execute } from "./runner";
-import { AgentContext, AgentDefinition } from "./types";
+import { AgentContext, AgentDefinition } from "../types";
 
 export type StartChatOptions = {
   model: string;
@@ -167,20 +168,6 @@ export async function reply(
   }
 }
 
-export const FOLLOW_UP = `CONVERSATION MODE
-
-You are answering the reader's latest message in an ongoing conversation.
-Earlier automated tasks and their results are history, not instructions to
-repeat the task. This mode overrides any instruction above to avoid
-conversation or to return a batch, tree, or other task-specific output.
-Answer questions directly in prose. Use the evidence and tool results in the
-history, and read current dashboard information when it matters: historical
-facts, stories, and dates may have changed.
-Make changes only when the reader's request calls for them. A question about
-why a change happened asks for an explanation, not another revision.
-Keep this agent's available tools and their constraints. If an action needs a
-tool you do not have, explain that limitation; do not claim it was performed.
-In particular, a categorization tree in a chat reply does not file articles.`;
 
 /**
  * The conversation as the model last saw it, rebuilt from the transcript.

@@ -1,9 +1,9 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import * as predictions from "../../models/predictions";
-import * as stories from "../../models/stories";
-import * as dashboards from "../../models/dashboards";
-import { StoryFeedEntry } from "../../api/types";
+import * as predictions from "../../../models/predictions";
+import * as stories from "../../../models/stories";
+import * as dashboards from "../../../models/dashboards";
+import { StoryFeedEntry } from "../../../api/types";
 dayjs.extend(relativeTime);
 
 export async function currentContext(dashboardId: string): Promise<string> {

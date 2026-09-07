@@ -1,8 +1,8 @@
-import * as sessions from "../../models/agentSessions";
-import { ChatMessage, sendChat } from "../ai/OpenRouter";
+import * as sessions from "../../../models/agentSessions";
+import { ChatMessage, sendChat } from "../../ai/OpenRouter";
 import { parseToolCalls } from "./protocol";
 import { buildSystem } from "./system";
-import { AgentContext, AgentDefinition, ToolCall } from "./types";
+import { AgentContext, AgentDefinition, ToolCall } from "../types";
 
 export type AgentRun = {
   sessionId: number;
@@ -46,16 +46,11 @@ export async function runAgent(
   // who the agent is, then what this one does, then what the dashboard itself
   // asks for, then what it can call
   const system = await buildSystem(agent, dashboardId);
-  const titles: Record<string, string> = {
-    facts_agent: "Facts update",
-    categorizing_agent: "Categorize stories",
-    analyzing_agent: "Dashboard analysis",
-  };
   const session = await sessions.start(
     agent.kind,
     model,
     dashboardId,
-    titles[agent.kind] ?? agent.name,
+    agent.runTitle ?? agent.name,
   );
   // after the session exists: a tool that proposes a change files it here
   const ctx: AgentContext = { dashboardId, sessionId: session.id };
