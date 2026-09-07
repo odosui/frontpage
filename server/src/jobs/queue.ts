@@ -48,10 +48,7 @@ function toJob(row: JobRow): Job {
   };
 }
 
-async function insert(
-  client: Queryable,
-  job: NewJob,
-): Promise<Job> {
+async function insert(client: Queryable, job: NewJob): Promise<Job> {
   const { rows } = await client.query<JobRow>(
     `insert into jobs (type, payload, max_attempts, run_at)
      values ($1, $2::jsonb, coalesce($3, 3),
@@ -71,10 +68,54 @@ export function enqueue(job: NewJob): Promise<Job> {
   return insert({ query }, job);
 }
 
-export function enqueueMany(
-  client: Queryable,
-  jobs: NewJob[],
-): Promise<Job[]> {
+/** Expose the transcript as soon as a worker opens it, before the run ends. */
+export async function attachSession(
+  jobId: string,
+  sessionId: number,
+): Promise<void> {
+  await query(
+    "update jobs set result = jsonb_build_object('sessionId', $2::bigint), updated_at = now() where id = $1",
+    [jobId, sessionId],
+  );
+}
+
+/** Reserve the conversation and queue its next turn in one transaction. */
+export async function enqueueAgentReply(
+  sessionId: number,
+  question: string,
+): Promise<Job | null> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ status: string }>(
+      "select status from agent_sessions where id = $1 for update",
+      [sessionId],
+    );
+    if (!rows[0] || rows[0].status === "running") return null;
+    // Also cover the interval after reply() finishes but before its job does.
+    const active = await client.query(
+      `select 1 from jobs where
+       (payload ->> 'sessionId' = $1 or result ->> 'sessionId' = $1)
+       and status in ('queued', 'running') limit 1`,
+      [String(sessionId)],
+    );
+    if (active.rows.length) return null;
+    const job = await insert(client, {
+      type: "agent_reply",
+      payload: { sessionId, question },
+      maxAttempts: 1,
+    });
+    await client.query(
+      `update agent_sessions set status = 'running', error = null,
+       finished_at = null, updated_at = now(),
+       title = case when title is null and not exists (
+         select 1 from agent_messages where session_id = $1 and role = 'user'
+       ) then $2 else title end where id = $1`,
+      [sessionId, question.replace(/\s+/g, " ").slice(0, 100)],
+    );
+    return job;
+  });
+}
+
+export function enqueueMany(client: Queryable, jobs: NewJob[]): Promise<Job[]> {
   return Promise.all(jobs.map((j) => insert(client, j)));
 }
 
@@ -164,17 +205,25 @@ export async function abandon(jobId: string, message: string): Promise<void> {
 
 /** Hand jobs abandoned by a crashed worker back to the queue. */
 export async function requeueStale(olderThanMs: number): Promise<number> {
-  const { rowCount } = await query(
-    `update jobs
+  const { rows } = await query<{ count: string }>(
+    `with stale as (update jobs
      set status = case when attempts < max_attempts then 'queued' else 'failed' end,
          error = 'worker stopped responding',
          finished_at = case when attempts < max_attempts then null else now() end,
          locked_by = null, locked_at = null, updated_at = now()
      where status = 'running'
-       and locked_at < now() - make_interval(secs => $1::float8)`,
+       and locked_at < now() - make_interval(secs => $1::float8)
+     returning payload, result), stopped as (
+       update agent_sessions set status = 'failed',
+         error = 'Worker stopped responding. You can send another message to continue.',
+         finished_at = now(), updated_at = now()
+       where id in (
+         select coalesce(payload ->> 'sessionId', result ->> 'sessionId')::bigint from stale
+       ) returning id
+     ) select count(*)::text as count from stale`,
     [olderThanMs / 1000],
   );
-  return rowCount ?? 0;
+  return Number(rows[0]?.count ?? 0);
 }
 
 /** Drop old finished jobs and orphaned page snapshots. */

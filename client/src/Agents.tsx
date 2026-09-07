@@ -1,190 +1,122 @@
-import { useCallback, useEffect, useState } from 'react'
-import api, {
-  type AgentInfo,
-  type AgentMessage,
-  type AgentSession,
-} from './api'
-import { useJobs } from './contexts/JobsContext'
-import AgentTranscript from './ui/agent/AgentTranscript'
-import DashboardPrompt from './ui/agent/DashboardPrompt'
+import { useState } from 'react'
+import Chat from './Chat'
+import { useAgentChat } from './ui/agent/useAgentChat'
+import { agentLabel, conversationTitle } from './ui/agent/conversationLabels'
 
-/** While a session is running its transcript grows every few seconds. */
-const LIVE_POLL_MS = 1000
-const IDLE_POLL_MS = 6000
-
-/** The agents view: session list on the left, live transcript on the right. */
-const Agents: React.FC<{
+type Props = {
   dashboardId: string
-  /** The arc's standing instruction to its agents, and how to change it. */
+  dashboardName: string
   prompt: string
   onSavePrompt: (prompt: string) => Promise<void>
-}> = ({ dashboardId, prompt, onSavePrompt }) => {
-  const { refresh: refreshJobs } = useJobs()
-  const [agents, setAgents] = useState<AgentInfo[]>([])
-  const [sessions, setSessions] = useState<AgentSession[]>([])
-  const [selected, setSelected] = useState<number | null>(null)
-  const [session, setSession] = useState<AgentSession | null>(null)
-  const [messages, setMessages] = useState<AgentMessage[]>([])
-  const [starting, setStarting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  onChanged?: () => void
+  active: boolean
+  onClose: () => void
+}
 
-  const loadSessions = useCallback(async () => {
-    try {
-      const data: { sessions: AgentSession[] } =
-        await api.listAgentSessions(dashboardId)
-      setSessions(data.sessions)
-      // land on the newest session the first time round
-      setSelected((current) => current ?? data.sessions[0]?.id ?? null)
-    } catch {
-      // keep whatever is on screen; the next tick retries
-    }
-  }, [dashboardId])
-
-  useEffect(() => {
-    // a different dashboard is a different set of sessions
-    setSelected(null)
-    setSession(null)
-    setMessages([])
-  }, [dashboardId])
-
-  useEffect(() => {
-    api
-      .listAgents()
-      .then((data: { agents: AgentInfo[] }) => setAgents(data.agents))
-      .catch(() => setError('could not load the agent list'))
-    loadSessions()
-  }, [loadSessions])
-
-  // one self-rescheduling loop, ticking fast only while something is running
-  useEffect(() => {
-    if (selected === null) return
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout>
-
-    const tick = async () => {
-      try {
-        const data: { session: AgentSession; messages: AgentMessage[] } =
-          await api.getAgentSession(selected)
-        if (cancelled) return
-        setSession(data.session)
-        setMessages(data.messages)
-        const live = data.session.status === 'running'
-        if (live) loadSessions()
-        timer = setTimeout(tick, live ? LIVE_POLL_MS : IDLE_POLL_MS)
-      } catch {
-        if (!cancelled) timer = setTimeout(tick, IDLE_POLL_MS)
-      }
-    }
-    tick()
-
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [selected, loadSessions])
-
-  const start = async (kind: string) => {
-    setStarting(true)
-    setError(null)
-    try {
-      await api.runAgent(dashboardId, kind)
-      refreshJobs()
-      // the session row appears once the worker picks the job up
-      setTimeout(loadSessions, 500)
-    } catch {
-      setError('could not start the agent')
-    } finally {
-      setStarting(false)
-    }
-  }
-
+const Agents = ({
+  dashboardId,
+  dashboardName,
+  prompt,
+  onSavePrompt,
+  onChanged,
+  active,
+  onClose,
+}: Props) => {
+  const c = useAgentChat({ dashboardId, active, onChanged })
+  const [history, setHistory] = useState(false)
+  const [filter, setFilter] = useState('')
+  const shown = c.sessions.filter((s) =>
+    `${conversationTitle(s)} ${agentLabel(s.kind)}`
+      .toLowerCase()
+      .includes(filter.toLowerCase()),
+  )
   return (
-    <div className="agents">
-      <aside className="agents-sidebar">
-        <div className="agents-launch">
-          {agents.map((agent) => (
-            <button
-              key={agent.kind}
-              className="agents-run-btn"
-              disabled={starting}
-              onClick={() => start(agent.kind)}
-            >
-              Run {agent.name}
-            </button>
-          ))}
-          {error && <p className="agents-error">{error}</p>}
-        </div>
-
-        {/* right under the run buttons: it is what those runs will be told */}
-        <DashboardPrompt value={prompt} onSave={onSavePrompt} />
-
-        <ul className="agents-sessions">
-          {sessions.map((s) => (
-            <li key={s.id}>
-              <button
-                className={`agents-session${s.id === selected ? ' is-active' : ''}`}
-                onClick={() => setSelected(s.id)}
-              >
-                <span className="agents-session-top">
-                  <span className={`agents-dot is-${s.status}`} />
-                  <span className="agents-session-id">#{s.id}</span>
-                  <span className="agents-session-time">
-                    {new Date(s.createdAt).toLocaleTimeString()}
+    <div className="conversation-workspace">
+      <header className="conversation-toolbar">
+        <strong>Conversations</strong>
+        <button
+          type="button"
+          onClick={() => {
+            c.select(null)
+            setHistory(false)
+          }}
+        >
+          New chat
+        </button>
+        <button
+          className="conversation-history-toggle"
+          type="button"
+          onClick={() => setHistory((v) => !v)}
+          aria-expanded={history}
+        >
+          History
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close conversations"
+        >
+          ×
+        </button>
+      </header>
+      <div className="conversation-body">
+        <aside
+          className={`agents-sidebar conversation-sidebar${history ? ' is-open' : ''}`}
+        >
+          <input
+            className="conversation-search"
+            aria-label="Search conversations"
+            placeholder="Search conversations…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+          <ul className="agents-sessions">
+            {shown.map((s) => (
+              <li key={s.id}>
+                <button
+                  className={`agents-session${s.id === c.selected ? ' is-active' : ''}`}
+                  onClick={() => {
+                    c.select(s.id)
+                    setHistory(false)
+                  }}
+                >
+                  <span className="agents-session-top">
+                    <span
+                      className={`agents-dot is-${s.status}`}
+                      aria-label={s.status}
+                    />
+                    <strong>{conversationTitle(s)}</strong>
                   </span>
-                </span>
-                <span className="agents-session-model">{s.model}</span>
-              </button>
-            </li>
-          ))}
-          {sessions.length === 0 && (
-            <li className="agents-empty">No sessions yet</li>
-          )}
-        </ul>
-      </aside>
-
-      <section className="agents-transcript">
-        {session ? (
-          <Transcript session={session} messages={messages} />
-        ) : (
-          <p className="agents-empty">Run an agent to watch it work.</p>
-        )}
-      </section>
+                  <span className="agents-session-time">
+                    {agentLabel(s.kind)} ·{' '}
+                    {new Date(s.updatedAt || s.createdAt).toLocaleString([], {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {shown.length === 0 && (
+              <li className="agents-empty">
+                {filter
+                  ? 'No matching conversations'
+                  : 'Your chats and runs will appear here.'}
+              </li>
+            )}
+          </ul>
+        </aside>
+        <Chat
+          conversation={c}
+          dashboardName={dashboardName}
+          active={active}
+          prompt={prompt}
+          onSavePrompt={onSavePrompt}
+        />
+      </div>
     </div>
   )
 }
-
-const Transcript: React.FC<{
-  session: AgentSession
-  messages: AgentMessage[]
-}> = ({ session, messages }) => {
-  const live = session.status === 'running'
-
-  const tokens = messages.reduce(
-    (sum, m) => sum + (m.promptTokens ?? 0) + (m.completionTokens ?? 0),
-    0,
-  )
-
-  return (
-    <>
-      <header className="agents-head">
-        <h2 className="agents-title">
-          <span className={`agents-dot is-${session.status}`} />
-          Session #{session.id}
-        </h2>
-        <div className="agents-meta">
-          <span className="agents-meta-item">{session.kind}</span>
-          <span className="agents-meta-item">{session.model}</span>
-          <span className="agents-meta-item">{messages.length} turns</span>
-          <span className="agents-meta-item">
-            {tokens.toLocaleString()} tokens
-          </span>
-        </div>
-        {session.error && <p className="agents-error">{session.error}</p>}
-      </header>
-
-      <AgentTranscript messages={messages} thinking={live} />
-    </>
-  )
-}
-
 export default Agents

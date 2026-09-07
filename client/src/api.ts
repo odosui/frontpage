@@ -40,7 +40,10 @@ export default {
    * more" walks forward with; the reply carries `total`, which is what says
    * whether there is another page behind this one.
    */
-  getFeed: (dashboardId: string, page: { limit?: number; offset?: number } = {}) =>
+  getFeed: (
+    dashboardId: string,
+    page: { limit?: number; offset?: number } = {},
+  ) =>
     api(
       'get',
       `/dashboards/${seg(dashboardId)}/feed` +
@@ -231,6 +234,8 @@ export type Job = {
   type: string
   status: JobStatus
   payload: {
+    sessionId?: number
+    kind?: string
     dashboardId?: string
     sourceId?: string
     articleId?: number
@@ -262,6 +267,8 @@ export type AgentSession = {
   error: string | null
   createdAt: string
   finishedAt: string | null
+  title: string | null
+  updatedAt: string
 }
 
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool'
@@ -614,7 +621,10 @@ async function api(method: string, url: string, data?: Record<string, any>) {
         if (x.status === 401) {
           window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
         }
-        throw new ApiError(body.error || `Request failed (${x.status})`, x.status)
+        throw new ApiError(
+          body.error || `Request failed (${x.status})`,
+          x.status,
+        )
       })
     }
     return x.json()

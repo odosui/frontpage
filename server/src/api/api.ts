@@ -4,6 +4,7 @@ import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/registry";
 import { factsAgent } from "../components/agents/facts";
+import { dashboardContext } from "../components/agents/context";
 import { startChat } from "../components/agents/chat";
 import {
   bigModel,
@@ -26,12 +27,7 @@ import * as sources from "../models/sources";
 import * as stories from "../models/stories";
 import { error, ok } from "./helpers";
 import * as stats from "./stats";
-import {
-  SOURCE_KINDS,
-  SourceConfig,
-  SourceKind,
-  StoryFeedEntry,
-} from "./types";
+import { SOURCE_KINDS, SourceConfig, SourceKind } from "./types";
 
 dayjs.extend(relativeTime);
 
@@ -62,7 +58,12 @@ export const createApi = async () => {
 
     updateSource: async (
       id: string,
-      body: { name?: string; kind?: string; url?: string; config?: SourceConfig },
+      body: {
+        name?: string;
+        kind?: string;
+        url?: string;
+        config?: SourceConfig;
+      },
     ) => {
       const existing = await sources.get(id);
       if (!existing) return error(404, "source not found");
@@ -81,7 +82,13 @@ export const createApi = async () => {
       if ("error" in config) return config.error;
 
       return ok({
-        source: await sources.upsert({ id, name, kind, url, config: config.config }),
+        source: await sources.upsert({
+          id,
+          name,
+          kind,
+          url,
+          config: config.config,
+        }),
       });
     },
 
@@ -112,7 +119,6 @@ export const createApi = async () => {
 
       return ok({ job: result.job });
     },
-
 
     // Dashboards
 
@@ -228,7 +234,10 @@ export const createApi = async () => {
      * at the foot of the list walks forward with; `total` is what tells it
      * whether to be there at all.
      */
-    getFeed: async (id: string, params: { limit?: string; offset?: string } = {}) => {
+    getFeed: async (
+      id: string,
+      params: { limit?: string; offset?: string } = {},
+    ) => {
       const limit = Math.min(
         Math.max(Number(params.limit) || MAX_ITEMS, 1),
         MAX_ITEMS,
@@ -299,7 +308,8 @@ export const createApi = async () => {
 
       let sourceId = (body?.sourceId ?? "").trim();
       if (sourceId) {
-        if (!(await sources.get(sourceId))) return error(404, "source not found");
+        if (!(await sources.get(sourceId)))
+          return error(404, "source not found");
       } else {
         const created = await makeSource(body);
         if ("error" in created) return created.error;
@@ -329,10 +339,7 @@ export const createApi = async () => {
      * The reader writes the claim; the likelihood is left alone. Putting a
      * number on it is the analyst's job, through FORECAST.
      */
-    createPrediction: async (
-      id: string,
-      body: { content?: string },
-    ) => {
+    createPrediction: async (id: string, body: { content?: string }) => {
       const content = (body?.content ?? "").trim();
       if (!content) return error(400, "content is required");
       if (!(await dashboards.exists(id))) {
@@ -670,13 +677,14 @@ export const createApi = async () => {
       const session = await agentSessions.get(sessionId);
       if (!session) return error(404, "session not found");
 
-      const job = await queue.enqueue({
-        type: "agent_reply",
-        payload: { sessionId, question: content },
-        // a question nobody can answer twice: a retried turn would ask the
-        // model the same thing again and append a second reply
-        maxAttempts: 1,
-      });
+      if (!session.dashboardId)
+        return error(400, "conversation has no dashboard");
+      const job = await queue.enqueueAgentReply(sessionId, content);
+      if (!job)
+        return error(
+          409,
+          "This conversation is already working. Wait for it to finish before sending another message.",
+        );
       return ok({ job });
     },
 
@@ -766,7 +774,9 @@ async function makeSource(
 
   const kind = (body?.kind || "web") as SourceKind;
   if (!SOURCE_KINDS.includes(kind)) {
-    return { error: error(400, `kind must be one of ${SOURCE_KINDS.join(", ")}`) };
+    return {
+      error: error(400, `kind must be one of ${SOURCE_KINDS.join(", ")}`),
+    };
   }
 
   const config = configFor(kind, body?.config);
@@ -778,7 +788,15 @@ async function makeSource(
     return { error: error(409, `a source called "${id}" already exists`) };
   }
 
-  return { source: await sources.upsert({ id, name, kind, url, config: config.config }) };
+  return {
+    source: await sources.upsert({
+      id,
+      name,
+      kind,
+      url,
+      config: config.config,
+    }),
+  };
 }
 
 /**
@@ -892,73 +910,3 @@ async function reviseFacts(
   const version = await facts.revise(id, { facts: next, author: "reader" });
   return ok({ facts: version.facts, version: version.version });
 }
-
-/**
- * The arc as the reader has it on screen, for the agent's system message: the
- * name, then every story under it with how much has been filed and how recent
- * it is. Titles only — the articles are a tool call away, and putting them all
- * here would cost more than it is worth on a chat that asks about one of them.
- */
-function dashboardContext(
-  name: string,
-  storyFeed: StoryFeedEntry[],
-  claims: predictions.Prediction[],
-): string {
-  const lines = storyFeed.map((story) => {
-    const when = dayjs(story.updatedAt).fromNow();
-    return `- ${story.title} (${story.articles.length} articles, newest ${when})`;
-  });
-
-  return [
-    // Everything below is dated relative to this, and a model's own sense of
-    // the date is whenever it was trained.
-    `Today is ${dayjs().format("dddd, D MMMM YYYY")}.`,
-    "",
-    `The reader has the dashboard "${name}" open, and the questions are most`,
-    `likely about it. The stories filed under it, newest first:`,
-    "",
-    lines.length > 0 ? lines.join("\n") : "(nothing filed under it yet)",
-    "",
-    `Those titles are exact — pass one to GET_STORY to read the articles under`,
-    `it. The arc may also have older stories not listed here.`,
-    "",
-    // The standing facts were written out here too, until GET_FACTS existed to
-    // return them. A copy in the system message is a copy that stops moving: it
-    // is stale the moment the analyst revises the list, and the ids it would
-    // name from a stale copy are ids REVISE_FACTS refuses. One reachable list
-    // cannot disagree with itself.
-    predictionsContext(claims),
-  ].join("\n");
-}
-
-/**
- * The open claims and where the odds stand. Only the current number and the
- * last reasoning: the whole history is on the reader's screen, and what the
- * analyst needs is what it thought last time, not every time.
- */
-function predictionsContext(claims: predictions.Prediction[]): string {
-  if (claims.length === 0) {
-    return `The reader has made no predictions on this dashboard yet.`;
-  }
-
-  const lines = claims.map((claim) => {
-    const odds =
-      claim.likelihood === null
-        ? "not yet forecast"
-        : `${claim.likelihood}/5 ${
-            predictions.LIKELIHOOD_LABELS[claim.likelihood]
-          }`;
-    const last = claim.forecasts[0];
-    const because = last ? `\n  last moved because: ${last.reasoning}` : "";
-    return `- #${claim.id} [${odds}] ${claim.content}${because}`;
-  });
-
-  return [
-    `The reader's predictions for this dashboard, with where you last put the`,
-    `odds — 1 highly unlikely to 5 highly likely. The ids are what FORECAST`,
-    `takes.`,
-    "",
-    lines.join("\n"),
-  ].join("\n");
-}
-

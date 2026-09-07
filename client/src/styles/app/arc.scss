@@ -42,91 +42,6 @@
   border-left: 1px solid var(--borderColor);
 }
 
-// The conversation sits over the dashboard instead of taking a column from
-// it. Keeping the panel in the tree while hidden preserves the current session
-// and lets an answer finish even if the reader closes it meanwhile.
-.floating-chat {
-  position: fixed;
-  right: $unit3;
-  bottom: $unit3;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: $unit1;
-  pointer-events: none;
-}
-
-.floating-chat-panel {
-  width: min(440px, calc(100vw - #{$unit5}));
-  height: min(720px, calc(100vh - 88px));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background: var(--surface-bg);
-  box-shadow: var(--surface-shadow-hover);
-  pointer-events: auto;
-
-  &[hidden] {
-    display: none;
-  }
-}
-
-.floating-chat-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: var(--surface-shadow);
-  color: #fff;
-  cursor: pointer;
-  pointer-events: auto;
-  transition:
-    filter 0.15s ease,
-    transform 0.15s ease;
-
-  &:hover {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--surface-bg);
-    outline-offset: 2px;
-  }
-
-  &.is-open {
-    filter: saturate(0.7) brightness(0.9);
-  }
-
-  // The global `*` text colour also reaches SVG paths, so currentColor would
-  // otherwise turn the icon dark even though the button itself is white.
-  svg,
-  svg * {
-    color: #fff;
-    stroke: #fff;
-  }
-}
-
-@media (max-width: 575px) {
-  .floating-chat {
-    right: $unit2;
-    bottom: $unit2;
-  }
-
-  .floating-chat-panel {
-    width: calc(100vw - #{$unit4});
-    height: calc(100vh - 76px);
-  }
-}
-
 // no arcs at all: the one screen in the app with nothing behind it, so it
 // says what a dashboard is rather than showing an empty four-column frame
 .arc--empty {
@@ -268,7 +183,6 @@
     background-color: var(--color-bg-hover);
     color: var(--color-accent);
   }
-
 }
 
 // the history toggle sits beside the add button, same size and same weight:

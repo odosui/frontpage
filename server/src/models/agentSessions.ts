@@ -15,6 +15,8 @@ export type AgentSession = {
   error: string | null;
   createdAt: string;
   finishedAt: string | null;
+  title: string | null;
+  updatedAt: string;
 };
 
 export type AgentMessage = {
@@ -51,6 +53,8 @@ type SessionRow = {
   error: string | null;
   created_at: Date;
   finished_at: Date | null;
+  title: string | null;
+  updated_at: Date;
 };
 
 type MessageRow = {
@@ -68,7 +72,7 @@ type MessageRow = {
 };
 
 const SESSION_COLUMNS = `id, kind, dashboard_id, status, model, error,
-                         created_at, finished_at`;
+                         created_at, finished_at, title, updated_at`;
 
 const MESSAGE_COLUMNS = `id, session_id, position, role, content, tool_name,
                          tool_args, model, prompt_tokens, completion_tokens,
@@ -84,6 +88,8 @@ function toSession(row: SessionRow): AgentSession {
     error: row.error,
     createdAt: row.created_at.toISOString(),
     finishedAt: row.finished_at?.toISOString() ?? null,
+    title: row.title,
+    updatedAt: row.updated_at.toISOString(),
   };
 }
 
@@ -107,12 +113,13 @@ export async function start(
   kind: string,
   model: string,
   dashboardId?: string,
+  title?: string,
 ): Promise<AgentSession> {
   const { rows } = await query<SessionRow>(
-    `insert into agent_sessions (kind, model, dashboard_id)
-     values ($1, $2, $3)
+    `insert into agent_sessions (kind, model, dashboard_id, title)
+     values ($1, $2, $3, $4)
      returning ${SESSION_COLUMNS}`,
-    [kind, model, dashboardId ?? null],
+    [kind, model, dashboardId ?? null, title ?? null],
   );
   return toSession(rows[0]!);
 }
@@ -208,7 +215,7 @@ export async function list(
   const { rows } = await query<SessionRow>(
     `select ${SESSION_COLUMNS} from agent_sessions
      where dashboard_id = $1 and ($2::text is null or kind = $2)
-     order by created_at desc, id desc
+     order by updated_at desc, id desc
      limit $3`,
     [dashboardId, kind ?? null, limit],
   );

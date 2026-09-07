@@ -24,6 +24,9 @@ export type RunOptions = {
   dashboardId: string;
   /** Progress reporting; the runner itself never prints. */
   log?: (message: string) => void;
+  onSession?: (sessionId: number) => Promise<void>;
+  /** The categorization handler finishes after it saves the returned tree. */
+  deferFinish?: boolean;
 };
 
 /**
@@ -43,12 +46,19 @@ export async function runAgent(
   // who the agent is, then what this one does, then what the dashboard itself
   // asks for, then what it can call
   const system = await buildSystem(agent, dashboardId);
-  const session = await sessions.start(agent.kind, model, dashboardId);
+  const titles: Record<string, string> = {
+    facts_agent: "Facts update",
+    categorizing_agent: "Categorize stories",
+    analyzing_agent: "Dashboard analysis",
+  };
+  const session = await sessions.start(
+    agent.kind,
+    model,
+    dashboardId,
+    titles[agent.kind] ?? agent.name,
+  );
   // after the session exists: a tool that proposes a change files it here
   const ctx: AgentContext = { dashboardId, sessionId: session.id };
-
-  await sessions.append(session.id, { role: "system", content: system });
-  await sessions.append(session.id, { role: "user", content: task });
 
   const conversation: ChatMessage[] = [
     { role: "system", content: system },
@@ -60,6 +70,9 @@ export async function runAgent(
   let steps = 0;
 
   try {
+    await options.onSession?.(session.id);
+    await sessions.append(session.id, { role: "system", content: system });
+    await sessions.append(session.id, { role: "user", content: task });
     while (steps < agent.maxSteps) {
       steps++;
       const { content, usage } = await sendChat(model, conversation);
@@ -78,7 +91,7 @@ export async function runAgent(
       const calls = parseToolCalls(content).filter((c) => c.name !== "DONE");
 
       if (calls.length === 0) {
-        await sessions.finish(session.id);
+        if (!options.deferFinish) await sessions.finish(session.id);
         return {
           sessionId: session.id,
           answer: content.replace(/<\|\s*DONE\s*\|>/g, "").trim(),
@@ -112,7 +125,7 @@ export async function runAgent(
       conversation.push({ role: "user", content: results.join("\n\n") });
     }
 
-    await sessions.finish(session.id);
+    if (!options.deferFinish) await sessions.finish(session.id);
     return {
       sessionId: session.id,
       answer: lastAssistant(conversation),

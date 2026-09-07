@@ -24,6 +24,8 @@ export interface DashboardTools {
    */
   prompt: string
   onSavePrompt: (prompt: string) => Promise<void>
+  conversationsOpen: boolean
+  onOpenConversations: () => void
 
   /** The sources this dashboard reads — shared with whatever else reads them. */
   sources: Source[]

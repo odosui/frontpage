@@ -7,24 +7,6 @@ import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
 
-/**
- * The step between the coverage and the standing knowledge, on its own.
- *
- * The analyzing agent can already revise the facts, but only while answering
- * something else — the list moves when a conversation happens to touch it, and
- * an arc nobody asked a question about this week keeps a fact list a week out
- * of date. This one does nothing but that.
- *
- * It cannot forecast, and that is deliberate. Facts come before odds in the
- * chain, and an agent that could do both in one run would be free to move a
- * number and then write the fact that justifies it.
- *
- * What belongs here is what is true of every run: the job, and the judgement
- * calls the tool descriptions do not cover. How to write a fact is on
- * REVISE_FACTS itself, which the runner appends to this — saying it twice only
- * gives the two copies a chance to disagree. What this particular run is
- * looking at is in the task, from `establishFactsPrompt`.
- */
 export const factsAgent: AgentDefinition = {
   kind: "facts_agent",
   name: "FactsAgent",
@@ -44,11 +26,9 @@ export const factsAgent: AgentDefinition = {
 
   Please read the stories and articles and update facts as needed.
 
-  We are interested in facts that are saying something about the system and / or may have a lasting impact. Compare to the facts GET_FACTS returns and update them if you think there is new info, better info, possibly update the score as well. Delete the facts that you think are wrong, but provide a reasining.
+  We are interested in facts that say something about the system and / or may have a lasting impact. Compare what you read to GET_FACTS and revise only where evidence establishes a specific factual correction, a material development, a misleading ambiguity to resolve, or a change to confidence or citations. Delete a fact only when evidence establishes it is false, and explain why.
 
-  REVISE_FACTS takes only the facts that moved, named by their ids, and leaves everything else exactly as it stands. A fact you have nothing new to say about is a fact you do not mention.
-
-  A fact rests on as many articles as report it, not one. Coverage arrives in pieces — one outlet breaks a claim, another corroborates it a day later, a third dates or extends it under a different story — and that is one fact gathering evidence rather than several facts. When what you are reading is already on the list, possibly raise its confidence if the second source earns it.
+  A fact rests on as many articles as report it, not one. Coverage arrives in pieces — one outlet breaks a claim, another corroborates it a day later, a third dates or extends it under a different story — and that is one fact gathering evidence rather than several facts. When what you are reading is already on the list, add any additional citation without rewriting the text. Raise confidence only if the evidence earns it; another outlet repeating the same report is not independent corroboration.
 
   Finishing without calling REVISE_FACTS is a legitimate outcome, and the common one on a quiet day: if the stories establish nothing the list does not already hold, say so and stop. A revision that only rewords the standing facts costs the reader a version to read back through and tells them nothing.
 

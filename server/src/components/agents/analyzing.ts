@@ -10,12 +10,6 @@ import { readArticle } from "./tools/readArticle";
 import { webSearch } from "./tools/webSearch";
 import { AgentDefinition } from "./types";
 
-/**
- * The one you talk to. Same tools as the categorizing agent and the same way
- * of calling them — the difference is that it is never given a batch to
- * process. It answers the question in front of it and then waits for the next
- * one, so `maxSteps` here bounds a single reply rather than a whole run.
- */
 export const analyzingAgent: AgentDefinition = {
   kind: "analyzing_agent",
   name: "AnalyzingAgent",

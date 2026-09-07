@@ -6,6 +6,7 @@ import * as dashboards from "../../models/dashboards";
 import * as facts from "../../models/facts";
 import * as stories from "../../models/stories";
 import { JobHandler } from "../types";
+import { attachSession } from "../queue";
 
 export type RunFactsPayload = {
   /** The dashboard the run is confined to. */
@@ -28,7 +29,7 @@ const ENOUGH_TO_KNOW_IT_IS_NOT_EMPTY = 1;
  * can see in the transcript. A run that changed nothing therefore leaves no
  * version behind, which is the correct record of a day that settled nothing.
  */
-export const runFactsHandler: JobHandler = async (payload, { log }) => {
+export const runFactsHandler: JobHandler = async (payload, { log, job }) => {
   const { dashboardId, model } = payload as RunFactsPayload;
   if (!dashboardId) throw new Error("run_facts requires a dashboardId");
 
@@ -51,6 +52,7 @@ export const runFactsHandler: JobHandler = async (payload, { log }) => {
     task: establishFactsPrompt(dashboard.name),
     dashboardId,
     log,
+    onSession: (id) => attachSession(job.id, id),
   });
 
   const after = await facts.current(dashboardId);

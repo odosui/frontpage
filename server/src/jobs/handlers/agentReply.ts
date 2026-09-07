@@ -26,8 +26,15 @@ export const agentReplyHandler: JobHandler = async (payload, { log }) => {
   const session = await sessions.get(sessionId);
   if (!session) throw new Error(`no such session ${sessionId}`);
 
-  const agent = getAgent(session.kind);
-  const turn = await reply(agent, sessionId, question);
+  const turn = await (async () => {
+    try {
+      return await reply(getAgent(session.kind), sessionId, question);
+    } catch (error) {
+      // Covers setup failures too, before reply enters its model loop.
+      await sessions.fail(sessionId, (error as Error).message);
+      throw error;
+    }
+  })();
 
   log(
     `session ${sessionId} answered in ${turn.steps} steps` +

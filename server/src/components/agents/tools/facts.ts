@@ -27,17 +27,22 @@ import { AgentTool } from "../types";
 export const reviseFacts: AgentTool = {
   name: "REVISE_FACTS",
   usage:
-    '<|REVISE_FACTS "Reuters has now put a second source behind the July shipment, so the supply claim stops being a Ukrainian allegation" f3 "**Wildberries** warehouses have supplied drone components since **July 2026**, first reported by **Reuters** on **12 August 2026**" 4 9241 9310 "The **Kaluga** plant reopened on **3 August**, per **Kommersant**" 2 -f8|>',
+    '<|REVISE_FACTS "Article 9310 also supports f3; wording and confidence unchanged" f3 9310|>',
   description:
     "Records what changed in what this dashboard has established, as a new version: one line saying why, then only the facts that moved. " +
     "Anything you do not name is kept exactly as it stands — never retype the list. " +
+    "Existing fact text is stable. Change it only to correct a specific factual error, incorporate a material development, or resolve a misleading ambiguity supported by evidence you have read. " +
+    "Preserve all unaffected wording, figures, attribution, comparisons, and caveats. Do not shorten, polish, standardize, change bolding, or remove detail merely because a newer article omits it. " +
+    "For each text replacement or deletion, identify in the reasoning the fact id, the specific factual difference or error, and the article that supports the change. Previously cited evidence can support a correction too. If you cannot identify that difference and its evidence, leave the text unchanged. " +
+    "When only citations or confidence change, omit the text argument entirely. If the evidence supports no change to text, confidence, or citations, do not call REVISE_FACTS. " +
     "There are three kinds of change, told apart by shape: " +
     "an existing id (as given by GET_FACTS, e.g. f3) followed by any of a new line in quotes, a confidence from 1 to 5, and the ids of further articles it now rests on, changes that fact and leaves out whatever you do not give — `f3 4` alone just raises its confidence; " +
     "a line in quotes with no id in front of it files a new fact, again with its confidence and the articles behind it; " +
     "and a minus in front of an id, `-f8`, deletes that fact — which is what you do with one that turned out to be false, and only that. Keep a fact when it is merely shakier than it looked and lower its confidence instead. " +
     "Confidence runs 1 rumour, 2 one source, 3 reported, 4 corroborated, 5 certain. " +
-    "A fact can rest on several articles, so give every article that carries the claim: the one that broke it and the ones that corroborate, date or extend it. Citing the second article behind a standing claim is usually the point of a revision — it is what takes a fact from one source to corroborated. The ids you name are added to what the fact already cites, so you never retype a citation to keep it. " +
+    "A fact can rest on several articles, so give every article that carries the claim: the one that broke it and the ones that corroborate, date or extend it. An additional article can be a citation-only update; raise confidence only when its evidence warrants it. Another outlet repeating the same report is not independent corroboration. The ids you name are added to what the fact already cites, so give only additional citations. " +
     "An id you name must be one GET_FACTS actually returned: if it is not, nothing is written at all, so read the list before you change it. " +
+    "The following writing guidelines apply to new facts and only the portions of existing facts that require factual correction or a material update; they are not a reason to rewrite existing text. " +
     "Write each line so it stands on its own, record what will still matter next week rather than a summary of today's news, and wrap the load-bearing parts — figures, dates, the people and organisations acting — in **double asterisks**. Mark those, not whole clauses. " +
     "Anchor it in time wherever the claim has a date: when the thing happened, when it was reported, or both when they differ — written into the line itself, not left to the fact's own age. " +
     "Name who says so in the line too, and name the outlet or person that reported it first rather than whoever you read repeating it. " +

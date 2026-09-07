@@ -1,108 +1,141 @@
 import { useEffect, useRef } from 'react'
-import { type AgentMessage } from './api'
 import AgentTranscript from './ui/agent/AgentTranscript'
 import ChatComposer from './ui/agent/ChatComposer'
 import ProposalCard from './ui/agent/ProposalCard'
-import { useAgentChat } from './ui/agent/useAgentChat'
+import DashboardPrompt from './ui/agent/DashboardPrompt'
+import type { Conversation } from './ui/agent/useAgentChat'
+import { conversationTitle, agentLabel } from './ui/agent/conversationLabels'
 
 type Props = {
-  dashboardId: string
-  /** The arc's name, for the placeholder. The server builds the real context. */
+  conversation: Conversation
   dashboardName: string
-  /**
-   * Called whenever the agent may have changed what the page is showing: after
-   * every finished turn, and after an approved proposal. The agent writes facts
-   * and merges stories through its own tools, so the panes beside it cannot
-   * know they are stale by any other means.
-   */
-  onChanged?: () => void
-  /** Whether the chat is on screen; opening it puts the cursor in the composer. */
-  active?: boolean
+  active: boolean
+  prompt: string
+  onSavePrompt: (prompt: string) => Promise<void>
 }
 
-/** In a conversation the roles are people, not job descriptions. */
-const CHAT_LABEL: Partial<Record<AgentMessage['role'], string>> = {
-  user: 'You',
-  assistant: 'Analyst',
-}
-
-/**
- * The agent you talk to about one arc. The transcript and its message cards are
- * the same ones the agents view uses; what is added here is the composer, a
- * session that stays open between questions, and the proposals it needs
- * answered before it can change anything.
- */
-const Chat = ({ dashboardId, dashboardName, onChanged, active }: Props) => {
-  const { session, messages, proposals, thinking, error, send, decide } =
-    useAgentChat({ dashboardId, kind: 'analyzing_agent' })
-
-  // A turn ending is the moment anything it wrote exists. Watching the flag
-  // rather than the transcript: a turn writes several messages, and only its
-  // end means the tools have all run.
-  const wasThinking = useRef(false)
+const Chat = ({
+  conversation: c,
+  dashboardName,
+  active,
+  prompt,
+  onSavePrompt,
+}: Props) => {
+  const scroll = useRef<HTMLDivElement>(null)
+  const lastSession = useRef<number | null>(null)
   useEffect(() => {
-    if (wasThinking.current && !thinking) onChanged?.()
-    wasThinking.current = thinking
-  }, [thinking, onChanged])
+    if (c.session && lastSession.current !== c.session.id) {
+      lastSession.current = c.session.id
+      if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight
+    }
+  }, [c.session, c.messages])
 
-  // the system message is the agent's own instructions, not part of the
-  // conversation; a tool result reads as the agent working, so it stays
-  const visible = messages.filter((m) => m.role !== 'system')
-
-  // Only what still needs an answer, plus anything that went wrong — once a
-  // proposal is decided the outcome is in the transcript, and leaving the card
-  // there would keep asking a question that has been answered.
-  const asking = proposals.filter(
+  const visible = c.messages.filter((m) => m.role !== 'system')
+  const instructions = c.messages.filter((m) => m.role === 'system')
+  const tokens = c.messages.reduce(
+    (sum, m) => sum + (m.promptTokens ?? 0) + (m.completionTokens ?? 0),
+    0,
+  )
+  const asking = c.proposals.filter(
     (p) => p.status === 'pending' || p.status === 'failed',
   )
-  const empty = visible.length === 0 && asking.length === 0 && !thinking
-
-  const onDecide = async (id: number, approve: boolean) => {
-    const decided = await decide(id, approve)
-    // an approved merge rewrote the stories this page is showing
-    if (decided?.status === 'approved') onChanged?.()
-  }
 
   return (
-    <div className="chat">
-      <header className="col-head">
-        <h2 className="col-heading">Chat</h2>
-        {session && <span className="chat-model">{session.model}</span>}
-      </header>
-
-      <div className="col-body chat-transcript">
-        {!empty && (
-          <>
-            <AgentTranscript
-              messages={visible}
-              thinking={thinking}
-              labelFor={(m) => CHAT_LABEL[m.role]}
-            />
-            {asking.length > 0 && (
-              <ul className="proposals">
-                {asking.map((proposal) => (
-                  <ProposalCard
-                    key={proposal.id}
-                    proposal={proposal}
-                    onDecide={onDecide}
-                  />
-                ))}
-              </ul>
+    <section className="chat conversation-chat">
+      <header className="conversation-head">
+        <div>
+          <h2>
+            {c.session
+              ? conversationTitle(c.session)
+              : c.loading
+                ? 'Loading conversation…'
+                : 'New conversation'}
+          </h2>
+          <p>
+            {c.session
+              ? `${agentLabel(c.session.kind)} · ${c.thinking ? 'Working…' : c.session.status === 'failed' ? 'Failed · you can try again' : 'Ready for a follow-up'}`
+              : dashboardName}
+          </p>
+        </div>
+        <details className="conversation-details" key={c.selected ?? 'new'}>
+          <summary>Details</summary>
+          <div className="conversation-details-body">
+            {c.session && (
+              <p>
+                #{c.session.id} · {c.session.model}
+                <br />
+                {c.messages.length} messages · {tokens.toLocaleString()} tokens
+              </p>
             )}
-          </>
+            <DashboardPrompt value={prompt} onSave={onSavePrompt} />
+            {instructions.length > 0 && (
+              <details>
+                <summary>Instructions ({instructions.length})</summary>
+                <AgentTranscript messages={instructions} />
+              </details>
+            )}
+          </div>
+        </details>
+      </header>
+      <div className="conversation-scroll" ref={scroll}>
+        {visible.length > 0 ? (
+          <AgentTranscript
+            messages={visible}
+            thinking={c.thinking}
+            labelFor={(m) =>
+              m.role === 'user'
+                ? 'You / task'
+                : m.role === 'assistant'
+                  ? agentLabel(c.session?.kind ?? 'analyzing_agent')
+                  : undefined
+            }
+          />
+        ) : (
+          <div className="conversation-empty">
+            <h3>
+              {c.loading
+                ? 'Loading…'
+                : c.thinking
+                  ? 'The agent is getting started…'
+                  : `Explore ${dashboardName}`}
+            </h3>
+            {!c.loading && !c.thinking && (
+              <p>
+                Ask a question, or choose an earlier chat or agent run from the
+                history.
+              </p>
+            )}
+          </div>
+        )}
+        {c.pendingUser && (
+          <p className="conversation-pending">
+            <strong>You</strong> {c.pendingUser}
+          </p>
+        )}
+        {asking.length > 0 && (
+          <ul className="proposals">
+            {asking.map((p) => (
+              <ProposalCard key={p.id} proposal={p} onDecide={c.decide} />
+            ))}
+          </ul>
         )}
       </div>
-
-      {error && <p className="agents-error chat-error">{error}</p>}
-
+      {(c.error || c.session?.error) && (
+        <p role="alert" className="agents-error conversation-feedback">
+          {c.error || c.session?.error}
+        </p>
+      )}
       <ChatComposer
-        disabled={thinking}
+        disabled={c.thinking || c.loading}
         focused={active}
-        placeholder={`Ask about ${dashboardName}…`}
-        onSend={send}
+        value={c.draft}
+        onChange={c.setDraft}
+        placeholder={
+          c.session ? 'Ask a follow-up…' : `Ask about ${dashboardName}…`
+        }
+        onSend={c.send}
       />
-    </div>
+    </section>
   )
 }
-
 export default Chat

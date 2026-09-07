@@ -16,7 +16,7 @@ import AddSourceModal from './AddSourceModal'
 import ArticleContentModal from './ArticleContentModal'
 import DashboardEmptyState from './DashboardEmptyState'
 import Facts from './Facts'
-import FloatingChat from './FloatingChat'
+import ConversationsModal from './ConversationsModal'
 import { HOTKEYS, useHotkey } from './hotkeys'
 import Predictions from './Predictions'
 import Stories from './Stories'
@@ -68,6 +68,8 @@ const Dashboard: React.FC = () => {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showAddSource, setShowAddSource] = useState(false)
+  const [conversationsOpen, setConversationsOpen] = useState(false)
+  const openConversations = useCallback(() => setConversationsOpen(true), [])
   // the article whose stored text is on screen, if any
   const [openArticle, setOpenArticle] = useState<number | null>(null)
   const [sourceErrors, setSourceErrors] = useState<Map<string, string>>(
@@ -451,6 +453,8 @@ const Dashboard: React.FC = () => {
       onRename: renameDashboard,
       prompt: loaded?.dashboard.prompt ?? '',
       onSavePrompt: savePrompt,
+      conversationsOpen,
+      onOpenConversations: openConversations,
       sources,
       refreshingSources: refreshing,
       sourceErrors,
@@ -483,6 +487,8 @@ const Dashboard: React.FC = () => {
     deleteDashboard,
     renameDashboard,
     savePrompt,
+    conversationsOpen,
+    openConversations,
     refreshSource,
     removeSource,
     refreshAll,
@@ -562,10 +568,16 @@ const Dashboard: React.FC = () => {
         />
       </section>
 
-      <FloatingChat
+      <ConversationsModal
+        key={dashboardId}
         dashboardId={dashboardId}
         dashboardName={dashboard.name}
         onChanged={load}
+        prompt={dashboard.prompt}
+        onSavePrompt={savePrompt}
+        isOpen={conversationsOpen}
+        onClose={() => setConversationsOpen(false)}
+        onToggle={() => setConversationsOpen((open) => !open)}
       />
 
       <AddSourceModal

@@ -502,3 +502,230 @@ ol.markdown-list {
   font-size: $text0;
   color: $red;
 }
+
+// One full-size conversation workspace, with a responsive history drawer.
+.conversations-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &[hidden] {
+    display: none;
+  }
+}
+.conversations-modal-panel {
+  display: flex;
+  position: relative;
+  width: min(1440px, 94vw);
+  height: 88vh;
+  height: 88dvh;
+  overflow: hidden;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background: var(--surface-bg);
+  box-shadow: var(--surface-shadow-hover);
+  z-index: 1;
+}
+
+.conversation-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  pointer-events: auto;
+}
+
+.conversation-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.conversation-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $unit1;
+  padding: $unit2;
+  border-bottom: 1px solid var(--borderColor);
+
+  > strong {
+    margin-right: auto;
+    font-size: $text1;
+  }
+  button {
+    font: inherit;
+    font-size: $text0;
+    padding: $unit1;
+    color: var(--color-text);
+    background: var(--surface-bg);
+    border: 1px solid var(--borderColor);
+    border-radius: $unit1;
+    cursor: pointer;
+    &:hover {
+      border-color: var(--color-accent);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+.conversation-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.conversation-sidebar {
+  display: none;
+  width: 280px;
+  .agents-session-top strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .agents-session-time {
+    font-size: $text0;
+  }
+}
+.conversation-sidebar {
+  display: flex;
+}
+.conversation-history-toggle {
+  display: none;
+}
+.conversation-sidebar.is-open {
+  display: flex;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  z-index: 3;
+  background: var(--surface-bg);
+}
+.conversation-search {
+  margin: $unit2;
+  padding: $unit1;
+  min-width: 0;
+  font: inherit;
+  font-size: $text0;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background: var(--surface-bg);
+  color: var(--color-text);
+}
+.conversation-chat {
+  min-width: 0;
+  background: var(--color-note-area-bg);
+}
+.conversation-head {
+  display: flex;
+  align-items: flex-start;
+  gap: $unit2;
+  padding: $unit2 $unit3;
+  border-bottom: 1px solid var(--borderColor);
+  position: relative;
+  > div {
+    min-width: 0;
+    flex: 1;
+  }
+  h2 {
+    margin: 0;
+    font-size: $text2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  p {
+    margin: $unit0 0 0;
+    color: var(--lighter);
+    font-size: $text0;
+  }
+}
+.conversation-details {
+  font-size: $text0;
+  summary {
+    cursor: pointer;
+    padding: $unit0;
+  }
+}
+.conversation-details-body {
+  position: absolute;
+  z-index: 4;
+  right: $unit2;
+  top: 100%;
+  width: min(520px, calc(100% - #{$unit4}));
+  max-height: 55vh;
+  overflow: auto;
+  padding: $unit2;
+  border: 1px solid var(--borderColor);
+  border-radius: $unit1;
+  background: var(--surface-bg);
+  box-shadow: var(--surface-shadow-hover);
+  .agents-prompt {
+    padding: $unit2 0;
+  }
+  .agents-messages {
+    overflow: visible;
+    padding: $unit1 0;
+  }
+}
+.conversation-scroll {
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  .agents-messages {
+    overflow: visible;
+    flex: none;
+    padding: $unit2 $unit3;
+  }
+}
+.conversation-empty {
+  margin: $unit6 auto;
+  padding: $unit3;
+  max-width: 480px;
+  text-align: center;
+}
+.conversation-empty h3 {
+  margin: 0 0 $unit1;
+  font-size: $text2;
+}
+.conversation-empty p {
+  margin: 0;
+  font-size: $text1;
+  color: var(--lighter);
+  line-height: 1.6;
+}
+.conversation-feedback,
+.conversation-pending {
+  margin: 0;
+  padding: $unit1 $unit3;
+  font-size: $text0;
+}
+.conversation-pending {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 700px) {
+  .conversation-sidebar {
+    display: none;
+  }
+  .conversation-sidebar.is-open {
+    display: flex;
+  }
+  .conversation-history-toggle {
+    display: block;
+  }
+  .conversations-modal-panel {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .conversation-toolbar > strong {
+    flex-basis: 100%;
+  }
+}

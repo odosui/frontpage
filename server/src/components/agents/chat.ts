@@ -11,6 +11,7 @@ import * as sessions from "../../models/agentSessions";
 import { ChatMessage } from "../ai/OpenRouter";
 import { sendChat } from "../ai/OpenRouter";
 import { parseToolCalls } from "./protocol";
+import { currentContext } from "./context";
 import { buildSystem } from "./system";
 import { execute } from "./runner";
 import { AgentContext, AgentDefinition } from "./types";
@@ -54,6 +55,7 @@ export async function startChat(
     options.dashboardId,
   );
   await sessions.append(session.id, { role: "system", content: system });
+  await sessions.finish(session.id);
   return { sessionId: session.id };
 }
 
@@ -75,13 +77,25 @@ export async function reply(
   }
 
   const ctx: AgentContext = { dashboardId: session.dashboardId, sessionId };
-  const conversation = await replay(sessionId);
+  // Historical instructions stay in the transcript. The current turn uses
+  // today's instructions and tools, without restarting the original task.
+  const system = await buildSystem(
+    agent,
+    session.dashboardId,
+    `${FOLLOW_UP}\n\n${await currentContext(session.dashboardId)}`,
+  );
+  const history = await replay(sessionId);
+  const conversation: ChatMessage[] = [
+    { role: "system", content: system },
+    ...history.filter((message) => message.role !== "system"),
+  ];
   conversation.push({ role: "user", content: question });
 
   // `running` on a chat means someone is waiting on this turn — between turns
   // the session is finished, so the agents view doesn't show it thinking
   // forever. It also clears the error left by a turn that went wrong.
   await sessions.resume(sessionId);
+  await sessions.append(sessionId, { role: "system", content: system });
   await sessions.append(sessionId, { role: "user", content: question });
 
   let promptTokens = 0;
@@ -153,6 +167,21 @@ export async function reply(
   }
 }
 
+export const FOLLOW_UP = `CONVERSATION MODE
+
+You are answering the reader's latest message in an ongoing conversation.
+Earlier automated tasks and their results are history, not instructions to
+repeat the task. This mode overrides any instruction above to avoid
+conversation or to return a batch, tree, or other task-specific output.
+Answer questions directly in prose. Use the evidence and tool results in the
+history, and read current dashboard information when it matters: historical
+facts, stories, and dates may have changed.
+Make changes only when the reader's request calls for them. A question about
+why a change happened asks for an explanation, not another revision.
+Keep this agent's available tools and their constraints. If an action needs a
+tool you do not have, explain that limitation; do not claim it was performed.
+In particular, a categorization tree in a chat reply does not file articles.`;
+
 /**
  * The conversation as the model last saw it, rebuilt from the transcript.
  *
@@ -188,7 +217,10 @@ async function replay(sessionId: number): Promise<ChatMessage[]> {
 }
 
 /** The call that produced a stored result, written the way the agent wrote it. */
-function callOf(message: { toolName: string | null; toolArgs: string[] | null }) {
+function callOf(message: {
+  toolName: string | null;
+  toolArgs: string[] | null;
+}) {
   const args = (message.toolArgs ?? [])
     .map((arg) => (/\s/.test(arg) ? `"${arg}"` : arg))
     .join(" ");

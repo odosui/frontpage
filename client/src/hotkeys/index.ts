@@ -6,7 +6,7 @@ export { default as useHotkey } from './useHotkey'
  * browser's own shortcuts free.
  */
 export const HOTKEYS = {
-  /** Show or hide the chat panel. */
+  /** Show or hide the conversations modal. */
   toggleChat: 'alt+c',
   /** Walk to the previous or next arc. */
   prevDashboard: 'alt+ArrowLeft',

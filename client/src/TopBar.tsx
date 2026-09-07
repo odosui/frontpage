@@ -5,12 +5,10 @@ import {
   ZapIcon,
   DependabotIcon,
 } from '@primer/octicons-react'
-import { useState } from 'react'
 import { Link, useLocation } from 'slim-react-router'
 import { useAuth } from './contexts/AuthContext'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
-import AgentsModal from './AgentsModal'
 import DashboardSwitcher from './DashboardSwitcher'
 import LatestMenu from './LatestMenu'
 import SourcesMenu from './SourcesMenu'
@@ -25,7 +23,6 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
   const { activeCount } = useJobs()
   const { tools } = useToolbar()
   const { user, signOut } = useAuth()
-  const [agentsOpen, setAgentsOpen] = useState(false)
 
   return (
     <header className="topbar">
@@ -91,21 +88,14 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
               onRefreshAll={tools.onRefreshAll}
             />
             <button
-              className={`topbar-btn${agentsOpen ? ' active' : ''}`}
-              onClick={() => setAgentsOpen(true)}
+              className={`topbar-btn${tools.conversationsOpen ? ' active' : ''}`}
+              onClick={tools.onOpenConversations}
               aria-haspopup="dialog"
-              aria-expanded={agentsOpen}
+              aria-expanded={tools.conversationsOpen}
             >
               <DependabotIcon size={16} />
-              Agents
+              Conversations
             </button>
-            <AgentsModal
-              isOpen={agentsOpen}
-              onClose={() => setAgentsOpen(false)}
-              dashboardId={tools.current}
-              prompt={tools.prompt}
-              onSavePrompt={tools.onSavePrompt}
-            />
           </>
         )}
 

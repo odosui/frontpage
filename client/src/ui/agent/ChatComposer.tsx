@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 
 type Props = {
   disabled?: boolean
@@ -12,6 +6,8 @@ type Props = {
   focused?: boolean
   placeholder?: string
   onSend: (message: string) => void
+  value: string
+  onChange: (value: string) => void
 }
 
 /**
@@ -23,8 +19,9 @@ const ChatComposer = ({
   focused = false,
   placeholder,
   onSend,
+  value,
+  onChange,
 }: Props) => {
-  const [value, setValue] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const widthRef = useRef(0)
 
@@ -66,7 +63,6 @@ const ChatComposer = ({
     const message = value.trim()
     if (!message || disabled) return
     onSend(message)
-    setValue('')
   }
 
   return (
@@ -84,7 +80,7 @@ const ChatComposer = ({
         value={value}
         placeholder={placeholder}
         disabled={disabled}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
@@ -97,7 +93,7 @@ const ChatComposer = ({
         type="submit"
         disabled={disabled || value.trim() === ''}
       >
-        Ask
+        Send
       </button>
     </form>
   )
