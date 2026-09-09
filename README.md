@@ -6,9 +6,7 @@
 
 [![CI](https://github.com/odosui/frontpage/actions/workflows/ci.yml/badge.svg)](https://github.com/odosui/frontpage/actions/workflows/ci.yml)
 
-AI-powered news aggregator and analyst.
-
-Frontpage uses LLMs to scrape front pages, extract articles, group them into the events they cover, and keep track of what those events establish. You give it the arcs you care about and the sources to read; it does the filing.
+AI-powered news aggregator and analyst — an LLM harness for making sense of current events.
 
 <p align="center">
   <img src="media/screen.png" alt="screenshot" width="800" />
@@ -16,20 +14,17 @@ Frontpage uses LLMs to scrape front pages, extract articles, group them into the
 
 ## How it works
 
-The flow goes like this. Sources -> Articles -> (Aggregated) Stories -> Facts -> Predictions. You can also chat with the agent in the context of the arc you are following.
-
-A **dashboard** is one running arc — "AI chip race", "Bird flu outbreak". Everything hangs off it:
-
-```
-dashboard   the arc you are following
-  story     one event inside it — several outlets merged into one entry
-    article one headline from one outlet
-  facts       what the arc is taken to have established, versioned
-  predictions what it points to and has not settled
-  chat        an agent that reads all of the above, and the web
+```mermaid
+flowchart LR
+  S[Sources] --> A[Articles] --> T[Stories] --> F[Facts] --> P[Predictions]
 ```
 
-**Sources** sit outside that tree. A source is a site or feed we pull from, it belongs to no dashboard, and any number of dashboards can read it — a general outlet feeds several arcs at once and is fetched once for all of them. Each dashboard files that source's articles into its own stories, under its own tags, and skips whatever is not its business. Two arcs reading the same wire never see each other's judgements.
+1. You add sources — RSS, web pages, or subreddits.
+2. Frontpage extracts the headlines and groups them into stories.
+3. It reads the recent stories and updates the arc's facts.
+4. The facts set the likelihood of the predictions you have written.
+
+An agent runs each step. You can step in at any point, or just talk to the agent in a chat panel: it reads articles, revises facts, moves forecasts, and searches the web when you supply a Brave API key.
 
 ## Features
 
@@ -37,26 +32,24 @@ dashboard   the arc you are following
 - Stories: several outlets covering one event, merged
 - Facts and predictions per arc, versioned, with the reasoning kept
 - An analyst you can talk to about what it has collected
-- Data stored in your own PostgreSQL database
 - Any model on OpenRouter
-- Quick start with docker-compose
-- Open source and self-hosted
+- Self-hosted and open source, with your data in your own PostgreSQL
 
 ## Keyboard shortcuts
 
-- `Alt` + `←` / `→` — switch to previous / next dashboard (wraps around)
+- `Alt` + `←` / `→` — previous / next dashboard (wraps around)
 - `Alt` + `R` — refresh every source the current dashboard reads
-- `Alt` + `C` — to toggle the chat panel
+- `Alt` + `C` — toggle the chat panel
 
 ## Running with Docker
 
-The bundled compose file brings up both the app and a PostgreSQL database. Edit `docker-compose.yml` to set your `OPENROUTER_API_KEY`, then:
+The bundled compose file brings up the app and a PostgreSQL database. Set your `OPENROUTER_API_KEY` in `docker-compose.yml`, then:
 
 ```bash
 docker compose up -d
 ```
 
-The app will be available at `http://localhost:3043`.
+The app is then at `http://localhost:3043`.
 
 To run the container against a database you already have:
 
@@ -73,16 +66,11 @@ docker run -d \
 
 ## Accounts
 
-The api is behind a login, and there is no sign-up page — accounts are made from the command line. Set `FRONTPAGE_SECRET` to a long random string first: it signs the session cookies, and the server refuses to start in production without it.
+The API is behind a login and there is no sign-up page — accounts are made from the command line. Set `FRONTPAGE_SECRET` to a long random string first: it signs the session cookies, and the server refuses to start in production without it.
 
 ```bash
 FRONTPAGE_SECRET=$(openssl rand -hex 32)     # keep it; changing it signs everyone out
 npm run user:create --prefix server -- me@example.com my-long-password
-```
-
-The other commands, same shape:
-
-```bash
 npm run user:list --prefix server
 npm run user:passwd --prefix server -- me@example.com a-new-password
 npm run user:delete --prefix server -- me@example.com
@@ -94,17 +82,17 @@ Inside the production container the compiled entrypoint is `npm run user`:
 docker exec -it frontpage npm run user --prefix server -- create me@example.com my-long-password
 ```
 
-Sessions are a signed, httpOnly cookie that lasts 30 days; signing out drops it, and rotating `FRONTPAGE_SECRET` invalidates every session at once.
+A session is a signed, httpOnly cookie lasting 30 days. Signing out drops it; rotating `FRONTPAGE_SECRET` invalidates every session at once.
 
 ## Storage
 
-Everything — dashboards, sources, fetched articles, and what has been made of them — lives in PostgreSQL. Point the app at your database with `FRONTPAGE_DATABASE_URL` (or `DATABASE_URL`):
+Everything — dashboards, sources, fetched articles, and what has been made of them — lives in PostgreSQL:
 
 ```
 FRONTPAGE_DATABASE_URL=postgres://user:password@localhost:5432/frontpage
 ```
 
-If neither is set, the standard `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` variables are used instead, defaulting to `postgres:postgres@localhost:5432/frontpage`. For managed databases that require TLS, set `FRONTPAGE_DATABASE_SSL=require` (or `no-verify` for self-signed certificates).
+Without it (or `DATABASE_URL`), the standard `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` variables are used, defaulting to `postgres:postgres@localhost:5432/frontpage`. For managed databases requiring TLS, set `FRONTPAGE_DATABASE_SSL=require` — or `no-verify` for self-signed certificates.
 
 ### Migrations
 
@@ -117,31 +105,4 @@ npm run migrate:status    # show which migrations are applied
 npm run migrate:new -- add_tags   # scaffold a new migration file
 ```
 
-The server also applies pending migrations on startup, so a fresh database just works. Set `FRONTPAGE_AUTO_MIGRATE=false` to disable that and run them yourself. Inside the production container, use the compiled entrypoint: `npm run db -- up`.
-
-## FAQ
-
-### Why not just use RSS?
-
-Many websites have stopped providing RSS feeds, because, khmm, ads. Other times, RSS feeds are available but not frequently updated.
-
-### What model should I use?
-
-Everything goes through [OpenRouter](https://openrouter.ai), so both settings take an OpenRouter model id. Set `OPENROUTER_API_KEY` to your key.
-
-Pick them under **Settings → Models**, where the field autocompletes against OpenRouter's live catalogue — an id it does not serve cannot be saved. The choice is stored in the database and applies to the whole instance, api and worker alike, within a few seconds of saving.
-
-The environment variables below still work, as the default an unset slot falls back to; a model chosen in the ui overrides them. Clearing a slot on that page puts it back on its environment value, or on the built-in default if there is none.
-
-There are two of them, because the app does two different jobs:
-
-- `FRONTPAGE_MODEL_SMALL` (default `google/gemini-3.1-flash-lite`) reads a front page and pulls the articles out of it. This runs on every source refresh, over a lot of HTML, so it should be fast and cheap. Another good option: `anthropic/claude-haiku-4-5`. (The older `FRONTPAGE_MODEL` still works as a fallback name for this one.)
-- `FRONTPAGE_MODEL_BIG` (default `anthropic/claude-opus-5`) files the collected headlines into stories, decides what belongs to an arc at all, and answers in the chat. It runs rarely and on short input — headlines only — and the quality gap between models is wide here, so it is worth paying for.
-
-Note: for the _small_ model, pick a _non-reasoning_ one. Front pages are cropped to 200k characters, and reasoning models (DeepSeek V4 Flash, MiMo-V2.5, etc.) spend so long thinking about that much HTML that they run past the request timeout. Very small models tend to return prose instead of the JSON array. Flash-tier instruct models hit the sweet spot.
-
-Model choice also affects _image_ extraction, which varies far more than title extraction — on the same page, some models return an image for every article and others for only a quarter of them. If your feed looks text-only, try a different model before assuming the sites lack images.
-
-### So is this another service wrapped around a prompt?
-
-Yes. You can read the prompt [here](server/src/components/websites/prompt.ts).
+The server also applies pending migrations on startup, so a fresh database just works. Set `FRONTPAGE_AUTO_MIGRATE=false` to run them yourself instead. Inside the production container, use the compiled entrypoint: `npm run db -- up`.
