@@ -1,6 +1,18 @@
-import { describe, expect, it } from "vitest";
-import { execute } from "./runner";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { execute, runAgent } from "./runner";
+import * as sessions from "../../../models/agentSessions";
+import { sendChat } from "../../ai/OpenRouter";
+import { buildSystem } from "./system";
 import { AgentDefinition, AgentTool } from "../types";
+
+vi.mock("../../../models/agentSessions", () => ({
+  start: vi.fn(),
+  append: vi.fn(),
+  finish: vi.fn(),
+  fail: vi.fn(),
+}));
+vi.mock("../../ai/OpenRouter", () => ({ sendChat: vi.fn() }));
+vi.mock("./system", () => ({ buildSystem: vi.fn() }));
 
 const reader: AgentTool = {
   name: "READ_IT",
@@ -48,5 +60,53 @@ describe("execute", () => {
     expect(await execute(agent, call("NOPE"), ctx, 1)).toContain(
       "no such function NOPE",
     );
+  });
+});
+
+/** One model turn, with the usage the runner expects alongside it. */
+const turn = (content: string) => ({
+  content,
+  usage: { model: "m", promptTokens: 1, completionTokens: 1 },
+});
+
+describe("runAgent", () => {
+  beforeEach(() => {
+    vi.mocked(buildSystem).mockResolvedValue("system");
+    vi.mocked(sessions.start).mockResolvedValue({ id: 1 } as never);
+    vi.mocked(sessions.append).mockResolvedValue(undefined as never);
+    vi.mocked(sessions.finish).mockResolvedValue(undefined as never);
+    vi.mocked(sendChat).mockReset();
+  });
+
+  const run = () =>
+    runAgent(agent, { model: "m", task: "t", dashboardId: "d" });
+
+  it("asks again when the agent finishes with a bare <|DONE|>", async () => {
+    vi.mocked(sendChat)
+      .mockResolvedValueOnce(turn("<|DONE|>") as never)
+      .mockResolvedValueOnce(turn("<|DONE|>\nthe answer") as never);
+
+    const result = await run();
+
+    expect(result.answer).toBe("the answer");
+    expect(result.steps).toBe(2);
+    expect(sendChat).toHaveBeenCalledTimes(2);
+  });
+
+  it("takes a real answer on the first turn", async () => {
+    vi.mocked(sendChat).mockResolvedValueOnce(turn("<|DONE|>\nthe answer") as never);
+
+    expect((await run()).answer).toBe("the answer");
+    expect(sendChat).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives up on an agent that only ever says <|DONE|>", async () => {
+    vi.mocked(sendChat).mockResolvedValue(turn("<|DONE|>") as never);
+
+    const result = await run();
+
+    // the empty turns are bounded by maxSteps rather than looping for ever
+    expect(result.steps).toBe(agent.maxSteps);
+    expect(result.answer).toBe("");
   });
 });

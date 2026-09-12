@@ -176,8 +176,18 @@ and the results come back before you have to decide anything. The JSON is your
 LAST message, once GET_STORIES has told you which of these events are already
 filed.
 
-That final message is ONLY a JSON object, with no prose and no markdown fences,
-shaped exactly like this:
+That last message must CARRY the JSON. <|DONE|> on its own is not an answer —
+it ends the run with nothing filed, every article here stays in the queue, and
+the whole batch is read again from scratch next time. If you write <|DONE|>,
+the complete JSON follows it in that same message; if the JSON is not ready
+yet, do not write <|DONE|> at all — keep looking things up instead.
+
+Nothing is filed until that JSON arrives, so never stop on a summary of what
+you are about to file, a count of the stories you found, or a promise to return
+it. There is no later message to return it in.
+
+That final message is ONLY <|DONE|> and a JSON object, with no prose and no
+markdown fences, shaped exactly like this:
 ${SCHEMA}
 
 ARTICLES

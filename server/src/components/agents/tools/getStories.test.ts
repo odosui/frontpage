@@ -7,7 +7,7 @@ import { parseArgs } from "./getStories";
  */
 describe("GET_STORIES arguments", () => {
   it("lists with no arguments at all", () => {
-    expect(parseArgs([])).toEqual({ term: "", limit: 50 });
+    expect(parseArgs([])).toEqual({ term: "", limit: 100 });
   });
 
   it("reads a bare number as the row cap, the way the old list tool took it", () => {
@@ -17,7 +17,7 @@ describe("GET_STORIES arguments", () => {
   it("reads anything else as the term, the way the old grep took it", () => {
     expect(parseArgs(["novorossiysk"])).toEqual({
       term: "novorossiysk",
-      limit: 50,
+      limit: 100,
     });
   });
 
@@ -32,7 +32,9 @@ describe("GET_STORIES arguments", () => {
     });
   });
 
-  // a runaway count would otherwise dump the whole table into the turn
+  // a runaway count would otherwise dump the whole table into the turn. The
+  // default is now the cap as well, so this pins the clamp, not a distinct
+  // number: a bare listing and a request for 100000 both come back at 100.
   it("caps the rows however big a number it is given", () => {
     expect(parseArgs(["100000"]).limit).toBe(100);
   });

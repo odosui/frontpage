@@ -84,12 +84,31 @@ export async function runAgent(
       });
 
       const calls = parseToolCalls(content).filter((c) => c.name !== "DONE");
+      const answer = stripDone(content);
+
+      // A message that is nothing but <|DONE|> says the agent is finished and
+      // then says nothing: taken at face value it ends the run with an empty
+      // answer, and for a categorizing run that means a whole batch filed
+      // nowhere. It is a slip, not a decision, so it costs one turn — the loop
+      // asks for the answer that was supposed to be there.
+      if (calls.length === 0 && !answer && steps < agent.maxSteps) {
+        log(`step ${steps}: finished with an empty answer, asking again`);
+        conversation.push({ role: "user", content: EMPTY_ANSWER_NUDGE });
+        // unlike the tool-result turn below, this one is persisted: it is the
+        // only thing that explains the repeated assistant turn to whoever
+        // reads the transcript afterwards
+        await sessions.append(session.id, {
+          role: "user",
+          content: EMPTY_ANSWER_NUDGE,
+        });
+        continue;
+      }
 
       if (calls.length === 0) {
         if (!options.deferFinish) await sessions.finish(session.id);
         return {
           sessionId: session.id,
-          answer: content.replace(/<\|\s*DONE\s*\|>/g, "").trim(),
+          answer,
           steps,
           promptTokens,
           completionTokens,
@@ -123,7 +142,7 @@ export async function runAgent(
     if (!options.deferFinish) await sessions.finish(session.id);
     return {
       sessionId: session.id,
-      answer: lastAssistant(conversation),
+      answer: stripDone(lastAssistant(conversation)),
       steps,
       promptTokens,
       completionTokens,
@@ -135,6 +154,19 @@ export async function runAgent(
     throw e;
   }
 }
+
+/** <|DONE|> marks the end of the run; it is never part of the answer. */
+function stripDone(content: string): string {
+  return content.replace(/<\|\s*DONE\s*\|>/g, "").trim();
+}
+
+const EMPTY_ANSWER_NUDGE =
+  `That message was only <|DONE|>, so it carried no answer, and nothing you ` +
+  `worked out has reached anyone. <|DONE|> is not a function: nothing comes ` +
+  `back from it and no further turn follows it, so the answer has to be in ` +
+  `the same message, written straight after it. Send it now, in full and in ` +
+  `the format you were asked for — or, if you still need a lookup first, ` +
+  `make the call instead and leave <|DONE|> out.`;
 
 /**
  * Unknown names and failing functions are reported back to the model rather
