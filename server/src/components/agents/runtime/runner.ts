@@ -27,6 +27,11 @@ export type RunOptions = {
   onSession?: (sessionId: number) => Promise<void>;
   /** The categorization handler finishes after it saves the returned tree. */
   deferFinish?: boolean;
+  /**
+   * Checks the final answer before the run ends. Returning a complaint spends
+   * one turn asking for it again; returning null accepts it.
+   */
+  checkAnswer?: (answer: string) => string | null;
 };
 
 /**
@@ -86,21 +91,19 @@ export async function runAgent(
       const calls = parseToolCalls(content).filter((c) => c.name !== "DONE");
       const answer = stripDone(content);
 
-      // A message that is nothing but <|DONE|> says the agent is finished and
-      // then says nothing: taken at face value it ends the run with an empty
-      // answer, and for a categorizing run that means a whole batch filed
-      // nowhere. It is a slip, not a decision, so it costs one turn — the loop
-      // asks for the answer that was supposed to be there.
-      if (calls.length === 0 && !answer && steps < agent.maxSteps) {
-        log(`step ${steps}: finished with an empty answer, asking again`);
-        conversation.push({ role: "user", content: EMPTY_ANSWER_NUDGE });
+      // An answer that is empty, or that the caller cannot use, ends the run
+      // with nothing — and for a categorizing run that means a whole batch
+      // filed nowhere. It is a slip, not a decision, so it costs one turn: the
+      // loop says what was wrong and asks for the answer again.
+      const complaint =
+        calls.length === 0 ? reject(answer, options.checkAnswer) : null;
+      if (complaint && steps < agent.maxSteps) {
+        log(`step ${steps}: unusable answer, asking again`);
+        conversation.push({ role: "user", content: complaint });
         // unlike the tool-result turn below, this one is persisted: it is the
         // only thing that explains the repeated assistant turn to whoever
         // reads the transcript afterwards
-        await sessions.append(session.id, {
-          role: "user",
-          content: EMPTY_ANSWER_NUDGE,
-        });
+        await sessions.append(session.id, { role: "user", content: complaint });
         continue;
       }
 
@@ -153,6 +156,15 @@ export async function runAgent(
     await sessions.fail(session.id, (e as Error).message);
     throw e;
   }
+}
+
+/** What is wrong with this answer, or null when it can be taken as final. */
+function reject(
+  answer: string,
+  checkAnswer: RunOptions["checkAnswer"],
+): string | null {
+  if (!answer) return EMPTY_ANSWER_NUDGE;
+  return checkAnswer?.(answer) ?? null;
 }
 
 /** <|DONE|> marks the end of the run; it is never part of the answer. */

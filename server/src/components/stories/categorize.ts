@@ -1,4 +1,5 @@
 import * as articles from "../../models/articles";
+import { outermostObject } from "../../utils/jsonObject";
 import { PromptArticle } from "./prompt";
 
 export type RecentArticle = PromptArticle & {
@@ -68,16 +69,58 @@ export async function uncategorizedArticles(
 
 /** Models like to wrap JSON in prose or fences; take the outermost object. */
 export function parseTree(raw: string): StoryTree {
-  const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) {
-    throw new Error("no JSON object in the model response");
+  const object = outermostObject(raw);
+  if (!object) {
+    // what the model actually sent is the only thing that explains the
+    // failure afterwards, and in production this error is all that survives
+    throw new Error(`no JSON object in the model response: ${preview(raw)}`);
   }
-  const parsed = JSON.parse(match[0]) as StoryTree;
+
+  let parsed: StoryTree;
+  try {
+    parsed = JSON.parse(object) as StoryTree;
+  } catch (e) {
+    throw new Error(
+      `the JSON in the model response does not parse: ${(e as Error).message}`,
+    );
+  }
+
   if (!Array.isArray(parsed.stories)) {
     throw new Error("response has no stories array");
   }
   return parsed;
 }
+
+/**
+ * What to tell the agent when its final message was not the tree it was asked
+ * for, or null when the tree is fine. A batch reaches this point having cost a
+ * whole conversation, so a malformed last message is worth one more turn
+ * rather than the run — every article in it stays uncategorized otherwise.
+ */
+export function treeComplaint(answer: string): string | null {
+  try {
+    parseTree(answer);
+    return null;
+  } catch (e) {
+    return (
+      `That message was your answer, and nothing in it could be filed: ` +
+      `${(e as Error).message}. Nothing has been saved. Send the complete ` +
+      `JSON object now — <|DONE|> and the object, no prose, no markdown ` +
+      `fences, every article id from the batch appearing exactly once.`
+    );
+  }
+}
+
+/** Enough of a bad answer to recognise it in a log, without pasting a batch. */
+function preview(raw: string): string {
+  const flat = raw.replace(/\s+/g, " ").trim();
+  if (!flat) return "(empty)";
+  return flat.length > PREVIEW_LIMIT
+    ? `${flat.slice(0, PREVIEW_LIMIT)}…`
+    : flat;
+}
+
+const PREVIEW_LIMIT = 300;
 
 function hostname(url: string): string {
   try {

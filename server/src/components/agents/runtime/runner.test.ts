@@ -100,6 +100,27 @@ describe("runAgent", () => {
     expect(sendChat).toHaveBeenCalledTimes(1);
   });
 
+  it("asks again when the caller cannot use the answer", async () => {
+    vi.mocked(sendChat)
+      .mockResolvedValueOnce(turn("<|DONE|>\nsorry, no json") as never)
+      .mockResolvedValueOnce(turn('<|DONE|>\n{"ok":1}') as never);
+
+    const result = await runAgent(agent, {
+      model: "m",
+      task: "t",
+      dashboardId: "d",
+      checkAnswer: (answer) =>
+        answer.includes("{") ? null : "that was not json, send it again",
+    });
+
+    expect(result.answer).toBe('{"ok":1}');
+    expect(result.steps).toBe(2);
+    expect(sessions.append).toHaveBeenCalledWith(1, {
+      role: "user",
+      content: "that was not json, send it again",
+    });
+  });
+
   it("gives up on an agent that only ever says <|DONE|>", async () => {
     vi.mocked(sendChat).mockResolvedValue(turn("<|DONE|>") as never);
 

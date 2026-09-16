@@ -4,6 +4,7 @@ import * as dashboards from "../../models/dashboards";
 import {
   DEFAULT_WINDOW_DAYS,
   parseTree,
+  treeComplaint,
   uncategorizedArticles,
 } from "../../components/stories/categorize";
 import { persistTree } from "../../components/stories/persist";
@@ -76,6 +77,8 @@ export const runAgentHandler: JobHandler = async (payload, { log, job }) => {
     log,
     onSession: (id) => attachSession(job.id, id),
     deferFinish: true,
+    // a last message that is not the tree costs one turn, not the batch
+    checkAnswer: treeComplaint,
   });
 
   log(
