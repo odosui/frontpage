@@ -16,4 +16,14 @@
   background-color: var(--surface-bg);
   border-radius: $unit1;
   box-shadow: var(--surface-shadow-hover);
+  opacity: 0;
+  transform: translateY(-$unit1);
+  transition:
+    opacity $presence-duration ease,
+    transform $presence-duration ease;
+
+  &.is-shown {
+    opacity: 1;
+    transform: none;
+  }
 }

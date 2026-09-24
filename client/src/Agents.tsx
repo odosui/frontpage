@@ -68,7 +68,7 @@ const Agents = ({
             aria-label="Search conversations"
             placeholder="Search conversations…"
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={(e) => setFilter(e.currentTarget.value)}
           />
           <ul className="agents-sessions">
             {shown.map((s) => (

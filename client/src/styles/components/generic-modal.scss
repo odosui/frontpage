@@ -21,6 +21,12 @@
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity $presence-duration ease;
+
+  &.is-shown {
+    opacity: 1;
+  }
 
   .generic-modal {
     position: relative;
@@ -38,11 +44,18 @@
       0 $unit1 $unit1 (-$unit0) rgb(0 0 0 / 20%),
       0 $unit2 $unit3 0 rgb(0 0 0 / 14%),
       0 $unit0 $unit4 $unit0 rgb(0 0 0 / 12%);
+    // drops in from above as the overlay fades in, and back up on the way out
+    transform: translateY(-20vh);
+    transition: transform $presence-duration ease;
 
     .generic-modal-content {
       max-width: $unit14;
       width: 100%;
     }
+  }
+
+  &.is-shown .generic-modal {
+    transform: none;
   }
 }
 

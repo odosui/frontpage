@@ -88,7 +88,7 @@ const DashboardSwitcher = ({
                   <input
                     className="dash-switcher-edit-input"
                     value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+                    onChange={(e) => setEditName(e.currentTarget.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleRename(id, name)
                       if (e.key === 'Escape') setEditingId(null)
@@ -148,7 +148,7 @@ const DashboardSwitcher = ({
                 className="dash-switcher-create-input"
                 placeholder="New arc, e.g. Russian-Ukrainian war"
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={(e) => setNewName(e.currentTarget.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCreate()
                   if (e.key === 'Escape') {

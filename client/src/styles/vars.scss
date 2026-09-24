@@ -36,6 +36,9 @@ $unit15: 768px;
 $unit16: 960px;
 $unit17: 1024px;
 
+// keep in step with PRESENCE_MS in ui/usePresence.ts
+$presence-duration: 0.2s;
+
 $green: #63ab7b;
 $green-lighter: #4dc375;
 

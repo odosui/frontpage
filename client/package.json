@@ -14,19 +14,19 @@
   "dependencies": {
     "@primer/octicons-react": "^19.15.1",
     "date-fns": "^4.1.0",
-    "motion": "^12.36.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "preact": "^10.29.8",
     "slim-react-router": "^0.6.1"
   },
   "devDependencies": {
-    "@types/react": "^18.2.56",
-    "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@preact/preset-vite": "^2.10.6",
     "oxlint": "^1.32.0",
     "prettier": "^3.4.2",
     "sass": "^1.94.2",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
+  },
+  "overrides": {
+    "react": "npm:@preact/compat@^18.3.2",
+    "react-dom": "npm:@preact/compat@^18.3.2"
   }
 }

@@ -80,7 +80,7 @@ const ChatComposer = ({
         value={value}
         placeholder={placeholder}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.currentTarget.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()

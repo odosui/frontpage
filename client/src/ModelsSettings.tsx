@@ -156,7 +156,7 @@ const ModelPicker: React.FC<{
     if (model.id !== value) onPick(model.id)
   }
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') return close()
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -181,12 +181,12 @@ const ModelPicker: React.FC<{
         className="form-input model-picker-input"
         value={text}
         disabled={busy}
-        spellCheck={false}
+        spellcheck={false}
         role="combobox"
         aria-expanded={open}
         placeholder="Search OpenRouter models…"
         onChange={(e) => {
-          setText(e.target.value)
+          setText(e.currentTarget.value)
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}

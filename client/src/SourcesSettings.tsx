@@ -139,7 +139,7 @@ const SourcesSettings = () => {
                       className="form-input"
                       value={draft.kind}
                       onChange={(e) =>
-                        setDraft({ ...draft, kind: e.target.value as SourceKind })
+                        setDraft({ ...draft, kind: e.currentTarget.value as SourceKind })
                       }
                     >
                       {SOURCE_KINDS.map((k) => (
@@ -156,7 +156,7 @@ const SourcesSettings = () => {
                       className="form-input"
                       value={draft.url}
                       autoFocus
-                      onChange={(e) => setDraft({ ...draft, url: e.target.value })}
+                      onChange={(e) => setDraft({ ...draft, url: e.currentTarget.value })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') save(source.id)
                         if (e.key === 'Escape') setEditing(null)
@@ -172,7 +172,7 @@ const SourcesSettings = () => {
                         title="Minimum points"
                         value={draft.minScore}
                         onChange={(e) =>
-                          setDraft({ ...draft, minScore: e.target.value })
+                          setDraft({ ...draft, minScore: e.currentTarget.value })
                         }
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') save(source.id)
@@ -250,13 +250,13 @@ const SourcesSettings = () => {
             placeholder="Name"
             value={made.name}
             autoFocus
-            onChange={(e) => setMade({ ...made, name: e.target.value })}
+            onChange={(e) => setMade({ ...made, name: e.currentTarget.value })}
           />
           <select
             className="form-input"
             value={made.kind}
             onChange={(e) =>
-              setMade({ ...made, kind: e.target.value as SourceKind })
+              setMade({ ...made, kind: e.currentTarget.value as SourceKind })
             }
           >
             {SOURCE_KINDS.map((k) => (
@@ -271,7 +271,7 @@ const SourcesSettings = () => {
               made.kind === 'reddit' ? 'r/futurology' : 'https://example.com/feed'
             }
             value={made.url}
-            onChange={(e) => setMade({ ...made, url: e.target.value })}
+            onChange={(e) => setMade({ ...made, url: e.currentTarget.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter') create()
               if (e.key === 'Escape') setCreating(false)
@@ -284,7 +284,7 @@ const SourcesSettings = () => {
               min={0}
               title="Minimum points"
               value={made.minScore}
-              onChange={(e) => setMade({ ...made, minScore: e.target.value })}
+              onChange={(e) => setMade({ ...made, minScore: e.currentTarget.value })}
             />
           )}
           <button

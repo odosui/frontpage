@@ -162,7 +162,7 @@ const AddSourceModal: React.FC<Props> = ({
               className="form-input"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.currentTarget.value)}
               placeholder="Reuters world"
               autoFocus
             />
@@ -172,7 +172,7 @@ const AddSourceModal: React.FC<Props> = ({
             <select
               className="form-input"
               value={kind}
-              onChange={(e) => setKind(e.target.value as SourceKind)}
+              onChange={(e) => setKind(e.currentTarget.value as SourceKind)}
             >
               {SOURCE_KINDS.map((k) => (
                 <option key={k} value={k} disabled={!IMPLEMENTED.includes(k)}>
@@ -190,7 +190,7 @@ const AddSourceModal: React.FC<Props> = ({
               // a subreddit may be typed bare, so it is not a url field
               type={kind === 'reddit' ? 'text' : 'url'}
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => setUrl(e.currentTarget.value)}
               placeholder={
                 kind === 'reddit' ? 'r/futurology' : 'https://example.com/feed'
               }
@@ -206,7 +206,7 @@ const AddSourceModal: React.FC<Props> = ({
                 type="number"
                 min={0}
                 value={minScore}
-                onChange={(e) => setMinScore(e.target.value)}
+                onChange={(e) => setMinScore(e.currentTarget.value)}
               />
               <span className="form-hint form-hint--field">
                 Posts below this are ignored. A post that climbs past it later

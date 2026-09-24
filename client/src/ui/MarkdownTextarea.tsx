@@ -70,7 +70,7 @@ const MarkdownTextarea = ({
       disabled={disabled}
       autoFocus={autoFocus}
       title="cmd-B wraps the selection in **bold**"
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(e.currentTarget.value)}
       onKeyDown={onKeyDown}
     />
   )

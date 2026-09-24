@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import preact from '@preact/preset-vite'
 import fs from 'fs'
 
 // read the config file
@@ -11,7 +11,7 @@ const apiServerUrl =
   process.env.NODE_ENV === 'production' ? '' : config.apiServerUrl
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [preact()],
   define: {
     API_SERVER_URL: JSON.stringify(apiServerUrl),
   },

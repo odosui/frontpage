@@ -1,7 +1,7 @@
-import { AnimatePresence, motion } from 'motion/react'
 import React, { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ClickOutside from './ClickOutside'
+import { usePresence } from './usePresence'
 
 type Props = {
   open: boolean
@@ -23,6 +23,7 @@ const MARGIN = 8
 const DropdownMenu = ({ open, onClose, anchor, children }: Props) => {
   const panel = useRef<HTMLDivElement | null>(null)
   const [at, setAt] = useState<{ top: number; left: number } | null>(null)
+  const { mounted, shown } = usePresence(open)
 
   const handleClose = useCallback(() => {
     if (open) {
@@ -36,10 +37,12 @@ const DropdownMenu = ({ open, onClose, anchor, children }: Props) => {
    * moves only where that would put it off screen.
    */
   useLayoutEffect(() => {
-    if (!open) {
+    // kept through the exit, so the panel fades out where it was
+    if (!mounted) {
       setAt(null)
       return
     }
+    if (!open) return
 
     const control = anchor.current?.getBoundingClientRect()
     const box = panel.current?.getBoundingClientRect()
@@ -57,7 +60,7 @@ const DropdownMenu = ({ open, onClose, anchor, children }: Props) => {
         : Math.max(MARGIN, control.top - GAP - box.height)
 
     setAt({ top, left })
-  }, [open, anchor])
+  }, [open, mounted, anchor])
 
   /**
    * A panel fixed to the viewport does not travel with what it is anchored to,
@@ -75,29 +78,24 @@ const DropdownMenu = ({ open, onClose, anchor, children }: Props) => {
     }
   }, [open, handleClose])
 
+  if (!mounted) return null
+
   return createPortal(
-    <AnimatePresence>
-      {open && (
-        <ClickOutside onClickOutside={handleClose}>
-          <motion.div
-            ref={panel}
-            className="dropdown-menu"
-            // hidden for the one frame between mounting and being measured,
-            // so it is never seen in the corner it was rendered in
-            style={{
-              top: at?.top ?? 0,
-              left: at?.left ?? 0,
-              visibility: at ? 'visible' : 'hidden',
-            }}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            {children}
-          </motion.div>
-        </ClickOutside>
-      )}
-    </AnimatePresence>,
+    <ClickOutside onClickOutside={handleClose}>
+      <div
+        ref={panel}
+        className={`dropdown-menu${shown ? ' is-shown' : ''}`}
+        // hidden for the one frame between mounting and being measured,
+        // so it is never seen in the corner it was rendered in
+        style={{
+          top: at?.top ?? 0,
+          left: at?.left ?? 0,
+          visibility: at ? 'visible' : 'hidden',
+        }}
+      >
+        {children}
+      </div>
+    </ClickOutside>,
     document.body,
   )
 }

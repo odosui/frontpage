@@ -51,7 +51,7 @@ const DashboardPrompt: React.FC<Props> = ({ value, onSave }) => {
         value={draft}
         placeholder="e.g. Treat ministry statements as claims, not facts."
         disabled={saving}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => setDraft(e.currentTarget.value)}
       />
       <div className="agents-prompt-actions">
         {error && <span className="agents-error">{error}</span>}
