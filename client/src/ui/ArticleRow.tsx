@@ -55,7 +55,6 @@ const ArticleRow = ({
         target="_blank"
         rel="noopener noreferrer"
         className="article-row-title"
-        title={article.title}
       >
         {article.title}
       </a>

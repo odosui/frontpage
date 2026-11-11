@@ -31,24 +31,25 @@
   }
 }
 
-// the header line. There is no storyline label above it any more — the
-// dashboard is the arc, so every story on the page already belongs to it.
+// a story's title is a section label, not a headline: small capitals in the
+// muted grey, so the coverage under it stays what is read. It starts on the
+// headlines' edge rather than the column's, so the label and the headlines
+// beneath it share one left line and the times hang in their own column
 .story-title {
-  // a flex row again, now that the title is held to one line: the caret used
-  // to break onto a line of its own whenever the title wrapped, and a title
-  // that cannot wrap cannot do that to it.
+  // one line, the caret beside it: a title that cannot wrap cannot push the
+  // caret onto a line of its own
   display: flex;
   align-items: center;
-  // flush with the column's gutter: the rows beneath bleed their hover box
-  // outwards rather than pushing their text in, so the two share a left edge
-  // with the first row's own padding, the same 8px the rows keep between them
-  margin: 0 0 $unit0;
-  font-family: var(--font-display);
-  font-size: var(--story-title-size);
-  font-weight: var(--story-title-weight);
-  line-height: 1.2;
-  letter-spacing: var(--story-title-tracking);
-  color: var(--color-text);
+  margin: 0;
+  padding-left: calc(var(--row-when) + var(--row-gap));
+  font-family: var(--font-ui);
+  font-size: $text0;
+  font-weight: 600;
+  line-height: 1.4;
+  text-transform: uppercase;
+  // small capitals need real tracking to stay readable
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
 }
 
 // renaming or unfiling a story: the caret keeps out of the way until the card
@@ -140,6 +141,7 @@
 .story-title-text {
   font: inherit;
   letter-spacing: inherit;
+  text-transform: inherit;
   color: inherit;
   // one line, cut with an ellipsis. Two- and three-line headers pushed the
   // stories apart unevenly and buried the articles, which are what is being
@@ -179,8 +181,8 @@
 // moving it.
 .article-row {
   display: grid;
-  grid-template-columns: 3rem minmax(0, 1fr) auto;
-  column-gap: $unit3;
+  grid-template-columns: var(--row-when) minmax(0, 1fr) auto;
+  column-gap: var(--row-gap);
   align-items: start;
   margin: 0 calc(-1 * var(--row-bleed));
   padding: var(--row-pad) var(--row-bleed);
@@ -229,11 +231,9 @@
   letter-spacing: var(--headline-tracking);
   text-decoration: none;
   color: var(--color-text);
-  @include transition(color);
 
-  &:hover {
-    color: var(--color-text-muted);
-  }
+  // the row's fill is the hover; the headline itself never dims, which read
+  // as the article being disabled
 
   // not filed into a story yet: set bold, so the queue the File button would
   // clear can be picked out by eye down the whole list

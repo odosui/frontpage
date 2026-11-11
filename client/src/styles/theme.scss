@@ -63,10 +63,6 @@
   --headline-weight: 500;
   --headline-leading: 1.4;
   --headline-tracking: 0.01em;
-  // a story's own title, over the coverage filed under it
-  --story-title-size: 22px;
-  --story-title-weight: 650;
-  --story-title-tracking: -0.02em;
   // who ran it and when, under the headline
   --meta-size: 12.5px;
   --meta-weight: 450;
@@ -80,6 +76,11 @@
   // its text, how round that fill is, and the fill itself. Rows are parted
   // by space, never by rules
   --row-pad: 12px;
+  // a row's two text edges: the time in a narrow column, then a gap, then
+  // the headline. Story labels start on the headline's edge, so labels and
+  // headlines share one line down the page and the times hang to the left
+  --row-when: 3rem;
+  --row-gap: 16px;
   --row-bleed: 14px;
   --radius-row: 16px;
   --row-hover: rgba(64, 64, 64, 0.05);
