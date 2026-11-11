@@ -32,7 +32,7 @@ const SourcesSettings = () => {
   const [made, setMade] = useState({
     name: '',
     url: '',
-    kind: 'web' as SourceKind,
+    kind: 'rss' as SourceKind,
     minScore: String(DEFAULT_MIN_SCORE),
   })
 
@@ -88,7 +88,7 @@ const SourcesSettings = () => {
     setMade({
       name: '',
       url: '',
-      kind: 'web',
+      kind: 'rss',
       minScore: String(DEFAULT_MIN_SCORE),
     })
     guard(

@@ -39,7 +39,7 @@ const AddSourceModal: React.FC<Props> = ({
   const [all, setAll] = useState<Source[]>([])
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
-  const [kind, setKind] = useState<SourceKind>('web')
+  const [kind, setKind] = useState<SourceKind>('rss')
   const [minScore, setMinScore] = useState(String(DEFAULT_MIN_SCORE))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,7 +65,7 @@ const AddSourceModal: React.FC<Props> = ({
   const close = () => {
     setName('')
     setUrl('')
-    setKind('web')
+    setKind('rss')
     setMinScore(String(DEFAULT_MIN_SCORE))
     setError(null)
     setTab('existing')
