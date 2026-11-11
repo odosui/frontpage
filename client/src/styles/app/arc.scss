@@ -22,17 +22,34 @@
 // A segmented control: the sections as pills, with the open one sitting on a
 // grey wash that slides from tab to tab when another is picked (see ArcTabs).
 // No rule under the bar — space does the separating.
+// the bar is full width, so the gutter is measured against the page; the
+// tabs and the actions inside it still line up with the column below
 .arc-nav {
   flex: none;
+  display: flex;
+  align-items: center;
+  gap: $unit2;
+  padding: $unit3 $reading-gutter $unit1;
 }
 
-// the bar is full width, so the gutter is measured against the page; the
-// tabs inside it still line up with the column below
+// the pills reach out into the gutter by the same bleed as a row's hover
+// fill, so the first label sits on the column's edge, in line with the
+// content of every row beneath it, and pill and fill share a left edge too
 .arc-tabs {
   position: relative;
   display: flex;
   gap: 2px;
-  padding: $unit3 $reading-gutter $unit1;
+  margin-left: calc(-1 * var(--row-bleed));
+}
+
+.arc-nav-actions {
+  margin-left: auto;
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: $unit1 - 2px;
 }
 
 .arc-tab {
@@ -42,7 +59,7 @@
   display: inline-flex;
   align-items: center;
   gap: $unit1;
-  padding: $unit1 $unit3;
+  padding: $unit1 var(--row-bleed);
   border: none;
   border-radius: $radius-pill;
   background: none;
@@ -93,8 +110,8 @@
 .arc-tabs-mark {
   position: absolute;
   left: 0;
-  top: $unit3;
-  height: calc(100% - #{$unit3} - #{$unit1});
+  top: 0;
+  height: 100%;
   border-radius: $radius-pill;
   background-color: var(--color-bg-active);
   pointer-events: none;
@@ -181,65 +198,6 @@
   flex-direction: column;
 }
 
-// THE PANEL HEAD
-//
-// One header for every panel: a line saying what the panel holds, and its
-// actions on the right. The tab above already names it and counts it, so this
-// does neither — it reads as a standfirst, not a second title. The min-height
-// keeps the line at one height whether or not there is a button beside it.
-.col-head {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $unit2;
-  min-height: $unit6;
-  padding: $unit4 $reading-gutter $unit2;
-}
-
-.col-dek {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: $unit1;
-  min-width: 0;
-  font-size: $text1;
-  line-height: 1.4;
-  color: var(--color-text-muted);
-}
-
-// whatever the column is counting, trailing its name: a version, a length, a
-// "100 of 175"
-.col-count {
-  font-weight: 400;
-  opacity: 0.7;
-  white-space: nowrap;
-}
-
-// the facts version is the only count you can press: it is the name of a
-// revision, so it opens the ones before it. Styled as the count it already is
-// rather than as a button — the underline on hover is the whole affordance
-.col-count-btn {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  color: inherit;
-  cursor: pointer;
-  @include transition(color, opacity);
-
-  &:hover,
-  // stays lit while the history it opened is on screen
-  &.is-on {
-    opacity: 1;
-    color: var(--color-accent);
-    text-decoration: underline;
-  }
-}
-
 // THE PANEL BODY
 //
 // The only thing on the page that scrolls, and the gutter every panel is
@@ -250,34 +208,22 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 $reading-gutter $unit6;
+  padding: $unit2 $reading-gutter $unit6;
 }
 
-.col-btn {
-  flex: none;
-  width: $unit3;
-  height: $unit3;
-  padding: 0;
-  border: none;
-  border-radius: $radius-sm;
-  background: none;
-  font-size: $text3;
-  line-height: 1;
+// the foot of a list that holds less than there is
+.list-foot {
+  margin: $unit4 0 0;
+  font-size: var(--meta-size);
+  text-align: center;
   color: var(--color-text-muted);
-  cursor: pointer;
-  @include transition(background-color, color);
-
-  &:hover,
-  // the history toggle stays lit while the panel it opened is on screen
-  &.is-on {
-    background-color: var(--color-bg-hover);
-    color: var(--color-accent);
-  }
 }
 
-// the button on this page that starts an agent — facts, in the stories
-// header. Unlike the icon buttons beside it it says what it does: small and outlined rather than filled, since
-// starting a run is a deliberate act, not the column's primary one.
+// A PANEL ACTION
+//
+// The open tab's buttons, at the right end of the tab bar: filing the queue,
+// updating the facts, the facts' history and the add form. Grey-wash pills
+// that say what they do; a toggle stays darker while what it opened is open.
 .col-run {
   flex: none;
   display: inline-flex;
@@ -311,19 +257,18 @@
   &.is-busy:disabled {
     opacity: 1;
   }
+
+  &.is-on {
+    background-color: var(--color-bg-active);
+  }
+
+  svg {
+    fill: currentColor;
+  }
 }
 
 .col-run-spin {
   animation: spin 1s linear infinite;
-}
-
-// the history toggle sits beside the add button, same size and same weight:
-// looking back is as ordinary an act as writing something down
-.col-tools {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: $unit0;
 }
 
 // the versions themselves: a stack of what the list once was, each one a

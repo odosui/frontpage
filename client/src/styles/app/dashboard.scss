@@ -156,17 +156,6 @@
   flex-direction: column;
 }
 
-// not filed yet: the count that the button beside it would clear
-// a solid chip, inverted: the one thing on the line that is asking for action
-.feed-uncategorized {
-  padding: 1px $unit1;
-  border-radius: $radius-pill;
-  background-color: var(--color-text);
-  font-size: $text0;
-  font-weight: 500;
-  color: var(--color-bg);
-}
-
 .feed-placeholder {
   color: var(--color-text-muted);
   font-size: $text1;
@@ -262,22 +251,23 @@
   color: var(--color-text-muted);
 }
 
-// said in the meta line, where it is read with the source rather than
-// shouting from the margin
-.article-row-unfiled {
-  display: inline-flex;
+// not filed into a story yet: a blue dot beside the time, the same size and
+// place as the importance dot in Stories but never one of its colours
+// the dots, pinned to the left of the time column, so down a list they form
+// one straight line whatever the width of the time beside them
+.article-row-marks {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  color: var(--color-accent-strong);
-  font-weight: 500;
+  gap: $unit0;
+  margin-right: auto;
+}
 
-  &::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--color-accent);
-  }
+.article-unfiled {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-unfiled);
 }
 
 // the agent's 1-10 score, as a dot: grey for trivia climbing to red for the

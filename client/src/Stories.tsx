@@ -1,14 +1,15 @@
 import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { type StoryFeedEntry } from './api'
 import ArticleRow from './ui/ArticleRow'
+import PanelActions from './ui/PanelActions'
 import StoryMenu from './ui/StoryMenu'
 
 type Props = {
   stories: StoryFeedEntry[]
   /**
    * How many stories this dashboard holds, which is not how many are on
-   * screen: the page asks for the newest hundred. Shown as "100 of 214" so a
-   * capped column says so rather than looking like the whole arc.
+   * screen: the page asks for the newest hundred. The foot of the list says so
+   * when it is capped, rather than looking like the whole arc.
    */
   total: number
   /** Whether this dashboard reads any source at all — for the empty state. */
@@ -24,6 +25,9 @@ type Props = {
   onRunFacts: () => void
   /** Whether that run is in flight right now. */
   runningFacts: boolean
+  /** The tab bar's action slot, and whether this is the open tab. */
+  actionsSlot: HTMLElement | null
+  active: boolean
 }
 
 /**
@@ -45,19 +49,12 @@ const Stories = ({
   onDelete,
   onRunFacts,
   runningFacts,
+  actionsSlot,
+  active,
 }: Props) => {
-  // the shared panel header: what the tab holds on the left, what can be done
-  // with it on the right. The name and the count are on the tab itself
+  // the panel's action, lent to the tab bar while this tab is open
   const head = (
-    <header className="col-head">
-      <p className="col-dek">
-        Events, with the coverage filed under each
-        {total > stories.length && (
-          <span className="col-count">
-            showing {stories.length} of {total}
-          </span>
-        )}
-      </p>
+    <PanelActions slot={actionsSlot} active={active}>
       <button
         className={`col-run${runningFacts ? ' is-busy' : ''}`}
         onClick={onRunFacts}
@@ -77,7 +74,7 @@ const Stories = ({
         )}
         {runningFacts ? 'Updating facts' : 'Update facts'}
       </button>
-    </header>
+    </PanelActions>
   )
 
   if (stories.length === 0) {
@@ -129,6 +126,13 @@ const Stories = ({
             </div>
           </article>
         ))}
+        {/* the page asks for the newest hundred; a capped list says so at
+            its foot, where running out is noticed */}
+        {total > stories.length && (
+          <p className="list-foot">
+            Showing the newest {stories.length} of {total} stories
+          </p>
+        )}
       </div>
     </div>
   )

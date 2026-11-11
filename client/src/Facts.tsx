@@ -1,3 +1,4 @@
+import { HistoryIcon, PlusIcon, XIcon } from '@primer/octicons-react'
 import { useCallback, useEffect, useState } from 'react'
 import api, {
   DEFAULT_CONFIDENCE,
@@ -6,6 +7,7 @@ import api, {
   type FactsVersion,
 } from './api'
 import MarkdownTextarea from './ui/MarkdownTextarea'
+import PanelActions from './ui/PanelActions'
 import ConfidencePicker from './ui/facts/ConfidencePicker'
 import FactRow from './ui/facts/FactRow'
 import FactsHistory from './ui/facts/FactsHistory'
@@ -18,6 +20,9 @@ type Props = {
   version: number
   /** Called after any change, so the page reloads what it holds. */
   onChanged: () => void
+  /** The tab bar's action slot, and whether this is the open tab. */
+  actionsSlot: HTMLElement | null
+  active: boolean
 }
 
 /**
@@ -37,6 +42,8 @@ const Facts = ({
   facts,
   version,
   onChanged,
+  actionsSlot,
+  active,
 }: Props) => {
   const [adding, setAdding] = useState(false)
   const [content, setContent] = useState('')
@@ -95,36 +102,32 @@ const Facts = ({
 
   return (
     <div className="facts">
-      <header className="col-head">
-        <p className="col-dek">
-          What this arc has established, and how sure it is
-          {version > 0 && (
-            <button
-              className={`col-count col-count-btn${
-                showHistory ? ' is-on' : ''
-              }`}
-              onClick={() => {
-                const next = !showHistory
-                setShowHistory(next)
-                if (next) loadHistory()
-              }}
-              aria-expanded={showHistory}
-              title="How this list got here"
-            >
-              v{version}
-            </button>
-          )}
-        </p>
-        <div className="col-tools">
+      <PanelActions slot={actionsSlot} active={active}>
+        {version > 0 && (
           <button
-            className="col-btn"
-            onClick={() => setAdding((was) => !was)}
-            title="Write down a fact"
+            className={`col-run${showHistory ? ' is-on' : ''}`}
+            onClick={() => {
+              const next = !showHistory
+              setShowHistory(next)
+              if (next) loadHistory()
+            }}
+            aria-expanded={showHistory}
+            title="How this list got here"
           >
-            {adding ? '×' : '+'}
+            <HistoryIcon size={12} />
+            History · v{version}
           </button>
-        </div>
-      </header>
+        )}
+        <button
+          className={`col-run${adding ? ' is-on' : ''}`}
+          onClick={() => setAdding((was) => !was)}
+          aria-expanded={adding}
+          title="Write down a fact"
+        >
+          {adding ? <XIcon size={12} /> : <PlusIcon size={12} />}
+          {adding ? 'Cancel' : 'Add fact'}
+        </button>
+      </PanelActions>
 
       <div className="col-body">
         {showHistory && (

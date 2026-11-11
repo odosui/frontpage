@@ -86,6 +86,8 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [showAddSource, setShowAddSource] = useState(false)
   const [tab, setTabState] = useState<Tab>(savedTab)
+  // the right end of the tab bar, where the open panel lends its actions
+  const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
   const setTab = useCallback((next: Tab) => {
     setTabState(next)
     try {
@@ -568,6 +570,7 @@ const Dashboard: React.FC = () => {
             { id: 'facts', label: 'Facts', count: loaded.facts?.length ?? 0 },
           ]}
         />
+        <div className="arc-nav-actions" ref={setActionsSlot} />
       </nav>
 
       {/* every panel stays mounted, hidden when it is not the open one: a
@@ -592,6 +595,8 @@ const Dashboard: React.FC = () => {
           extracting={extracting}
           onExtract={extractContent}
           onOpenContent={setOpenArticle}
+          actionsSlot={actionsSlot}
+          active={tab === 'latest'}
         />
       </section>
 
@@ -614,6 +619,8 @@ const Dashboard: React.FC = () => {
           onDelete={deleteStory}
           onRunFacts={runFacts}
           runningFacts={factsRunning}
+          actionsSlot={actionsSlot}
+          active={tab === 'stories'}
         />
       </section>
 
@@ -629,6 +636,8 @@ const Dashboard: React.FC = () => {
           facts={loaded.facts ?? []}
           version={loaded.factsVersion ?? 0}
           onChanged={load}
+          actionsSlot={actionsSlot}
+          active={tab === 'facts'}
         />
       </section>
 

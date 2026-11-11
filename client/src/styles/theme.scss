@@ -18,9 +18,6 @@
   --color-bg-hover: rgba(64, 64, 64, 0.06);
   --color-bg-active: rgba(64, 64, 64, 0.12);
   --color-surface: #ffffff;
-  // the top bar: an off-white band that sets it apart from the page by tone
-  // alone, without a rule under it
-  --color-bar: #f7f7f7;
   --color-overlay: rgba(20, 20, 20, 0.32);
 
   // text
@@ -46,6 +43,10 @@
   --color-warning: #e8a317;
   --color-orange: #f2711c;
   --color-danger: #e5484d;
+  // not filed into a story yet. Blue, because the importance scale already
+  // spends grey, amber, orange and red, and success is green: this must not
+  // be mistaken for a score
+  --color-unfiled: #2f7cf6;
 
   // elevation: barely there — a hairline and a long, faint shadow
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
@@ -102,7 +103,6 @@
   --color-bg-hover: rgba(255, 255, 255, 0.08);
   --color-bg-active: rgba(255, 255, 255, 0.14);
   --color-surface: #181818;
-  --color-bar: #171717;
   --color-overlay: rgba(0, 0, 0, 0.6);
 
   --color-text: #f2f2f2;
@@ -124,6 +124,7 @@
   --color-warning: #ffc53d;
   --color-orange: #ff8b3e;
   --color-danger: #ff6369;
+  --color-unfiled: #5b9cff;
 
   // dark needs a light ring: black shadows on a near-black page are invisible
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.1);

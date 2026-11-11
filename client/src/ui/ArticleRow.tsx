@@ -22,9 +22,9 @@ type Props = {
  * on a line of its own; who ran it, quietly, underneath; and the button that
  * fetches or opens its text at the end.
  *
- * Not filed into a story yet, the headline is set bold and the source line
- * says so — which only ever happens in Latest, since anything in a story has
- * been filed.
+ * Not filed into a story yet, the headline is set bold and a blue dot sits
+ * beside the time — which only ever happens in Latest, since anything in a
+ * story has been filed.
  */
 const ArticleRow = ({
   article,
@@ -35,16 +35,28 @@ const ArticleRow = ({
 }: Props) => (
   <div className={`article-row${article.uncategorized ? ' is-unfiled' : ''}`}>
     <span className="article-row-when">
-      {showImportance && (
-        <span
-          className={`article-importance is-${band(article.importance)}`}
-          title={
-            article.importance === null
-              ? 'Not scored yet'
-              : `Importance ${article.importance}/10`
-          }
-        />
-      )}
+      <span className="article-row-marks">
+        {/* not filed into a story yet: a blue dot beside the time, in the same
+            place Stories put the importance dot, and a bold headline */}
+        {article.uncategorized && (
+          <span
+            className="article-unfiled"
+            role="img"
+            aria-label="Not filed yet"
+            title="Not filed into a story yet"
+          />
+        )}
+        {showImportance && (
+          <span
+            className={`article-importance is-${band(article.importance)}`}
+            title={
+              article.importance === null
+                ? 'Not scored yet'
+                : `Importance ${article.importance}/10`
+            }
+          />
+        )}
+      </span>
       <ArticleTime article={article} />
     </span>
     <div className="article-row-main">
@@ -59,9 +71,6 @@ const ArticleRow = ({
       </a>
       <span className="article-row-meta">
         <ArticleSource article={article} />
-        {article.uncategorized && (
-          <span className="article-row-unfiled">not filed</span>
-        )}
       </span>
     </div>
     <ContentButton

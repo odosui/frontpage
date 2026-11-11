@@ -1,6 +1,7 @@
 import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { type FeedArticle } from './api'
 import ArticleRow from './ui/ArticleRow'
+import PanelActions from './ui/PanelActions'
 
 type Props = {
   articles: FeedArticle[]
@@ -15,6 +16,9 @@ type Props = {
   extracting: Set<number>
   onExtract: (articleId: number) => void
   onOpenContent: (articleId: number) => void
+  /** The tab bar's action slot, and whether this is the open tab. */
+  actionsSlot: HTMLElement | null
+  active: boolean
 }
 
 /**
@@ -35,18 +39,12 @@ const Feed = ({
   extracting,
   onExtract,
   onOpenContent,
+  actionsSlot,
+  active,
 }: Props) => {
   return (
     <div className="feed">
-      <header className="col-head">
-        <p className="col-dek">
-          Everything the sources collected, newest first
-          {uncategorized > 0 && (
-            <span className="feed-uncategorized">
-              {uncategorized} not filed yet
-            </span>
-          )}
-        </p>
+      <PanelActions slot={actionsSlot} active={active}>
         <button
           className={`col-run${running ? ' is-busy' : ''}`}
           onClick={onRunAgent}
@@ -62,9 +60,13 @@ const Feed = ({
           ) : (
             <PlayIcon size={12} />
           )}
-          {running ? 'Filing' : 'File into stories'}
+          {running
+            ? 'Filing'
+            : uncategorized === 0
+              ? 'All filed'
+              : `File ${uncategorized} into stories`}
         </button>
-      </header>
+      </PanelActions>
 
       {articles.length === 0 ? (
         <div className="col-body">
