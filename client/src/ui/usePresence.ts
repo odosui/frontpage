@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-/** Keep in step with `$presence-duration` in styles/vars.scss. */
-export const PRESENCE_MS = 200
+/** Keep in step with `--motion-slow` in styles/theme.scss. */
+export const PRESENCE_MS = 240
 
 /**
  * Mounting for an element that fades in and out with a CSS transition.

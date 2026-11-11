@@ -1,0 +1,111 @@
+// THE THEME
+//
+// Every colour, shadow and motion value the app uses, as custom properties, in
+// one place. Components never write a colour of their own: they name one of
+// these, so a change here is a change everywhere and the two themes cannot
+// drift apart.
+//
+// The palette is print editorial: warm paper, near-black ink, and a single
+// terracotta accent used sparingly, the way a magazine spends its one spot
+// colour. Neutrals all lean warm so paper, rules and ink read as one stock.
+// Status colours are muted earth tones (sage, ochre, brick) so they sit on
+// the page instead of shouting over it.
+
+:root {
+  // surfaces, from the page outward
+  --color-bg: #f5f1ea;
+  --color-bg-subtle: #efe9df;
+  --color-bg-hover: #e9e2d6;
+  --color-bg-active: #dfd5c6;
+  --color-surface: #fbf9f5;
+  --color-overlay: rgba(29, 26, 22, 0.34);
+
+  // text
+  --color-text: #1d1b18;
+  --color-text-muted: #877f74;
+  --color-scroll-thumb: rgba(29, 27, 24, 0.2);
+
+  // lines
+  --color-border: #e4ddd1;
+  --color-border-strong: #d3cabb;
+
+  // the accent: terracotta. `strong` is for text and pressed states, where
+  // it needs more weight; `soft` is a tint to sit behind it
+  --color-accent: #b5532f;
+  --color-accent-strong: #93401f;
+  --color-accent-pressed: #7a3418;
+  --color-accent-soft: #f4e4da;
+  --color-accent-contrast: #ffffff;
+  --color-focus-ring: rgba(181, 83, 47, 0.28);
+
+  // status
+  --color-success: #5b7f5a;
+  --color-warning: #c49536;
+  --color-orange: #cf7340;
+  --color-danger: #b23b3b;
+
+  // elevation: soft, and tinted warm like the paper rather than pure black
+  --shadow-sm: 0 1px 2px rgba(60, 45, 30, 0.06), 0 0 0 1px rgba(60, 45, 30, 0.05);
+  --shadow-md: 0 8px 24px rgba(60, 45, 30, 0.1), 0 0 0 1px rgba(60, 45, 30, 0.05);
+  --shadow-lg: 0 24px 48px -12px rgba(60, 45, 30, 0.24), 0 0 0 1px rgba(60, 45, 30, 0.06);
+
+  // motion: every transition in the app runs on these. `fast` for small,
+  // immediate feedback, `base` for hover and state, `slow` for things
+  // entering and leaving. A press darkens on `fast` and eases back on
+  // `base`; nothing scales on click, so text never changes size
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  // keep in step with PRESENCE_MS in ui/usePresence.ts
+  --motion-slow: 240ms;
+}
+
+[data-theme='dark'] {
+  --color-bg: #161412;
+  --color-bg-subtle: #1c1a17;
+  --color-bg-hover: #26221e;
+  --color-bg-active: #312c27;
+  --color-surface: #1e1b18;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
+  --color-text: #ece6dc;
+  --color-text-muted: #9a9185;
+  --color-scroll-thumb: rgba(236, 230, 220, 0.18);
+
+  --color-border: #2d2925;
+  --color-border-strong: #3b3630;
+
+  --color-accent: #e0835c;
+  --color-accent-strong: #eea383;
+  --color-accent-pressed: #f4bea6;
+  --color-accent-soft: #3a251b;
+  --color-accent-contrast: #1a120d;
+  --color-focus-ring: rgba(224, 131, 92, 0.35);
+
+  --color-success: #88ae86;
+  --color-warning: #dcb25c;
+  --color-orange: #e8935f;
+  --color-danger: #e27272;
+
+  // dark needs a light ring: black shadows on a near-black page are invisible
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+// motion is a nicety, never a requirement: with reduced motion asked for,
+// everything still changes state, just without travelling there
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 1ms;
+    --motion-base: 1ms;
+    --motion-slow: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

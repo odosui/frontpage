@@ -17,13 +17,13 @@
     position: relative;
     width: $unit5;
     height: $unit3;
-    background-color: var(--color-menu-bg-hover-intense);
-    border-radius: $unit1;
-    transition: background-color 0.3s ease;
-    border: 1px solid var(--color-menu-border);
+    background-color: var(--color-border-strong);
+    border-radius: $radius-md;
+    @include transition(background-color);
+    border: 1px solid var(--color-border);
 
     &:hover {
-      background-color: var(--color-menu-bg-hover);
+      background-color: var(--color-bg-hover);
     }
   }
 
@@ -44,7 +44,7 @@
     .theme-icon {
       width: $unit1;
       height: $unit1;
-      transition: all 0.3s ease;
+      @include transition(fill);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -56,11 +56,11 @@
     }
 
     .sun-icon {
-      fill: var(--color-menu-text-secondary);
+      fill: var(--color-text-muted);
     }
 
     .moon-icon {
-      fill: var(--color-menu-text-secondary);
+      fill: var(--color-text-muted);
     }
   }
 
@@ -70,11 +70,11 @@
     left: 2px;
     width: $unit2;
     height: $unit2;
-    background-color: var(--color-menu-accent);
+    background-color: var(--color-accent);
     border-radius: 50%;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    @include transition(left, $speed: slow);
     z-index: 2;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-sm);
   }
 
   .theme-toggle-track.dark {
@@ -83,21 +83,21 @@
     }
 
     .sun-icon {
-      fill: var(--color-menu-text-secondary);
+      fill: var(--color-text-muted);
     }
 
     .moon-icon {
-      fill: var(--color-menu-text);
+      fill: var(--color-text);
     }
   }
 
   .theme-toggle-track.light {
     .sun-icon {
-      fill: var(--color-menu-text);
+      fill: var(--color-text);
     }
 
     .moon-icon {
-      fill: var(--color-menu-text-secondary);
+      fill: var(--color-text-muted);
     }
   }
 }

@@ -37,7 +37,7 @@
 // while the other three drew one on the left, which put two lines in the first
 // gap and one in the others
 .arc-facts {
-  border-left: 1px solid var(--borderColor);
+  border-left: 1px solid var(--color-border);
 }
 
 // no arcs at all: the one screen in the app with nothing behind it, so it
@@ -64,23 +64,13 @@
   margin: 0 0 $unit4;
   font-size: $text1;
   line-height: 1.5;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .arc-empty-btn {
   padding: $unit1 $unit4;
   font-size: $text1;
-  font-weight: 500;
-  color: #fff;
-  background-color: var(--color-accent);
-  border: none;
-  border-radius: $unit1;
-  cursor: pointer;
-  transition: filter 0.15s ease;
-
-  &:hover {
-    filter: brightness(1.08);
-  }
+  @include button-primary;
 }
 
 .arc-error {
@@ -92,7 +82,7 @@
   padding: $unit2;
   font-size: $text1;
   line-height: 1.4;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 // stories, facts and chat are all one kind of column — a heading
@@ -134,7 +124,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 // whatever the column is counting, trailing its name: a version, a length, a
@@ -157,6 +147,7 @@
   text-transform: inherit;
   color: inherit;
   cursor: pointer;
+  @include transition(color, opacity);
 
   &:hover,
   // stays lit while the history it opened is on screen
@@ -186,15 +177,13 @@
   height: $unit3;
   padding: 0;
   border: none;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
   font-size: $text3;
   line-height: 1;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition:
-    background-color 0.12s ease,
-    color 0.12s ease;
+  @include transition(background-color, color);
 
   &:hover,
   // the history toggle stays lit while the panel it opened is on screen
@@ -213,19 +202,16 @@
   align-items: center;
   gap: $unit0 + 2px;
   padding: $unit0 $unit1;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit0;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-sm;
   background: none;
   font-size: $text0;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition:
-    background-color 0.12s ease,
-    border-color 0.12s ease,
-    color 0.12s ease;
+  @include transition(background-color, border-color, color);
 
   &:hover:not(:disabled) {
     border-color: var(--color-accent);
@@ -249,13 +235,7 @@
 }
 
 .col-run-spin {
-  animation: col-run-spin 1.2s linear infinite;
-}
-
-@keyframes col-run-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  animation: spin 1s linear infinite;
 }
 
 // the history toggle sits beside the add button, same size and same weight:
@@ -272,7 +252,7 @@
 .facts-history {
   margin-bottom: $unit2;
   padding-bottom: $unit2;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .facts-versions {
@@ -291,13 +271,13 @@
   width: 100%;
   padding: $unit0 $unit1;
   border: none;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
   font-size: $text0;
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.12s ease;
+  @include transition(background-color);
 
   &:hover {
     background-color: var(--color-bg-hover);
@@ -316,7 +296,7 @@
 
 .facts-version-when,
 .facts-version-count {
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 // what the revision did, in the shorthand a commit list uses, pushed to the
@@ -339,15 +319,15 @@
 .facts-version-counts,
 .facts-diff-counts {
   .is-added {
-    color: $green;
+    color: var(--color-success);
   }
 
   .is-removed {
-    color: $red;
+    color: var(--color-danger);
   }
 
   .is-rewritten {
-    color: var(--color-marker-amber);
+    color: var(--color-warning);
   }
 }
 
@@ -384,7 +364,7 @@
 .facts-diff-counts {
   margin: $unit0 0 0;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -408,14 +388,14 @@
 .facts-diff-why-text {
   margin: 0;
   padding: $unit2;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background-color: var(--color-bg-hover);
   font-size: $text1;
   line-height: 1.5;
   color: var(--color-text);
 
   &.is-empty {
-    color: var(--lighter);
+    color: var(--color-text-muted);
   }
 }
 
@@ -453,19 +433,19 @@
   align-items: baseline;
   gap: $unit1;
   padding: $unit0 $unit1;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   font-size: $text1;
   line-height: 1.45;
 
   &.is-added {
-    background-color: rgba($green, 0.12);
+    background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
   }
 
   &.is-removed {
-    background-color: rgba($red, 0.1);
-    color: var(--lighter);
+    background-color: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    color: var(--color-text-muted);
     text-decoration: line-through;
-    text-decoration-color: rgba($red, 0.6);
+    text-decoration-color: color-mix(in srgb, var(--color-danger) 60%, transparent);
   }
 
   // a rewrite is one row carrying both versions, so the row itself stays
@@ -477,7 +457,7 @@
 
   // unchanged facts are the context the changes read against, and nothing more
   &.is-context {
-    color: var(--lighter);
+    color: var(--color-text-muted);
   }
 }
 
@@ -486,17 +466,17 @@
 // rather than left to the user agent
 .facts-diff-ins {
   text-decoration: none;
-  background-color: rgba($green, 0.22);
-  box-shadow: 0 0 0 1px rgba($green, 0.22);
-  border-radius: 2px;
+  background-color: color-mix(in srgb, var(--color-success) 22%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-success) 22%, transparent);
+  border-radius: $radius-xs;
 }
 
 .facts-diff-del {
-  color: var(--lighter);
+  color: var(--color-text-muted);
   text-decoration: line-through;
-  text-decoration-color: rgba($red, 0.7);
-  background-color: rgba($red, 0.14);
-  border-radius: 2px;
+  text-decoration-color: color-mix(in srgb, var(--color-danger) 70%, transparent);
+  background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  border-radius: $radius-xs;
 }
 
 // a confidence that moved, on a row with no struck-out copy to carry the old
@@ -520,15 +500,15 @@
   text-decoration: none;
 
   .facts-diff-row.is-added & {
-    color: $green;
+    color: var(--color-success);
   }
 
   .facts-diff-row.is-removed & {
-    color: $red;
+    color: var(--color-danger);
   }
 
   .facts-diff-row.is-rewritten & {
-    color: var(--lighter);
+    color: var(--color-text-muted);
   }
 }
 
@@ -557,13 +537,14 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   text-decoration: none;
+  @include transition(color);
 
   &.is-added {
-    color: $green;
+    color: var(--color-success);
   }
 
   &.is-removed {
-    color: $red;
+    color: var(--color-danger);
     text-decoration: line-through;
   }
 
@@ -576,7 +557,7 @@
   margin: 0;
   font-size: $text1;
   line-height: 1.45;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .facts-list {
@@ -593,7 +574,7 @@
 .fact {
   margin: 0 (-$unit1);
   padding: $unit1;
-  border-radius: $unit1;
+  border-radius: $radius-md;
 
   &.is-editing {
     background-color: var(--color-bg-hover);
@@ -622,27 +603,27 @@
   font-size: $text0;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #fff;
-  background-color: var(--subtle);
+  color: var(--color-accent-contrast);
+  background-color: var(--color-border-strong);
 
   &.is-1 {
-    background-color: var(--subtle);
+    background-color: var(--color-border-strong);
   }
 
   &.is-2 {
-    background-color: var(--lighter);
+    background-color: var(--color-text-muted);
   }
 
   &.is-3 {
-    background-color: var(--color-marker-amber);
+    background-color: var(--color-warning);
   }
 
   &.is-4 {
-    background-color: $bleackOrange;
+    background-color: var(--color-orange);
   }
 
   &.is-5 {
-    background-color: $green;
+    background-color: var(--color-success);
   }
 }
 
@@ -651,7 +632,7 @@
 .fact-when {
   margin-left: auto;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .fact-content {
@@ -672,13 +653,11 @@
   height: $unit3;
   padding: 0;
   border: none;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition:
-    background-color 0.12s ease,
-    color 0.12s ease;
+  @include transition(background-color, color);
 
   &:hover {
     background-color: var(--color-bg-hover);
@@ -689,18 +668,15 @@
 .fact-input {
   width: 100%;
   padding: $unit1;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background-color: var(--surface-bg);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background-color: var(--color-surface);
   font-size: $text1;
   line-height: 1.4;
   color: var(--color-text);
   resize: vertical;
 
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
+  @include field-focus;
 }
 
 // the five rungs, filled up to the chosen one so the scale reads at a glance
@@ -715,21 +691,19 @@
   width: $unit3;
   height: $unit3;
   padding: 0;
-  border: 1px solid var(--borderColor);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
   background: none;
   font-size: $text0;
   font-variant-numeric: tabular-nums;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition:
-    background-color 0.12s ease,
-    color 0.12s ease;
+  @include transition(background-color, color);
 
   &.is-on {
     border-color: transparent;
     background-color: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-contrast);
   }
 
   &:disabled {
@@ -741,7 +715,7 @@
 .confidence-label {
   margin-left: $unit0;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .fact-actions {
@@ -752,41 +726,19 @@
 
 .fact-btn {
   padding: $unit0 $unit2;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background: none;
   font-size: $text0;
-  color: var(--color-text);
-  cursor: pointer;
-  transition:
-    background-color 0.12s ease,
-    color 0.12s ease;
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-bg-hover);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
+  @include button-secondary;
 
   &--primary {
-    border-color: transparent;
-    background-color: var(--color-accent);
-    color: #fff;
-
-    &:hover:not(:disabled) {
-      filter: brightness(1.08);
-    }
+    @include button-primary;
   }
 
   &--danger {
     margin-left: auto;
 
     &:hover:not(:disabled) {
-      color: $red;
-      border-color: $red;
+      color: var(--color-danger);
+      border-color: var(--color-danger);
       background: none;
     }
   }
@@ -795,7 +747,7 @@
 .fact-error {
   margin: 0 0 $unit1;
   font-size: $text0;
-  color: $red;
+  color: var(--color-danger);
 }
 
 // which model is answering, quietly — it is the one thing about the session
@@ -806,7 +758,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 // the scroll and the gutter come from .col-body, which this carries too; what
@@ -826,7 +778,7 @@
   margin: 0;
   font-size: $text1;
   line-height: 1.45;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .chat-error {
@@ -846,26 +798,26 @@
 
 .proposal {
   border: 1px solid var(--color-accent);
-  border-radius: $unit1;
+  border-radius: $radius-md;
   overflow: hidden;
 
   // decided: it is a record now, not a question
   &.is-approved,
   &.is-rejected,
   &.is-failed {
-    border-color: var(--borderColor);
+    border-color: var(--color-border);
     opacity: 0.75;
   }
 
   &.is-failed {
-    border-color: $red;
+    border-color: var(--color-danger);
   }
 }
 
 .proposal-head {
   padding: $unit1 $unit2;
-  border-bottom: 1px solid var(--borderColor);
-  background-color: var(--bgGray);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-subtle);
 }
 
 .proposal-title {
@@ -873,7 +825,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .proposal-summary {
@@ -889,7 +841,7 @@
   margin: 0;
   padding: 0 $unit2 $unit2;
   font-size: $text0;
-  color: $red;
+  color: var(--color-danger);
 }
 
 .proposal-actions {
@@ -900,35 +852,12 @@
 
 .proposal-btn {
   padding: $unit0 $unit2;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background: none;
   font-size: $text0;
-  color: var(--color-text);
-  cursor: pointer;
-  transition:
-    background-color 0.12s ease,
-    filter 0.12s ease;
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-bg-hover);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
+  @include button-secondary;
 
   // the destructive one, so it says what it does rather than "OK"
   &--approve {
-    border-color: transparent;
-    background-color: var(--color-accent);
-    color: #fff;
-
-    &:hover:not(:disabled) {
-      background-color: var(--color-accent);
-      filter: brightness(1.08);
-    }
+    @include button-primary;
   }
 }
 
@@ -939,7 +868,7 @@
   align-items: flex-end;
   gap: $unit1;
   padding: $unit2 $unit3 $unit3;
-  border-top: 1px solid var(--borderColor);
+  border-top: 1px solid var(--color-border);
 }
 
 .chat-input {
@@ -949,19 +878,14 @@
   max-height: 160px;
   overflow-y: hidden;
   padding: $unit1 $unit2;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
   background-color: transparent;
   font-size: $text1;
   line-height: 1.4;
   color: var(--color-text);
   resize: none;
-  transition: border-color 0.15s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
+  @include field-focus;
 
   &:disabled {
     cursor: not-allowed;
@@ -973,23 +897,6 @@
   flex: none;
   align-self: stretch;
   padding: $unit0 $unit3;
-  border: none;
-  border-radius: $unit1;
   font-size: $text1;
-  font-weight: 500;
-  color: #fff;
-  background-color: var(--color-accent);
-  cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    opacity 0.15s ease;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.08);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
+  @include button-primary;
 }

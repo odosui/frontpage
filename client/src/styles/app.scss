@@ -1,4 +1,6 @@
 @use './reset';
+@use './theme';
+@use './motion';
 @use './vars' as *;
 @use './breakpoints';
 @use './components/theme-toggle';
@@ -37,206 +39,23 @@ em {
   display: flex;
 }
 
-// colors
-
-:root {
-  // commons
-  --color-text: #333;
-  --color-accent: #5964ca;
-  --color-scroll-thumb: rgba(0, 0, 0, 0.5);
-  --color-bg: #f5f5f5;
-  --color-bg-hover: #ededed;
-  --accent: #5964ca;
-  --accentHover: #a18ca3;
-  --accentText: white;
-  --lighter: #999;
-  --subtle: #dadada;
-  --danger: #d45454;
-  --dangerHover: #da7474;
-  --borderColor: #d9dde7;
-  --bgGray: #f5f7f9;
-
-  // top bar / menu
-  --color-menu-bg: #192037;
-  --color-menu-bg-hover: #5b688e;
-  --color-menu-bg-hover-intense: #7b849e;
-  --color-menu-border: #d9dde7;
-  --color-menu-border-subtle: rgba(255, 255, 255, 0.32);
-  --color-menu-accent: #fff;
-  --color-menu-text: #cbc8ce;
-  --color-menu-text-secondary: #abb8de;
-  --color-menu-highlight: #7b849e;
-  --color-menu-input-text: #abb8de;
-
-  // notes panel
-  --color-notes-bg: #f5f5f5;
-  --color-notes-border: #d9dde7;
-  --color-notes-text-secondary: #a7a8ad;
-  --color-notes-bg-hover: #fff;
-  --color-notes-accent: #5964ca;
-  --color-notes-input-bg: #fff;
-
-  // note area
-  --color-note-area-bg: #fff;
-  --color-note-area-accent: #5964ca;
-  --color-note-area-text-secondary: #bbb;
-  --color-note-area-text-secondary-darker: #999;
-  --color-note-area-bg-hover: #f5f5f5;
-  --color-note-area-bg-hover-intense: #e0e0e0;
-  --color-note-area-bg-hover-intense-2: #d0d0d0;
-
-  // flashcards panel
-  --color-flashcards-panel-bg: #f5f5f5;
-  --color-flashcards-panel-bg-hover: #ededed;
-  --color-flashcards-panel-bg-hover-intense: #e0e0e0;
-  --color-flashcards-panel-border: #d9dde7;
-  --color-flashcards-panel-text: #555;
-  --color-flashcards-panel-text-secondary: #bbb;
-  --color-flashcards-panel-text-secondary-intense: #aaa;
-  --color-flashcards-panel-accent: #5964ca;
-  --color-flashcards-panel-info-bg: lightgoldenrodyellow;
-  --color-flashcards-panel-form-bg: #fff;
-
-  // hovering preview
-  --color-hovering-preview-bg: #fff;
-  --color-hovering-preview-bg-gray: #f5f5f5;
-  --color-hovering-preview-bg-gray-hover: #e0e0e0;
-  --color-hovering-preview-accent: #5964ca;
-  --color-hovering-preview-accent-intense: #a18ca3;
-  --color-hovering-preview-text: #333;
-
-  // flashacrds-page
-  --color-flashcards-page-bg: #f5f5f5;
-  --color-flashcards-page-bg-hover: #ededed;
-  --color-flashcards-page-card-bg: #fff;
-  --color-flashcards-page-secondary: #bbb;
-  --color-flashcards-page-text: #333;
-  --color-flashcards-page-btn-text: #999;
-  --color-flashcards-page-accent: #5964ca;
-
-  // note preview
-  --color-note-preview-error-bg: #fff0f0;
-
-  // git
-  --color-git-changes: #f0883e;
-  --color-git-clean: #2ea043;
-
-  // surface elevation
-  --surface-bg: #fff;
-  --color-marker-amber: #d4a017;
-  --surface-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --surface-shadow-hover:
-    0 8px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
-
-  // jobs
-  --color-jobs-bg: #fff;
-  --color-jobs-item-bg: #f5f7f9;
-  --color-job-queued: #b0b6c3;
-  --color-job-running: #5964ca;
-  --color-job-succeeded: #2ea043;
-  --color-job-failed: #d45454;
-}
-
-[data-theme='dark'] {
-  // commons
-  --color-text: #e6e9f2;
-  --color-accent: #8b93ff;
-  --color-scroll-thumb: rgba(255, 255, 255, 0.2);
-  --color-bg: #0d0f15;
-  --color-bg-hover: #262b3a;
-  --accent: #8b93ff;
-  --accentHover: #a6acff;
-  --accentText: #0d0e12;
-  --lighter: #868ea6;
-  --subtle: #3a3d4a;
-  --danger: #ff6b6b;
-  --dangerHover: #ff8787;
-  --borderColor: #272c3a;
-  --bgGray: #1a1b24;
-
-  // top bar / menu
-  --color-menu-bg: #090b10;
-  --color-menu-bg-hover: #1f2333;
-  --color-menu-bg-hover-intense: #2a2f45;
-  --color-menu-border: #2a2d3a;
-  --color-menu-border-subtle: rgba(255, 255, 255, 0.26);
-  --color-menu-accent: #8b93ff;
-  --color-menu-text: #c5c6d0;
-  --color-menu-text-secondary: #8a8f98;
-  --color-menu-highlight: #2a2f45;
-  --color-menu-input-text: #c5c6d0;
-
-  // notes panel
-  --color-notes-bg: #13141a;
-  --color-notes-border: #2a2d3a;
-  --color-notes-text-secondary: #8a8f98;
-  --color-notes-bg-hover: #1c1d26;
-  --color-notes-accent: #8b93ff;
-  --color-notes-input-bg: #1a1b24;
-
-  // note area
-  --color-note-area-bg: #181c27;
-  --color-note-area-accent: #8b93ff;
-  --color-note-area-text-secondary: #6e7280;
-  --color-note-area-text-secondary-darker: #8a8f98;
-  --color-note-area-bg-hover: #252633;
-  --color-note-area-bg-hover-intense: #2e3040;
-  --color-note-area-bg-hover-intense-2: #3e4050;
-
-  // flashcards panel
-  --color-flashcards-panel-bg: #13141a;
-  --color-flashcards-panel-bg-hover: #1c1d26;
-  --color-flashcards-panel-bg-hover-intense: #252633;
-  --color-flashcards-panel-border: #2a2d3a;
-  --color-flashcards-panel-text: #e8e8ed;
-  --color-flashcards-panel-text-secondary: #6e7280;
-  --color-flashcards-panel-text-secondary-intense: #8a8f98;
-  --color-flashcards-panel-accent: #8b93ff;
-  --color-flashcards-panel-info-bg: #2d2616;
-  --color-flashcards-panel-form-bg: #1a1b24;
-
-  // hovering preview
-  --color-hovering-preview-bg: #1a1b24;
-  --color-hovering-preview-accent: #8b93ff;
-  --color-hovering-preview-accent-intense: #a6acff;
-  --color-hovering-preview-text: #e8e8ed;
-
-  // flashcards-page
-  --color-flashcards-page-bg: #13141a;
-  --color-flashcards-page-bg-hover: #1c1d26;
-  --color-flashcards-page-card-bg: #1a1b24;
-  --color-flashcards-page-secondary: #6e7280;
-  --color-flashcards-page-text: #e8e8ed;
-  --color-flashcards-page-btn-text: #8a8f98;
-  --color-flashcards-page-accent: #8b93ff;
-
-  // note preview
-  --color-note-preview-error-bg: #2d1616;
-
-  // git
-  --color-git-changes: #f0883e;
-  --color-git-clean: #3fb950;
-
-  // surface elevation — dark needs a light ring, black shadows are invisible
-  --surface-bg: #181c27;
-  --color-marker-amber: #f0b950;
-  --surface-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.055);
-  --surface-shadow-hover:
-    0 8px 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.11);
-
-  // jobs
-  --color-jobs-bg: #13141a;
-  --color-jobs-item-bg: #1c1d26;
-  --color-job-queued: #6e7280;
-  --color-job-running: #8b93ff;
-  --color-job-succeeded: #3fb950;
-  --color-job-failed: #ff6b6b;
+html,
+body {
+  background-color: var(--color-bg);
 }
 
 * {
   caret-color: var(--color-accent);
+}
+
+::selection {
+  background-color: var(--color-accent-soft);
+}
+
+// keyboard focus gets a soft accent ring everywhere; a mouse click does not.
+// Fields draw their own (see `field-focus`), so this is for everything else
+:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 body,
@@ -259,9 +78,8 @@ body,
   }
 
   &::-webkit-scrollbar-thumb {
-    border-radius: $unit0;
+    border-radius: $radius-sm;
     background-color: var(--color-scroll-thumb);
-    box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
   }
 }
 
@@ -272,14 +90,15 @@ body,
   justify-content: center;
   width: $unit4;
   height: $unit4;
-  border-radius: $unit0;
-  background-color: var(--color-bg);
+  border-radius: $radius-sm;
+  background-color: transparent;
   cursor: pointer;
-  transition: background-color 0.1s ease-in-out;
+  @include transition(background-color);
+  @include press;
 
   &.danger {
     svg {
-      fill: var(--danger);
+      fill: var(--color-danger);
     }
   }
 
@@ -290,6 +109,6 @@ body,
     width: $unit2;
     height: $unit2;
     fill: var(--color-text);
-    transition: fill 0.1s ease-in-out;
+    @include transition(fill);
   }
 }

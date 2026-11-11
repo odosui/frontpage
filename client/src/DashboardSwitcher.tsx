@@ -4,6 +4,7 @@ import ChevronDownIcon from './icons/ChevronDownIcon'
 import EditIcon from './icons/EditIcon'
 import TrashIcon from './icons/TrashIcon'
 import PlusIcon from './icons/PlusIcon'
+import { usePresence } from './ui/usePresence'
 
 type Props = {
   dashboards: Dashboard[]
@@ -23,6 +24,7 @@ const DashboardSwitcher = ({
   onRename,
 }: Props) => {
   const [open, setOpen] = useState(false)
+  const { mounted, shown } = usePresence(open)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -75,8 +77,8 @@ const DashboardSwitcher = ({
         <ChevronDownIcon />
       </button>
 
-      {open && (
-        <div className="dash-switcher-dropdown">
+      {mounted && (
+        <div className={`dash-switcher-dropdown${shown ? ' is-shown' : ''}`}>
           {dashboards.map((dashboard) => {
             const { id, name } = dashboard
             return (

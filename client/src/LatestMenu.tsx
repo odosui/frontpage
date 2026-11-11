@@ -2,6 +2,7 @@ import { ChevronDownIcon } from '@primer/octicons-react'
 import { useEffect, useRef, useState } from 'react'
 import { type FeedArticle } from './api'
 import Feed from './Feed'
+import { usePresence } from './ui/usePresence'
 
 type Props = {
   articles: FeedArticle[]
@@ -42,6 +43,7 @@ const LatestMenu = ({
   onOpenContent,
 }: Props) => {
   const [open, setOpen] = useState(false)
+  const { mounted, shown } = usePresence(open)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -84,8 +86,8 @@ const LatestMenu = ({
         <ChevronDownIcon size={14} />
       </button>
 
-      {open && (
-        <div className="latest-dropdown">
+      {mounted && (
+        <div className={`latest-dropdown${shown ? ' is-shown' : ''}`}>
           <Feed
             articles={articles}
             total={total}

@@ -17,9 +17,9 @@
   width: 100%;
   max-width: $unit12;
   padding: $unit5;
-  background-color: var(--surface-bg);
-  border-radius: $unit2;
-  box-shadow: var(--surface-shadow);
+  background-color: var(--color-surface);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow-sm);
 }
 
 .login-title {
@@ -31,7 +31,7 @@
 .login-hint {
   margin-bottom: $unit2;
   font-size: $text1;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .login-field {
@@ -43,41 +43,28 @@
 .login-label {
   font-size: $text0;
   font-weight: 500;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .login-input {
   padding: $unit1 $unit2;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
   background-color: transparent;
   font-size: $text2;
   color: var(--color-text);
 
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
+  @include field-focus;
 }
 
 .login-error {
   font-size: $text1;
-  color: $red;
+  color: var(--color-danger);
 }
 
 .login-submit {
   margin-top: $unit2;
   padding: $unit1 $unit3;
-  border: none;
-  border-radius: $unit1;
-  background-color: var(--color-accent);
   font-size: $text2;
-  font-weight: 500;
-  color: #fff;
-  cursor: pointer;
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
+  @include button-primary;
 }

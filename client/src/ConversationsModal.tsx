@@ -54,7 +54,10 @@ const ConversationsModal = ({ isOpen, onClose, onToggle, ...props }: Props) => {
   }, [isOpen])
 
   return createPortal(
-    <div className="conversations-modal" hidden={!isOpen}>
+    <div
+      className={`conversations-modal${isOpen ? ' is-open' : ''}`}
+      aria-hidden={!isOpen}
+    >
       <div className="conversation-backdrop" onClick={onClose} />
       <aside
         ref={panel}

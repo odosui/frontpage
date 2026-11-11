@@ -6,6 +6,7 @@ import { JobsProvider } from './contexts/JobsContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ToolbarProvider } from './contexts/ToolbarContext'
 import JobsPanel from './JobsPanel'
+import { usePresence } from './ui/usePresence'
 import TopBar from './TopBar'
 
 const Dashboard = lazy(() => import('./Dashboard'))
@@ -31,6 +32,7 @@ const App: React.FC = () => {
 const SignedIn: React.FC = () => {
   const { user, loading } = useAuth()
   const [jobsOpen, setJobsOpen] = useState(false)
+  const jobsPanel = usePresence(jobsOpen)
 
   if (loading) return <Fallback />
   if (!user) {
@@ -49,7 +51,12 @@ const SignedIn: React.FC = () => {
             jobsOpen={jobsOpen}
             onToggleJobs={() => setJobsOpen((open) => !open)}
           />
-          {jobsOpen && <JobsPanel onClose={() => setJobsOpen(false)} />}
+          {jobsPanel.mounted && (
+            <JobsPanel
+              shown={jobsPanel.shown}
+              onClose={() => setJobsOpen(false)}
+            />
+          )}
           <main className="app-content">
             <Suspense fallback={<Fallback />}>
               <Switch>

@@ -24,9 +24,9 @@
   max-width: $unit16;
   margin: 0 auto $unit4;
   padding: $unit4;
-  background-color: var(--surface-bg);
-  border-radius: $unit2;
-  box-shadow: var(--surface-shadow);
+  background-color: var(--color-surface);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-section-head {
@@ -47,7 +47,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .settings-reload {
@@ -56,14 +56,12 @@
   gap: $unit0;
   padding: $unit1 $unit2;
   border: none;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: transparent;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-size: $text1;
   cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease;
+  @include transition(color, background-color);
 
   svg,
   svg * {
@@ -87,15 +85,15 @@
 
 .settings-error {
   padding: $unit2;
-  border: 1px solid rgba($red, 0.2);
-  border-radius: $unit1;
-  background-color: rgba($red, 0.08);
-  color: $red;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
+  border-radius: $radius-md;
+  background-color: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  color: var(--color-danger);
   font-size: $text1;
 }
 
 .settings-muted {
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-size: $text1;
 }
 
@@ -110,8 +108,8 @@
   flex-direction: column;
   gap: $unit0;
   padding: $unit2 $unit3;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
 }
 
 .stat-label {
@@ -119,7 +117,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .stat-value {
@@ -131,7 +129,7 @@
 
 .stat-hint {
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .settings-table {
@@ -143,7 +141,7 @@
   td {
     padding: $unit1 $unit2;
     text-align: left;
-    border-bottom: 1px solid var(--borderColor);
+    border-bottom: 1px solid var(--color-border);
   }
 
   th {
@@ -151,7 +149,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--lighter);
+    color: var(--color-text-muted);
   }
 
   tbody tr:last-child td {
@@ -174,7 +172,7 @@
 
   .num.is-orphan {
     // nobody reads it, yet it still fetches and still stores articles
-    color: var(--color-marker-amber);
+    color: var(--color-warning);
   }
 }
 
@@ -190,11 +188,12 @@
   background: none;
   font-size: $text1;
   text-align: left;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: text;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  @include transition(color);
 
   &:hover {
     color: var(--color-accent);
@@ -218,13 +217,11 @@
     padding: $unit1;
     font-size: $text1;
     background-color: transparent;
-    border: 1px solid var(--borderColor);
-    border-radius: $unit1;
+    border: 1px solid var(--color-border);
+    border-radius: $radius-md;
     color: var(--color-text);
 
-    &:focus {
-      border-color: var(--color-accent);
-    }
+    @include field-focus;
   }
 }
 
@@ -261,8 +258,8 @@
   flex-direction: column;
   gap: $unit1;
   padding: $unit2 $unit3 $unit3;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
 }
 
 .model-slot-head {
@@ -277,7 +274,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .model-slot-source {
@@ -289,8 +286,9 @@
   border: none;
   background: none;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
+  @include transition(color, opacity);
 
   &:hover {
     color: var(--color-accent);
@@ -305,7 +303,7 @@
 .model-slot-description {
   font-size: $text0;
   line-height: 1.5;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .model-slot-note {
@@ -322,13 +320,11 @@
   padding: $unit1 $unit2;
   font-size: $text1;
   background-color: transparent;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
   color: var(--color-text);
 
-  &:focus {
-    border-color: var(--color-accent);
-  }
+  @include field-focus;
 
   &:disabled {
     opacity: 0.6;
@@ -345,10 +341,11 @@
   overflow-y: auto;
   padding: $unit0;
   list-style: none;
-  background-color: var(--surface-bg);
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  box-shadow: var(--surface-shadow);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  box-shadow: var(--shadow-sm);
+  @include popover;
 }
 
 .model-option {
@@ -360,7 +357,7 @@
   width: 100%;
   padding: $unit1 $unit2;
   border: none;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
   text-align: left;
   cursor: pointer;
@@ -386,7 +383,7 @@
 .model-option-id {
   grid-column: 1;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -397,7 +394,7 @@
   grid-row: 1 / span 2;
   align-self: center;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -405,9 +402,9 @@
 .model-option-empty {
   padding: $unit1 $unit2;
   font-size: $text1;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 
   &.is-error {
-    color: $red;
+    color: var(--color-danger);
   }
 }

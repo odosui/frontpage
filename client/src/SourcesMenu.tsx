@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { type Source } from './api'
+import { usePresence } from './ui/usePresence'
 import ChevronDownIcon from './icons/ChevronDownIcon'
 import PlusIcon from './icons/PlusIcon'
 import RefreshIcon from './icons/RefreshIcon'
@@ -35,6 +36,7 @@ const SourcesMenu = ({
   onRefreshAll,
 }: Props) => {
   const [open, setOpen] = useState(false)
+  const { mounted, shown } = usePresence(open)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -57,8 +59,8 @@ const SourcesMenu = ({
         <ChevronDownIcon />
       </button>
 
-      {open && (
-        <div className="sources-dropdown">
+      {mounted && (
+        <div className={`sources-dropdown${shown ? ' is-shown' : ''}`}>
           {sources.length === 0 && (
             <div className="sources-empty">No sources yet</div>
           )}

@@ -9,8 +9,8 @@
   align-items: center;
   gap: $unit1;
   padding: 0 $unit2;
-  background-color: var(--color-menu-bg);
-  border-bottom: 1px solid var(--color-menu-border);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .topbar-nav {
@@ -28,40 +28,34 @@
   height: $unit5;
   padding: 0;
   border: none;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: none;
-  color: var(--color-menu-text-secondary);
+  color: var(--color-text-muted);
   text-decoration: none;
   cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease,
-    transform 0.1s ease;
+  @include transition(color, background-color);
+  @include press;
 
   svg {
-    fill: var(--color-menu-text-secondary);
-    transition: fill 0.15s ease;
+    fill: var(--color-text-muted);
+    @include transition(fill);
   }
 
   &:hover {
-    background-color: var(--color-menu-bg-hover);
-    color: var(--color-menu-text);
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
 
     svg {
-      fill: var(--color-menu-text);
+      fill: var(--color-text);
     }
   }
 
-  &:active {
-    transform: scale(0.94);
-  }
-
   &.active {
-    background-color: var(--color-menu-highlight);
-    color: var(--color-menu-accent);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-strong);
 
     svg {
-      fill: var(--color-menu-accent);
+      fill: var(--color-accent-strong);
     }
   }
 }
@@ -81,15 +75,13 @@
   height: $unit5;
   padding: 0 $unit2;
   border: none;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: none;
-  color: var(--color-menu-text-secondary);
+  color: var(--color-text-muted);
   font-size: $text1;
   cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease,
-    transform 0.1s ease;
+  @include transition(color, background-color);
+  @include press;
 
   // these icons stroke with currentColor, so they only need the colour back —
   // never a fill, that would override their `fill="none"`
@@ -99,12 +91,8 @@
   }
 
   &:hover {
-    background-color: var(--color-menu-bg-hover);
-    color: var(--color-menu-accent);
-  }
-
-  &:active {
-    transform: scale(0.97);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent-strong);
   }
 
   &:disabled {
@@ -124,15 +112,14 @@
   gap: $unit1;
   height: $unit5;
   padding: 0 $unit2;
-  border: 1px solid var(--color-menu-border-subtle);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
   background: none;
-  color: var(--color-menu-accent);
+  color: var(--color-accent-strong);
   font-size: $text1;
   cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease;
+  @include transition(color, background-color);
+  @include press;
 
   // the global `*` rule sets a color on every element, so the label and the
   // icon's paths have to opt back into the button's colour explicitly
@@ -145,21 +132,21 @@
   }
 
   &:hover {
-    background-color: var(--color-menu-bg-hover);
-    color: var(--color-menu-accent);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent-strong);
   }
 
   &.active {
-    background-color: var(--color-menu-highlight);
-    color: var(--color-menu-accent);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-strong);
   }
 
   // something is in flight
   &.is-active {
-    color: var(--color-menu-accent);
+    color: var(--color-accent-strong);
 
     svg {
-      animation: job-pulse 1.2s ease-in-out infinite;
+      animation: pulse 1.2s ease-in-out infinite;
     }
   }
 }
@@ -193,15 +180,14 @@
   height: $unit5;
   padding: 0 $unit1;
   border: none;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: transparent;
-  color: var(--color-menu-text);
+  color: var(--color-text);
   font-size: $text1;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease;
+  @include transition(color, background-color);
+  @include press;
 
   .dash-switcher-label,
   svg,
@@ -210,8 +196,8 @@
   }
 
   &:hover {
-    background-color: var(--color-menu-bg-hover);
-    color: var(--color-menu-accent);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent-strong);
   }
 }
 
@@ -228,23 +214,21 @@
   left: 0;
   z-index: 200;
   min-width: $unit11;
-  background-color: var(--surface-bg);
-  border-radius: $unit2;
-  box-shadow: var(--surface-shadow-hover);
+  background-color: var(--color-surface);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow-md);
   padding: $unit1;
+  @include popover;
 }
 
 .dash-switcher-item {
   display: flex;
   align-items: center;
-  border-radius: $unit1;
+  border-radius: $radius-md;
+  @include transition(background-color, opacity);
 
   &.active {
-    background: rgba(0, 0, 0, 0.04);
-
-    [data-theme='dark'] & {
-      background: rgba(255, 255, 255, 0.06);
-    }
+    background: var(--color-accent-soft);
   }
 
   &:hover .dash-switcher-item-actions {
@@ -261,7 +245,8 @@
   font-size: $text1;
   text-align: left;
   color: var(--color-text);
-  border-radius: $unit1;
+  border-radius: $radius-md;
+  @include transition(background-color);
 
   &:hover {
     background: var(--color-bg-hover);
@@ -273,7 +258,7 @@
   gap: $unit0;
   padding-right: $unit1;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  @include transition(opacity);
 }
 
 .dash-switcher-action {
@@ -283,10 +268,11 @@
   width: $unit4;
   height: $unit4;
   border: none;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
+  @include transition(background-color, color);
 
   &:hover {
     background: var(--color-bg-hover);
@@ -294,8 +280,8 @@
   }
 
   &--danger:hover {
-    background: rgba($red, 0.08);
-    color: $red;
+    background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+    color: var(--color-danger);
   }
 }
 
@@ -303,7 +289,7 @@
   flex: 1;
   padding: $unit1 $unit2;
   border: 1px solid var(--color-accent);
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: transparent;
   font-size: $text1;
   color: var(--color-text);
@@ -313,7 +299,7 @@
 .dash-switcher-divider {
   height: 1px;
   margin: $unit1 $unit0;
-  background: var(--borderColor);
+  background: var(--color-border);
 }
 
 .dash-switcher-new-btn {
@@ -323,11 +309,12 @@
   width: 100%;
   padding: $unit1 $unit2;
   border: none;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: none;
   cursor: pointer;
   font-size: $text1;
-  color: var(--lighter);
+  color: var(--color-text-muted);
+  @include transition(background-color, color);
 
   &:hover {
     background: var(--color-bg-hover);
@@ -344,27 +331,26 @@
 .dash-switcher-create-input {
   flex: 1;
   padding: $unit1 $unit2;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
   background: transparent;
   font-size: $text1;
   color: var(--color-text);
   outline: none;
 
-  &:focus {
-    border-color: var(--color-accent);
-  }
+  @include field-focus;
 }
 
 .dash-switcher-create-submit {
   padding: $unit1 $unit2;
   border: none;
-  border-radius: $unit1;
+  border-radius: $radius-md;
   background: var(--color-accent);
   color: white;
   font-size: $text1;
   font-weight: 500;
   cursor: pointer;
+  @include transition(opacity);
 
   &:disabled {
     opacity: 0.4;
@@ -385,19 +371,19 @@
   justify-content: center;
   min-width: $unit3;
   padding: 0 $unit0;
-  border-radius: $unit3;
+  border-radius: $radius-pill;
   font-size: $text0;
   font-weight: 600;
   line-height: $unit3;
   font-variant-numeric: tabular-nums;
-  color: var(--color-menu-bg);
-  background-color: var(--color-marker-amber);
+  color: var(--color-surface);
+  background-color: var(--color-warning);
 }
 
 // how many stories the arc holds, beside its name in the switcher
 .dash-switcher-item-count {
   margin-left: $unit1;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }

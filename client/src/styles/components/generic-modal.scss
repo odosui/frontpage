@@ -18,11 +18,11 @@
   // included: a modal the topbar paints over is a modal with its head cut off,
   // and a backdrop that dims all but one bar is not a backdrop
   z-index: 1000;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-overlay);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   opacity: 0;
-  transition: opacity $presence-duration ease;
+  @include transition(opacity, $speed: slow);
 
   &.is-shown {
     opacity: 1;
@@ -31,22 +31,20 @@
   .generic-modal {
     position: relative;
     margin: auto;
-    background-color: var(--color-note-area-bg);
+    background-color: var(--color-surface);
     padding: $unit5;
-    border-radius: $unit3;
+    border-radius: $radius-xl;
     z-index: 1001;
     // nothing may grow past the screen it sits in. Contents that manage their
     // own scrolling never reach this; the rest scroll the overlay instead,
     // which is why the top stays reachable either way
     max-height: calc(100vh - #{$unit6});
     overflow-y: auto;
-    box-shadow:
-      0 $unit1 $unit1 (-$unit0) rgb(0 0 0 / 20%),
-      0 $unit2 $unit3 0 rgb(0 0 0 / 14%),
-      0 $unit0 $unit4 $unit0 rgb(0 0 0 / 12%);
-    // drops in from above as the overlay fades in, and back up on the way out
-    transform: translateY(-20vh);
-    transition: transform $presence-duration ease;
+    box-shadow: var(--shadow-lg);
+    // rises a little and settles as the overlay fades in, and sinks back on
+    // the way out: enough to read as arriving, not so much it travels
+    transform: translateY($unit2) scale(0.98);
+    @include transition(transform, $speed: slow);
 
     .generic-modal-content {
       max-width: $unit14;
@@ -63,8 +61,10 @@
   position: absolute;
   top: $unit2;
   right: $unit2;
+  @include transition(color);
+
   &:hover {
-    color: var(--accent);
+    color: var(--color-accent);
   }
 }
 

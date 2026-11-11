@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import api, { type CatalogModel, type ModelSetting } from './api'
+import { usePresence } from './ui/usePresence'
 
 /**
  * Which models the instance runs on.
@@ -102,6 +103,7 @@ const ModelPicker: React.FC<{
   onPick: (id: string) => void
 }> = ({ value, busy, onPick }) => {
   const [open, setOpen] = useState(false)
+  const { mounted, shown } = usePresence(open)
   const [text, setText] = useState(value)
   const [results, setResults] = useState<CatalogModel[]>([])
   const [loading, setLoading] = useState(false)
@@ -193,8 +195,11 @@ const ModelPicker: React.FC<{
         onKeyDown={onKeyDown}
       />
 
-      {open && (
-        <ul className="model-options" role="listbox">
+      {mounted && (
+        <ul
+          className={`model-options${shown ? ' is-shown' : ''}`}
+          role="listbox"
+        >
           {error && <li className="model-option-empty is-error">{error}</li>}
           {!error && results.length === 0 && (
             <li className="model-option-empty">

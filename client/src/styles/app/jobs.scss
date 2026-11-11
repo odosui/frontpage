@@ -22,23 +22,12 @@
   flex-direction: column;
   width: $unit115;
   max-width: calc(100vw - #{$unit4});
-  background-color: var(--color-jobs-bg);
-  border: 1px solid var(--borderColor);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-top: none;
-  border-radius: 0 0 $unit1 $unit1;
-  box-shadow: 0 $unit1 $unit4 rgba(0, 0, 0, 0.18);
-  animation: jobs-drop 0.16s ease-out;
-}
-
-@keyframes jobs-drop {
-  from {
-    opacity: 0;
-    transform: translateY(-$unit1);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  border-radius: 0 0 $radius-md $radius-md;
+  box-shadow: var(--shadow-lg);
+  @include popover;
 }
 
 .jobs-panel-header {
@@ -62,10 +51,11 @@
   height: $unit4;
   margin-left: auto;
   border: none;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   cursor: pointer;
+  @include transition(background-color, color);
 
   &:hover {
     background-color: var(--color-bg-hover);
@@ -78,7 +68,7 @@
   flex-wrap: wrap;
   gap: $unit0;
   padding: 0 $unit2 $unit1;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .jobs-filter {
@@ -87,25 +77,26 @@
   gap: $unit0;
   padding: $unit0 * 0.5 $unit1;
   border: 1px solid transparent;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   background: none;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-size: $text0;
   cursor: pointer;
+  @include transition(background-color, border-color, color);
 
   &:hover {
     background-color: var(--color-bg-hover);
   }
 
   &.is-active {
-    border-color: var(--borderColor);
-    background-color: var(--color-jobs-item-bg);
+    border-color: var(--color-border);
+    background-color: var(--color-bg-subtle);
     color: var(--color-text);
   }
 }
 
 .jobs-filter-count {
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -117,7 +108,7 @@
 
 .jobs-empty {
   padding: $unit4 $unit3;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-size: $text1;
   text-align: center;
 }
@@ -131,9 +122,10 @@
 .job-row {
   padding: $unit0 $unit2;
   font-size: $text1;
+  @include transition(background-color);
 
   &:hover {
-    background-color: var(--color-jobs-item-bg);
+    background-color: var(--color-bg-subtle);
   }
 }
 
@@ -149,34 +141,24 @@
   width: $unit1;
   height: $unit1;
   border-radius: 50%;
-  background-color: var(--lighter);
+  background-color: var(--color-text-muted);
 }
 
 .job-dot--queued {
-  background-color: var(--color-job-queued);
+  background-color: var(--color-text-muted);
 }
 
 .job-dot--running {
-  background-color: var(--color-job-running);
-  animation: job-pulse 1.2s ease-in-out infinite;
+  background-color: var(--color-accent);
+  animation: pulse 1.2s ease-in-out infinite;
 }
 
 .job-dot--succeeded {
-  background-color: var(--color-job-succeeded);
+  background-color: var(--color-success);
 }
 
 .job-dot--failed {
-  background-color: var(--color-job-failed);
-}
-
-@keyframes job-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+  background-color: var(--color-danger);
 }
 
 .job-type {
@@ -201,7 +183,7 @@
 }
 
 .job-target {
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .job-error {
@@ -210,16 +192,16 @@
 }
 
 .job-error {
-  color: var(--color-job-failed);
+  color: var(--color-danger);
 }
 
 .job-attempts {
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .job-timing {
   flex-shrink: 0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-size: $text0;
   font-variant-numeric: tabular-nums;
   text-align: right;

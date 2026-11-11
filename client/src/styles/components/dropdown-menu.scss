@@ -13,17 +13,8 @@
   position: fixed;
   z-index: 400;
   padding: $unit0;
-  background-color: var(--surface-bg);
-  border-radius: $unit1;
-  box-shadow: var(--surface-shadow-hover);
-  opacity: 0;
-  transform: translateY(-$unit1);
-  transition:
-    opacity $presence-duration ease,
-    transform $presence-duration ease;
-
-  &.is-shown {
-    opacity: 1;
-    transform: none;
-  }
+  background-color: var(--color-surface);
+  border-radius: $radius-md;
+  box-shadow: var(--shadow-md);
+  @include popover;
 }

@@ -1,0 +1,20 @@
+// The app's keyframes, defined once. Durations and easing for transitions live
+// in theme.scss and are applied with the `transition` mixin from vars.scss.
+
+// a refresh or a run in flight
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// something is working and has no progress to show
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}

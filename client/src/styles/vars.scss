@@ -1,3 +1,6 @@
+@use 'sass:map';
+@use 'sass:meta';
+
 $menu-width: 200px;
 $notes-width: 280px;
 $notes-bar-height: 38px;
@@ -36,13 +39,114 @@ $unit15: 768px;
 $unit16: 960px;
 $unit17: 1024px;
 
-// keep in step with PRESENCE_MS in ui/usePresence.ts
-$presence-duration: 0.2s;
+// RADII
+//
+// Soft corners, one step per size of thing: a tag, a control, a row or card,
+// a panel, a dialog. Circles use 50% and pills $radius-pill.
+$radius-xs: 4px;
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 18px;
+$radius-pill: 999px;
 
-$green: #63ab7b;
-$green-lighter: #4dc375;
+// MOTION
+//
+// The one way anything in the app transitions. Name the properties that move;
+// the duration and the easing come from the theme, so every hover, press and
+// reveal moves at the same pace with the same curve.
+//
+//   @include transition(background-color, color);
+//   @include transition(opacity, transform, $speed: slow);
+@mixin transition($props...) {
+  $speed: map.get(meta.keywords($props), 'speed') or base;
+  transition-property: $props;
+  transition-duration: var(--motion-#{$speed});
+  transition-timing-function: var(--motion-ease);
+}
 
-$red: #f76b6d;
-$red-lighter: #f78081;
+// a control held down: its background goes a step deeper, quickly, and eases
+// back on release. Colour only, never scale: text must not change size
+@mixin press($bg: var(--color-bg-active)) {
+  &:active:not(:disabled) {
+    background-color: $bg;
+    transition-duration: var(--motion-fast);
+  }
+}
 
-$bleackOrange: #e97451;
+// POPOVERS
+//
+// Anything that opens over the page from a control: dropdowns, menus, the
+// jobs panel. Hidden, it sits a little above where it lands and slightly
+// small; `.is-shown` (set by `usePresence`) lets it settle into place, and
+// removing it lets it lift away again before it unmounts. It ignores the
+// pointer while leaving, so a closing panel never catches a click.
+@mixin popover {
+  opacity: 0;
+  transform: translateY(-$unit1) scale(0.98);
+  transform-origin: top center;
+  pointer-events: none;
+  @include transition(opacity, transform, $speed: slow);
+
+  &.is-shown {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
+// FIELDS
+//
+// A text field taking focus: the border turns to the accent and a soft ring
+// grows around it.
+@mixin field-focus {
+  @include transition(border-color, box-shadow);
+
+  &:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+  }
+}
+
+// BUTTONS
+//
+// The filled accent button: the one primary action in a place.
+@mixin button-primary {
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-weight: 500;
+  cursor: pointer;
+  @include transition(background-color, box-shadow, opacity);
+  @include press(var(--color-accent-pressed));
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-accent-strong);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+// The outlined button: everything that is not the primary action.
+@mixin button-secondary {
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+  @include transition(background-color, border-color, color);
+  @include press;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}

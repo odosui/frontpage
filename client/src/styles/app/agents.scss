@@ -30,13 +30,13 @@
   flex-direction: column;
   width: $unit11;
   flex-shrink: 0;
-  background-color: var(--bgGray);
-  border-right: 1px solid var(--borderColor);
+  background-color: var(--color-bg-subtle);
+  border-right: 1px solid var(--color-border);
 }
 
 .agents-launch {
   padding: $unit2;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .agents-run-btn {
@@ -44,27 +44,10 @@
   width: 100%;
   padding: $unit1 $unit2;
   font-size: $text1;
-  font-weight: 500;
-  color: #fff;
-  background-color: var(--color-accent);
-  border: none;
-  border-radius: $unit1;
-  cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    opacity 0.15s ease;
+  @include button-primary;
 
   & + & {
     margin-top: $unit1;
-  }
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.08);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
   }
 }
 
@@ -75,7 +58,7 @@
   flex-direction: column;
   gap: $unit0;
   padding: $unit2;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .agents-prompt-label {
@@ -88,7 +71,7 @@
   margin: 0;
   font-size: $text0;
   line-height: 1.4;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .agents-prompt-input {
@@ -98,16 +81,11 @@
   font-size: $text0;
   line-height: 1.5;
   color: var(--color-text);
-  border: 1px solid var(--borderColor);
-  border-radius: $unit0;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
   background-color: transparent;
   resize: vertical;
-  transition: border-color 0.15s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
+  @include field-focus;
 
   &:disabled {
     opacity: 0.6;
@@ -124,7 +102,7 @@
 
 .agents-prompt-state {
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .agents-prompt-save {
@@ -133,9 +111,10 @@
   font-weight: 500;
   color: var(--color-text);
   background-color: transparent;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit0;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-sm;
   cursor: pointer;
+  @include transition(border-color, opacity);
 
   &:hover:not(:disabled) {
     border-color: var(--color-accent);
@@ -169,13 +148,14 @@
   border: none;
   border-left: $unit0 solid transparent;
   cursor: pointer;
+  @include transition(background-color);
 
   &:hover {
     background-color: var(--color-bg-hover);
   }
 
   &.is-active {
-    background-color: var(--color-note-area-bg);
+    background-color: var(--color-surface);
     border-left-color: var(--color-accent);
   }
 }
@@ -192,7 +172,7 @@
 
 .agents-session-time,
 .agents-session-model {
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .agents-session-model {
@@ -207,29 +187,19 @@
   height: $unit1;
   flex-shrink: 0;
   border-radius: 50%;
-  background-color: var(--lighter);
+  background-color: var(--color-text-muted);
 
   &.is-running {
-    background-color: $green;
-    animation: agents-pulse 1.2s ease-in-out infinite;
+    background-color: var(--color-success);
+    animation: pulse 1.2s ease-in-out infinite;
   }
 
   &.is-finished {
-    background-color: $green;
+    background-color: var(--color-success);
   }
 
   &.is-failed {
-    background-color: $red;
-  }
-}
-
-@keyframes agents-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
+    background-color: var(--color-danger);
   }
 }
 
@@ -238,14 +208,14 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  background-color: var(--color-note-area-bg);
+  background-color: var(--color-surface);
 }
 
 // stays put while the conversation scrolls under it; the right padding keeps
 // clear of the modal's close button
 .agents-head {
   padding: $unit3 $unit6 $unit2 $unit4;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .agents-title {
@@ -261,15 +231,15 @@
   flex-wrap: wrap;
   gap: $unit0 $unit1;
   font-size: $text0;
-  color: var(--lighter);
+  color: var(--color-text-muted);
 }
 
 .agents-meta-item {
   padding: 0 $unit1;
   line-height: $unit4;
-  background-color: var(--bgGray);
-  border: 1px solid var(--borderColor);
-  border-radius: $unit3;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-xl;
   white-space: nowrap;
 }
 
@@ -287,9 +257,9 @@
 
 .agents-msg {
   flex: none; // cards keep their natural height; the list scrolls instead
-  border: 1px solid var(--borderColor);
-  border-left: $unit0 solid var(--borderColor);
-  border-radius: $unit1;
+  border: 1px solid var(--color-border);
+  border-left: $unit0 solid var(--color-border);
+  border-radius: $radius-md;
   overflow: hidden;
 
   // the two that matter while watching: what the agent said, what came back
@@ -298,8 +268,8 @@
   }
 
   &.is-tool {
-    border-left-color: $green;
-    background-color: var(--bgGray);
+    border-left-color: var(--color-success);
+    background-color: var(--color-bg-subtle);
   }
 }
 
@@ -310,7 +280,7 @@
   min-height: $unit4;
   padding: $unit1 $unit2;
   font-size: $text0;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 }
 
 // a folded result is a control, so the whole header is the target
@@ -319,13 +289,14 @@
   border: none;
   // the rule divides the header from the body; folded, there is no body under
   // it to divide from
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
   background: none;
   font: inherit;
   font-size: $text0;
   color: inherit;
   text-align: left;
   cursor: pointer;
+  @include transition(background-color);
 
   &:hover {
     background-color: var(--color-bg-hover);
@@ -343,8 +314,8 @@
   height: 0;
   border-top: $unit0 solid transparent;
   border-bottom: $unit0 solid transparent;
-  border-left: $unit0 solid var(--lighter);
-  transition: transform 0.12s ease;
+  border-left: $unit0 solid var(--color-text-muted);
+  @include transition(transform);
 
   &.is-open {
     transform: rotate(90deg);
@@ -362,7 +333,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-weight: 400;
 }
 
@@ -376,7 +347,7 @@
   padding-left: $unit1;
   font-size: $text0;
   font-weight: 400;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -393,18 +364,18 @@
   float: left;
   margin-right: $unit1;
   padding: 0 $unit0 + 1px;
-  border-radius: $unit0;
+  border-radius: $radius-sm;
   font-size: $text0;
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   background-color: var(--color-bg-hover);
 
   // the analyst is the voice worth finding when skimming back
   .is-assistant & {
-    color: var(--accentText);
+    color: var(--color-accent-contrast);
     background-color: var(--color-accent);
   }
 }
@@ -485,22 +456,22 @@ ol.markdown-list {
 
 .agents-thinking {
   font-size: $text0;
-  color: var(--lighter);
-  animation: agents-pulse 1.2s ease-in-out infinite;
+  color: var(--color-text-muted);
+  animation: pulse 1.2s ease-in-out infinite;
 }
 
 .agents-empty {
   margin: auto; // centers the "nothing here yet" line in the empty pane
   padding: $unit4;
   font-size: $text1;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   text-align: center;
 }
 
 .agents-error {
   margin: $unit1 0 0;
   font-size: $text0;
-  color: $red;
+  color: var(--color-danger);
 }
 
 // One full-size conversation workspace, with a responsive history drawer.
@@ -511,8 +482,15 @@ ol.markdown-list {
   display: flex;
   align-items: center;
   justify-content: center;
-  &[hidden] {
-    display: none;
+  // kept mounted so a conversation survives closing; hidden by visibility
+  // rather than `display`, so it can fade out first. The visibility flips
+  // only once the fade is over, and back at once on the way in
+  visibility: hidden;
+  transition: visibility 0s linear var(--motion-slow);
+
+  &.is-open {
+    visibility: visible;
+    transition-delay: 0s;
   }
 }
 .conversations-modal-panel {
@@ -522,18 +500,35 @@ ol.markdown-list {
   height: 88vh;
   height: 88dvh;
   overflow: hidden;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background: var(--surface-bg);
-  box-shadow: var(--surface-shadow-hover);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-xl;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
   z-index: 1;
+  // arrives the way every dialog does: see `.generic-modal`
+  opacity: 0;
+  transform: translateY($unit2) scale(0.98);
+  @include transition(opacity, transform, $speed: slow);
+
+  .is-open > & {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .conversation-backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(0 0 0 / 40%);
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   pointer-events: auto;
+  opacity: 0;
+  @include transition(opacity, $speed: slow);
+
+  .is-open > & {
+    opacity: 1;
+  }
 }
 
 .conversation-workspace {
@@ -550,7 +545,7 @@ ol.markdown-list {
   flex-wrap: wrap;
   gap: $unit1;
   padding: $unit2;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
 
   > strong {
     margin-right: auto;
@@ -561,9 +556,9 @@ ol.markdown-list {
     font-size: $text0;
     padding: $unit1;
     color: var(--color-text);
-    background: var(--surface-bg);
-    border: 1px solid var(--borderColor);
-    border-radius: $unit1;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: $radius-md;
     cursor: pointer;
     &:hover {
       border-color: var(--color-accent);
@@ -605,7 +600,7 @@ ol.markdown-list {
   inset: 0;
   width: 100%;
   z-index: 3;
-  background: var(--surface-bg);
+  background: var(--color-surface);
 }
 .conversation-search {
   margin: $unit2;
@@ -613,21 +608,21 @@ ol.markdown-list {
   min-width: 0;
   font: inherit;
   font-size: $text0;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background: var(--surface-bg);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
   color: var(--color-text);
 }
 .conversation-chat {
   min-width: 0;
-  background: var(--color-note-area-bg);
+  background: var(--color-surface);
 }
 .conversation-head {
   display: flex;
   align-items: flex-start;
   gap: $unit2;
   padding: $unit2 $unit3;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid var(--color-border);
   position: relative;
   > div {
     min-width: 0;
@@ -642,7 +637,7 @@ ol.markdown-list {
   }
   p {
     margin: $unit0 0 0;
-    color: var(--lighter);
+    color: var(--color-text-muted);
     font-size: $text0;
   }
 }
@@ -662,10 +657,10 @@ ol.markdown-list {
   max-height: 55vh;
   overflow: auto;
   padding: $unit2;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background: var(--surface-bg);
-  box-shadow: var(--surface-shadow-hover);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
   .agents-prompt {
     padding: $unit2 0;
   }
@@ -697,7 +692,7 @@ ol.markdown-list {
 .conversation-empty p {
   margin: 0;
   font-size: $text1;
-  color: var(--lighter);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 .conversation-feedback,

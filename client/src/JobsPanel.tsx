@@ -15,11 +15,13 @@ const STATUS_LABEL: Record<JobStatus, string> = {
 }
 
 interface JobsPanelProps {
+  /** Settled into place; false while it is still arriving or leaving. */
+  shown: boolean
   onClose: () => void
 }
 
 /** Drops down from under the top bar, over the dashboard. */
-const JobsPanel: React.FC<JobsPanelProps> = ({ onClose }) => {
+const JobsPanel: React.FC<JobsPanelProps> = ({ shown, onClose }) => {
   const { jobs, stats } = useJobs()
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -36,8 +38,8 @@ const JobsPanel: React.FC<JobsPanelProps> = ({ onClose }) => {
 
   return (
     <>
-      <div className="jobs-backdrop" onClick={onClose} />
-      <section className="jobs-panel">
+      {shown && <div className="jobs-backdrop" onClick={onClose} />}
+      <section className={`jobs-panel${shown ? ' is-shown' : ''}`}>
         <header className="jobs-panel-header">
           <h2 className="jobs-panel-title">Jobs</h2>
           <button
