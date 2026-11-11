@@ -96,7 +96,9 @@ export async function runAgent(
       // filed nowhere. It is a slip, not a decision, so it costs one turn: the
       // loop says what was wrong and asks for the answer again.
       const complaint =
-        calls.length === 0 ? reject(answer, options.checkAnswer) : null;
+        calls.length === 0
+          ? (strayCall(content, agent) ?? reject(answer, options.checkAnswer))
+          : null;
       if (complaint && steps < agent.maxSteps) {
         log(`step ${steps}: unusable answer, asking again`);
         conversation.push({ role: "user", content: complaint });
@@ -156,6 +158,34 @@ export async function runAgent(
     await sessions.fail(session.id, (e as Error).message);
     throw e;
   }
+}
+
+/**
+ * A message that meant to call a function and wrote it in some other format,
+ * so nothing here could read it. Models with native tool calling drift into
+ * their own syntax — `<invoke name="REVISE_FACTS">`, `<function_calls>` —
+ * most of all on a long final call, and without this the run simply ends: the
+ * message holds no call the parser knows, so it is taken as the answer, and a
+ * whole run's work is dropped without a word. Like an empty answer, it is a
+ * slip rather than a decision, so it costs one turn instead.
+ */
+export function strayCall(text: string, agent: AgentDefinition): string | null {
+  const foreign = /<\s*\/?\s*(?:invoke|function_calls|tool_call|tool_use|parameter)\b/i.test(text);
+  // a known name inside some other kind of tag: `<invoke name="GET_FACTS">`,
+  // `<GET_FACTS>`. A proper call starts `<|`, which this never matches
+  const named = agent.tools.find((tool) =>
+    new RegExp(`<[^|>\\n]{0,40}\\b${tool.name}\\b`).test(text),
+  );
+  if (!foreign && !named) return null;
+
+  const example = named?.usage ?? agent.tools[0]?.usage ?? "<|NAME arguments|>";
+  return (
+    `That message tried to call ${named ? named.name : "a function"}, but ` +
+    `not in the format this system reads, so nothing ran and nothing was ` +
+    `saved. A call is written exactly as <|NAME arguments|>, opened with <| ` +
+    `and closed with |> — for example ${example}. Send the call again in ` +
+    `that format, and nothing else.`
+  );
 }
 
 /** What is wrong with this answer, or null when it can be taken as final. */

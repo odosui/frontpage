@@ -9,7 +9,7 @@
 AI-powered news aggregator and analyst — an LLM harness for making sense of current events.
 
 <p align="center">
-  <img src="media/screen.png" alt="screenshot" width="800" />
+  <img src="media/screen-stories.png" alt="Stories: coverage from several outlets grouped into events, each article with its importance" width="800" />
 </p>
 
 ## How it works
@@ -20,10 +20,35 @@ flowchart LR
 ```
 
 1. You add sources — RSS, web pages, or subreddits.
-2. Frontpage extracts the headlines and groups them into stories.
+2. Frontpage extracts the headlines and groups them into stories, scoring each article's importance.
 3. It reads the recent stories and updates the arc's facts.
 
-An agent runs each step. You can step in at any point, or just talk to the agent in a chat panel: it reads articles, revises facts, and searches the web when you supply a Brave API key.
+Each dashboard has three tabs, one per step:
+
+- **Latest** — everything the sources collected, newest first. Articles not yet filed into a story are marked with a blue dot.
+- **Stories** — the events, each with the coverage filed under it and a 1–10 importance meter per article.
+- **Facts** — what the coverage establishes, with a confidence for each and links to the articles it rests on. Every revision is kept.
+
+An agent runs each step. You can step in at any point, or just talk to the agent in Conversations: it reads articles, revises facts, and searches the web when you supply a Brave API key.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="media/screen-latest.png" alt="Latest: the raw feed, unfiled articles marked" /></td>
+    <td><img src="media/screen-facts.png" alt="Facts: established claims with confidence and sources" /></td>
+  </tr>
+  <tr>
+    <td align="center">Latest</td>
+    <td align="center">Facts</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="media/screen-dark.png" alt="Stories in the dark theme" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">Dark theme</td>
+  </tr>
+</table>
 
 ## Features
 
@@ -38,7 +63,8 @@ An agent runs each step. You can step in at any point, or just talk to the agent
 
 - `Alt` + `←` / `→` — previous / next dashboard (wraps around)
 - `Alt` + `R` — refresh every source the current dashboard reads
-- `Alt` + `C` — toggle the chat panel
+- `Alt` + `1` / `2` / `3` — Latest / Stories / Facts
+- `Alt` + `C` — open or close conversations
 
 ## Running with Docker
 

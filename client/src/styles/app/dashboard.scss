@@ -251,10 +251,9 @@
   color: var(--color-text-muted);
 }
 
-// not filed into a story yet: a blue dot beside the time, the same size and
-// place as the importance dot in Stories but never one of its colours
-// the dots, pinned to the left of the time column, so down a list they form
-// one straight line whatever the width of the time beside them
+// not filed into a story yet: a blue dot beside the time
+// the dot, pinned to the left of the time column, so down a list the dots
+// form one straight line whatever the width of the time beside them
 .article-row-marks {
   display: flex;
   align-items: center;
@@ -270,35 +269,48 @@
   background-color: var(--color-unfiled);
 }
 
-// the agent's 1-10 score, as a dot: grey for trivia climbing to red for the
-// things that change the world. The exact number is the tooltip
+// the agent's 1-10 score: five rising bars in the source line, as many
+// filled as the score earns, and the filled ones coloured by how far up the
+// scale it is — grey for trivia, amber, orange, red for what changes the
+// world. No blue anywhere on that scale: blue beside the time means "not
+// filed", and the two must never be read as one
 .article-importance {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--color-border-strong);
+  --level: var(--color-text-muted);
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+  // the bars stand on the text's baseline, the way the letters beside them
+  // do: an inline-flex box with no text in it takes its bottom edge as its
+  // baseline, so baseline alignment is exactly that
+  align-self: baseline;
 
-  &.is-low {
-    background-color: var(--color-text-muted);
+  &.is-3 {
+    --level: var(--color-warning);
   }
 
-  &.is-mid {
-    background-color: var(--color-warning);
+  &.is-4 {
+    --level: var(--color-orange);
   }
 
-  &.is-high {
-    background-color: var(--color-orange);
+  &.is-5 {
+    --level: var(--color-danger);
+  }
+}
+
+.article-importance-bar {
+  width: 3px;
+  border-radius: 1px;
+  background-color: var(--color-bg-active);
+
+  @for $i from 1 through 5 {
+    &:nth-child(#{$i}) {
+      height: 3px + ($i - 1) * 2px;
+    }
   }
 
-  &.is-highest {
-    background-color: var(--color-danger);
-  }
-
-  // never scored: an outline, so it reads as absent rather than as a low score
-  &.is-none {
-    background-color: transparent;
-    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  &.is-on {
+    background-color: var(--level);
   }
 }
 

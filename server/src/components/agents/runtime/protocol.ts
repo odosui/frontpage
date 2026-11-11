@@ -1,6 +1,7 @@
 import { AgentTool, ToolCall } from "../types";
 
-const CALL_RE = /<\|\s*([A-Z][A-Z0-9_]*)([^|]*)\|>/g;
+/** Where a call starts: `<|` and the function's name. */
+const OPEN_RE = /<\|\s*([A-Z][A-Z0-9_]*)/g;
 
 /**
  * Quoted arguments stay in one piece: `<|GREP_TAGS "united states" 10|>`.
@@ -18,6 +19,17 @@ function unescape(text: string): string {
   return text.replace(/\\(.)/g, "$1");
 }
 
+/**
+ * The calls in a message, in order.
+ *
+ * A call is `<|NAME args|>`. One the model left open — no `|>` before the
+ * next `<|`, or none at all — still counts, and ends where the next marker
+ * begins or the message does. That is not hypothetical: a long REVISE_FACTS,
+ * paragraphs of quoted facts, has been written with the closing `|>` dropped
+ * and `<|DONE|>` straight after it. Read strictly, the run's whole work was
+ * the one call the parser could not see, and the run ended having saved
+ * nothing.
+ */
 export function parseToolCalls(text: string): ToolCall[] {
   const calls: ToolCall[] = [];
   // A model that writes the same call twice in one message — once as the call
@@ -25,17 +37,25 @@ export function parseToolCalls(text: string): ToolCall[] {
   // it twice would cost the same query and paste the same result back in
   // twice, so identical calls collapse to the first.
   const seen = new Set<string>();
-  CALL_RE.lastIndex = 0;
+  OPEN_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = CALL_RE.exec(text)) !== null) {
+  while ((match = OPEN_RE.exec(text)) !== null) {
     const name = match[1]!;
-    const args = parseArgs(match[2] ?? "");
+    const from = OPEN_RE.lastIndex;
+    const close = text.indexOf("|>", from);
+    const nextOpen = text.indexOf("<|", from);
+    const closed = close !== -1 && (nextOpen === -1 || close < nextOpen);
+    const to = closed ? close : nextOpen === -1 ? text.length : nextOpen;
+    const end = closed ? close + 2 : to;
+    OPEN_RE.lastIndex = end;
+
+    const args = parseArgs(text.slice(from, to));
     const key = `${name}\u0000${args.join("\u0000")}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
-    calls.push({ name, args, raw: match[0] });
+    calls.push({ name, args, raw: text.slice(match.index, end).trimEnd() });
   }
   return calls;
 }

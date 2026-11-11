@@ -121,6 +121,37 @@ describe("runAgent", () => {
     });
   });
 
+  // a long final call written in the model's native syntax, which the parser
+  // cannot see: read as the answer, the run ended having saved nothing
+  it("asks again when a call is written in a foreign format", async () => {
+    vi.mocked(sendChat)
+      .mockResolvedValueOnce(
+        turn('<invoke name="CHANGE_IT">\n"a fact" 3\n</invoke>') as never,
+      )
+      .mockResolvedValueOnce(turn("<|CHANGE_IT|>") as never)
+      .mockResolvedValueOnce(turn("<|DONE|>\nchanged it") as never);
+
+    const result = await run();
+
+    expect(result.answer).toBe("changed it");
+    expect(result.steps).toBe(3);
+    expect(sessions.append).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        role: "user",
+        content: expect.stringContaining("tried to call CHANGE_IT"),
+      }),
+    );
+  });
+
+  it("takes an answer that mentions a function in plain words", async () => {
+    vi.mocked(sendChat).mockResolvedValueOnce(
+      turn("<|DONE|>\nI used CHANGE_IT once.") as never,
+    );
+
+    expect((await run()).answer).toBe("I used CHANGE_IT once.");
+  });
+
   it("gives up on an agent that only ever says <|DONE|>", async () => {
     vi.mocked(sendChat).mockResolvedValue(turn("<|DONE|>") as never);
 

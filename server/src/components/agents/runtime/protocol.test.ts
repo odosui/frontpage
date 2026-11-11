@@ -59,6 +59,41 @@ describe("parseToolCalls", () => {
     expect(calls[0]!.args).toEqual(["a\\b"]);
   });
 
+  // a long REVISE_FACTS was written with its closing |> dropped and <|DONE|>
+  // straight after; read strictly, the call vanished and the run saved nothing
+  it("reads a call left open up to the next marker", () => {
+    const calls = parseToolCalls(
+      '<|REVISE_FACTS "first version" "a fact" 4 12\n\n"another fact" 3 9\n\n<|DONE|>\nFiled two facts.',
+    );
+
+    expect(calls.map((c) => c.name)).toEqual(["REVISE_FACTS", "DONE"]);
+    expect(calls[0]!.args).toEqual([
+      "first version",
+      "a fact",
+      "4",
+      "12",
+      "another fact",
+      "3",
+      "9",
+    ]);
+  });
+
+  it("reads a call left open at the end of the message", () => {
+    const calls = parseToolCalls('looking\n<|GET_STORY "Abu Dhabi talks"');
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.args).toEqual(["Abu Dhabi talks"]);
+  });
+
+  it("does not let an open call swallow a closed one after it", () => {
+    const calls = parseToolCalls('<|GET_TAGS\n<|GET_STORY "x"|>');
+
+    expect(calls.map((c) => [c.name, c.args])).toEqual([
+      ["GET_TAGS", []],
+      ["GET_STORY", ["x"]],
+    ]);
+  });
+
   it("finds nothing in a message that only talks about calls", () => {
     expect(parseToolCalls("I could call GET_STORY next.")).toEqual([]);
   });

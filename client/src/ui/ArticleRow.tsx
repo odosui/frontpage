@@ -10,8 +10,8 @@ type Props = {
   onExtract: (articleId: number) => void
   onOpen: (articleId: number) => void
   /**
-   * Show the agent's 1-10 score as a dot beside the time. Stories show it:
-   * there it ranks the coverage inside one event. Latest leaves it out.
+   * Show the agent's 1-10 score as a meter in the source line. Stories show
+   * it: there it ranks the coverage inside one event. Latest leaves it out.
    */
   showImportance?: boolean
 }
@@ -36,24 +36,14 @@ const ArticleRow = ({
   <div className={`article-row${article.uncategorized ? ' is-unfiled' : ''}`}>
     <span className="article-row-when">
       <span className="article-row-marks">
-        {/* not filed into a story yet: a blue dot beside the time, in the same
-            place Stories put the importance dot, and a bold headline */}
+        {/* not filed into a story yet: a blue dot beside the time, and a bold
+            headline. The only mark that ever sits here, in either tab */}
         {article.uncategorized && (
           <span
             className="article-unfiled"
             role="img"
             aria-label="Not filed yet"
             title="Not filed into a story yet"
-          />
-        )}
-        {showImportance && (
-          <span
-            className={`article-importance is-${band(article.importance)}`}
-            title={
-              article.importance === null
-                ? 'Not scored yet'
-                : `Importance ${article.importance}/10`
-            }
           />
         )}
       </span>
@@ -71,6 +61,7 @@ const ArticleRow = ({
       </a>
       <span className="article-row-meta">
         <ArticleSource article={article} />
+        {showImportance && <Importance score={article.importance} />}
       </span>
     </div>
     <ContentButton
@@ -126,17 +117,32 @@ const ContentButton = ({
   )
 }
 
+const BARS = [1, 2, 3, 4, 5]
+
 /**
- * The 1-10 score in five colour bands — the dot carries the reading, the
- * exact number is in its tooltip.
+ * The agent's 1-10 score as a signal meter: five rising bars, as many filled
+ * as the score earns, coloured grey to red by the same steps. Never blue —
+ * blue beside the time means "not filed". Unscored, every bar is empty; the
+ * exact number is the tooltip either way.
  */
-function band(importance: number | null): string {
-  if (importance === null) return 'none'
-  if (importance <= 2) return 'lowest'
-  if (importance <= 4) return 'low'
-  if (importance <= 6) return 'mid'
-  if (importance <= 8) return 'high'
-  return 'highest'
+const Importance = ({ score }: { score: number | null }) => {
+  const level = score === null ? 0 : Math.max(1, Math.ceil(score / 2))
+  const label = score === null ? 'Not scored yet' : `Importance ${score} of 10`
+  return (
+    <span
+      className={`article-importance is-${level}`}
+      role="img"
+      aria-label={label}
+      title={label}
+    >
+      {BARS.map((bar) => (
+        <span
+          key={bar}
+          className={`article-importance-bar${bar <= level ? ' is-on' : ''}`}
+        />
+      ))}
+    </span>
+  )
 }
 
 export default ArticleRow
