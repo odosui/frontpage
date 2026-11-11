@@ -10,7 +10,6 @@
   gap: $unit1;
   padding: 0 $unit2;
   background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .topbar-nav {
@@ -28,7 +27,7 @@
   height: $unit5;
   padding: 0;
   border: none;
-  border-radius: $radius-md;
+  border-radius: var(--radius-control);
   background: none;
   color: var(--color-text-muted);
   text-decoration: none;
@@ -75,7 +74,7 @@
   height: $unit5;
   padding: 0 $unit2;
   border: none;
-  border-radius: $radius-md;
+  border-radius: var(--radius-control);
   background: none;
   color: var(--color-text-muted);
   font-size: $text1;
@@ -112,9 +111,9 @@
   gap: $unit1;
   height: $unit5;
   padding: 0 $unit2;
-  border: 1px solid var(--color-border);
-  border-radius: $radius-md;
-  background: none;
+  border: none;
+  border-radius: var(--radius-control);
+  background-color: var(--color-bg-subtle);
   color: var(--color-accent-strong);
   font-size: $text1;
   cursor: pointer;
@@ -180,7 +179,7 @@
   height: $unit5;
   padding: 0 $unit1;
   border: none;
-  border-radius: $radius-md;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--color-text);
   font-size: $text1;
@@ -360,24 +359,6 @@
   &:hover:not(:disabled) {
     opacity: 0.85;
   }
-}
-
-// The unfiled count, on the Latest button. The list itself is a dropdown now,
-// so this is the only thing about the queue that is visible without opening it
-// — which makes it the whole reason the button is worth glancing at.
-.topbar-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: $unit3;
-  padding: 0 $unit0;
-  border-radius: $radius-pill;
-  font-size: $text0;
-  font-weight: 600;
-  line-height: $unit3;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-surface);
-  background-color: var(--color-warning);
 }
 
 // how many stories the arc holds, beside its name in the switcher

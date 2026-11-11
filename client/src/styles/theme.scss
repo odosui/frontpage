@@ -1,53 +1,86 @@
 // THE THEME
 //
-// Every colour, shadow and motion value the app uses, as custom properties, in
-// one place. Components never write a colour of their own: they name one of
-// these, so a change here is a change everywhere and the two themes cannot
-// drift apart.
+// Every colour, typeface, size, shape, shadow and motion value the app uses,
+// as custom properties, in one place. Components never write one of their
+// own: they name one of these, so a change here is a change everywhere.
 //
-// The palette is print editorial: warm paper, near-black ink, and a single
-// terracotta accent used sparingly, the way a magazine spends its one spot
-// colour. Neutrals all lean warm so paper, rules and ink read as one stock.
-// Status colours are muted earth tones (sage, ochre, brick) so they sit on
-// the page instead of shouting over it.
+// The look is a product gallery: a pure white page, near-black type, two
+// greys and no accent colour at all — the only colour is whatever the content
+// brings. Surfaces are a faint grey wash rather than boxes and rules; every
+// control is a pill, the primary one solid black. One grotesk throughout,
+// medium and slightly open at small sizes, tight at large ones.
 
 :root {
-  // surfaces, from the page outward
-  --color-bg: #f5f1ea;
-  --color-bg-subtle: #efe9df;
-  --color-bg-hover: #e9e2d6;
-  --color-bg-active: #dfd5c6;
-  --color-surface: #fbf9f5;
-  --color-overlay: rgba(29, 26, 22, 0.34);
+  // surfaces, from the page outward. The washes are translucent, so they read
+  // the same on the page and on a surface sitting above it
+  --color-bg: #ffffff;
+  --color-bg-subtle: rgba(64, 64, 64, 0.06);
+  --color-bg-hover: rgba(64, 64, 64, 0.06);
+  --color-bg-active: rgba(64, 64, 64, 0.12);
+  --color-surface: #ffffff;
+  --color-overlay: rgba(20, 20, 20, 0.32);
 
   // text
-  --color-text: #1d1b18;
-  --color-text-muted: #877f74;
-  --color-scroll-thumb: rgba(29, 27, 24, 0.2);
+  --color-text: #141414;
+  --color-text-muted: #707070;
+  --color-scroll-thumb: rgba(20, 20, 20, 0.18);
 
-  // lines
-  --color-border: #e4ddd1;
-  --color-border-strong: #d3cabb;
+  // lines, where a line is still needed: fields, the odd divider
+  --color-border: rgba(64, 64, 64, 0.08);
+  --color-border-strong: #adadad;
 
-  // the accent: terracotta. `strong` is for text and pressed states, where
-  // it needs more weight; `soft` is a tint to sit behind it
-  --color-accent: #b5532f;
-  --color-accent-strong: #93401f;
-  --color-accent-pressed: #7a3418;
-  --color-accent-soft: #f4e4da;
+  // the accent is ink: the primary button is black, the marks are black.
+  // `strong` is for text and marks, `soft` a wash to sit behind them
+  --color-accent: #141414;
+  --color-accent-strong: #141414;
+  --color-accent-pressed: #3a3a3a;
+  --color-accent-soft: rgba(64, 64, 64, 0.06);
   --color-accent-contrast: #ffffff;
-  --color-focus-ring: rgba(181, 83, 47, 0.28);
+  --color-focus-ring: rgba(20, 20, 20, 0.18);
 
-  // status
-  --color-success: #5b7f5a;
-  --color-warning: #c49536;
-  --color-orange: #cf7340;
-  --color-danger: #b23b3b;
+  // status: the only saturated colour in the interface, so kept for meaning
+  --color-success: #2f9e5f;
+  --color-warning: #e8a317;
+  --color-orange: #f2711c;
+  --color-danger: #e5484d;
 
-  // elevation: soft, and tinted warm like the paper rather than pure black
-  --shadow-sm: 0 1px 2px rgba(60, 45, 30, 0.06), 0 0 0 1px rgba(60, 45, 30, 0.05);
-  --shadow-md: 0 8px 24px rgba(60, 45, 30, 0.1), 0 0 0 1px rgba(60, 45, 30, 0.05);
-  --shadow-lg: 0 24px 48px -12px rgba(60, 45, 30, 0.24), 0 0 0 1px rgba(60, 45, 30, 0.06);
+  // elevation: barely there — a hairline and a long, faint shadow
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 80px rgba(0, 0, 0, 0.16), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+
+  // type: one grotesk, with Cyrillic — most of what this app reads is Russian
+  --font-ui: 'Onest', system-ui, sans-serif;
+  --font-display: var(--font-ui);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  // a headline in a list: the line the reader actually reads
+  --headline-size: 16px;
+  --headline-weight: 500;
+  --headline-leading: 1.4;
+  --headline-tracking: 0.01em;
+  // a story's own title, over the coverage filed under it
+  --story-title-size: 22px;
+  --story-title-weight: 650;
+  --story-title-tracking: -0.02em;
+  // who ran it and when, under the headline
+  --meta-size: 12.5px;
+  --meta-weight: 450;
+  --meta-tracking: 0.012em;
+  // the section tabs
+  --tab-size: 14px;
+  --tab-weight: 550;
+  --tab-tracking: 0.01em;
+
+  // rows: the air above and below one, how far its hover fill reaches past
+  // its text, how round that fill is, and the fill itself. Rows are parted
+  // by space, never by rules
+  --row-pad: 12px;
+  --row-bleed: 14px;
+  --radius-row: 16px;
+  --row-hover: rgba(64, 64, 64, 0.05);
+  // every control is a pill
+  --radius-control: 9999px;
 
   // motion: every transition in the app runs on these. `fast` for small,
   // immediate feedback, `base` for hover and state, `slow` for things
@@ -61,36 +94,39 @@
 }
 
 [data-theme='dark'] {
-  --color-bg: #161412;
-  --color-bg-subtle: #1c1a17;
-  --color-bg-hover: #26221e;
-  --color-bg-active: #312c27;
-  --color-surface: #1e1b18;
+  --color-bg: #0f0f0f;
+  --color-bg-subtle: rgba(255, 255, 255, 0.06);
+  --color-bg-hover: rgba(255, 255, 255, 0.08);
+  --color-bg-active: rgba(255, 255, 255, 0.14);
+  --color-surface: #181818;
   --color-overlay: rgba(0, 0, 0, 0.6);
 
-  --color-text: #ece6dc;
-  --color-text-muted: #9a9185;
-  --color-scroll-thumb: rgba(236, 230, 220, 0.18);
+  --color-text: #f2f2f2;
+  --color-text-muted: #9a9a9a;
+  --color-scroll-thumb: rgba(242, 242, 242, 0.18);
 
-  --color-border: #2d2925;
-  --color-border-strong: #3b3630;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: #5c5c5c;
 
-  --color-accent: #e0835c;
-  --color-accent-strong: #eea383;
-  --color-accent-pressed: #f4bea6;
-  --color-accent-soft: #3a251b;
-  --color-accent-contrast: #1a120d;
-  --color-focus-ring: rgba(224, 131, 92, 0.35);
+  // inverted: the primary button is white on the dark page
+  --color-accent: #f2f2f2;
+  --color-accent-strong: #ffffff;
+  --color-accent-pressed: #d0d0d0;
+  --color-accent-soft: rgba(255, 255, 255, 0.08);
+  --color-accent-contrast: #0f0f0f;
+  --color-focus-ring: rgba(242, 242, 242, 0.25);
 
-  --color-success: #88ae86;
-  --color-warning: #dcb25c;
-  --color-orange: #e8935f;
-  --color-danger: #e27272;
+  --color-success: #3dd68c;
+  --color-warning: #ffc53d;
+  --color-orange: #ff8b3e;
+  --color-danger: #ff6369;
 
   // dark needs a light ring: black shadows on a near-black page are invisible
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+  --shadow-lg: 0 12px 80px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+
+  --row-hover: rgba(255, 255, 255, 0.05);
 }
 
 // motion is a nicety, never a requirement: with reduced motion asked for,

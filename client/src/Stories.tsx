@@ -52,20 +52,18 @@ const Stories = ({
   onRunFacts,
   runningFacts,
 }: Props) => {
-  // the shared column header, the same one facts and chat carry, so they read
-  // as panes of one page rather than a list with panes beside it
+  // the shared panel header: what the tab holds on the left, what can be done
+  // with it on the right. The name and the count are on the tab itself
   const head = (
     <header className="col-head">
-      <h2 className="col-heading">
-        Stories
-        {stories.length > 0 && (
+      <p className="col-dek">
+        Events, with the coverage filed under each
+        {total > stories.length && (
           <span className="col-count">
-            {total > stories.length
-              ? `${stories.length} of ${total}`
-              : stories.length}
+            showing {stories.length} of {total}
           </span>
         )}
-      </h2>
+      </p>
       <button
         className={`col-run${runningFacts ? ' is-busy' : ''}`}
         onClick={onRunFacts}
@@ -83,7 +81,7 @@ const Stories = ({
         ) : (
           <PlayIcon size={12} />
         )}
-        {runningFacts ? 'Running' : 'Facts'}
+        {runningFacts ? 'Updating facts' : 'Update facts'}
       </button>
     </header>
   )

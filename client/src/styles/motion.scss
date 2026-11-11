@@ -8,6 +8,18 @@
   }
 }
 
+// a tab's panel opening: it settles up into place as it fades in
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 // something is working and has no progress to show
 @keyframes pulse {
   0%,

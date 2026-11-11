@@ -10,7 +10,6 @@ import { useAuth } from './contexts/AuthContext'
 import { useJobs } from './contexts/JobsContext'
 import { useToolbar } from './contexts/ToolbarContext'
 import DashboardSwitcher from './DashboardSwitcher'
-import LatestMenu from './LatestMenu'
 import SourcesMenu from './SourcesMenu'
 
 interface TopBarProps {
@@ -63,20 +62,6 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
       <div className="topbar-actions">
         {tools && (
           <>
-            {/* the raw feed, which used to be a column of its own */}
-            <LatestMenu
-              articles={tools.feed}
-              total={tools.feedTotal}
-              onLoadMore={tools.onLoadMoreFeed}
-              loadingMore={tools.loadingMoreFeed}
-              hasSources={tools.sources.length > 0}
-              uncategorized={tools.uncategorized}
-              running={tools.agentRunning}
-              onRunAgent={tools.onRunAgent}
-              extracting={tools.extracting}
-              onExtract={tools.onExtract}
-              onOpenContent={tools.onOpenArticle}
-            />
             <SourcesMenu
               sources={tools.sources}
               refreshing={tools.refreshingSources}

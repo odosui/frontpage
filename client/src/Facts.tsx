@@ -96,8 +96,8 @@ const Facts = ({
   return (
     <div className="facts">
       <header className="col-head">
-        <h2 className="col-heading">
-          Facts
+        <p className="col-dek">
+          What this arc has established, and how sure it is
           {version > 0 && (
             <button
               className={`col-count col-count-btn${
@@ -114,10 +114,7 @@ const Facts = ({
               v{version}
             </button>
           )}
-          {facts.length > 0 && (
-            <span className="col-count">{facts.length}</span>
-          )}
-        </h2>
+        </p>
         <div className="col-tools">
           <button
             className="col-btn"

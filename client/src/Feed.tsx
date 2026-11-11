@@ -39,36 +39,44 @@ const Feed = ({
 }: Props) => {
   return (
     <div className="feed">
-      <div className="feed-head">
-        <h2 className="feed-heading">
-          Latest
+      <header className="col-head">
+        <p className="col-dek">
+          Everything the sources collected, newest first
           {uncategorized > 0 && (
-            <span className="feed-uncategorized">{uncategorized} unfiled</span>
+            <span className="feed-uncategorized">
+              {uncategorized} not filed yet
+            </span>
           )}
-        </h2>
+        </p>
         <button
-          className="feed-run"
+          className={`col-run${running ? ' is-busy' : ''}`}
           onClick={onRunAgent}
           disabled={running || uncategorized === 0}
           title={
             uncategorized === 0
               ? 'Everything is filed'
-              : `File ${uncategorized} article${uncategorized > 1 ? 's' : ''}`
+              : `File ${uncategorized} article${uncategorized > 1 ? 's' : ''} into stories`
           }
         >
-          <PlayIcon size={12} />
-          {running ? 'Running…' : 'Run'}
+          {running ? (
+            <SyncIcon size={12} className="col-run-spin" />
+          ) : (
+            <PlayIcon size={12} />
+          )}
+          {running ? 'Filing' : 'File into stories'}
         </button>
-      </div>
+      </header>
 
       {articles.length === 0 ? (
-        <p className="feed-placeholder">
-          {hasSources
-            ? 'No articles yet — hit refresh on a source.'
-            : 'No sources yet. Assign one to start collecting articles.'}
-        </p>
+        <div className="col-body">
+          <p className="feed-placeholder">
+            {hasSources
+              ? 'No articles yet — hit refresh on a source.'
+              : 'No sources yet. Assign one to start collecting articles.'}
+          </p>
+        </div>
       ) : (
-        <div className="feed-list">
+        <div className="col-body feed-list">
           {articles.map((article) => (
             <div
               key={article.id}
@@ -76,19 +84,29 @@ const Feed = ({
                 article.uncategorized ? ' feed-item--uncategorized' : ''
               }`}
             >
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="feed-item-link"
-                title={article.title}
-              >
-                {article.title}
-              </a>
-              <span className="feed-meta">
-                <ArticleSource article={article} /> ·{' '}
+              {/* a wire layout: when, in a column of its own down the left,
+                  so the list can be scanned by time; then the headline on a
+                  line of its own; then who ran it, quietly, underneath */}
+              <span className="feed-when">
                 <ArticleTime article={article} />
               </span>
+              <div className="feed-main">
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="feed-item-link"
+                  title={article.title}
+                >
+                  {article.title}
+                </a>
+                <span className="feed-meta">
+                  <ArticleSource article={article} />
+                  {article.uncategorized && (
+                    <span className="feed-unfiled">not filed</span>
+                  )}
+                </span>
+              </div>
               <ContentButton
                 article={article}
                 busy={extracting.has(article.id)}

@@ -60,7 +60,9 @@ body {
 
 body,
 * {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: var(--color-text);
   outline: none;
   box-sizing: border-box;

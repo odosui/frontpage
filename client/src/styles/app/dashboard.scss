@@ -1,6 +1,5 @@
 @use '../vars' as *;
 
-$feed-width: $unit12;
 
 // the stories themselves, held apart from the column's header so the gap
 // between two stories is not also the gap under the heading. The scrolling and
@@ -8,10 +7,6 @@ $feed-width: $unit12;
 .stories-list {
   display: flex;
   flex-direction: column;
-  // the gap does the separating now that the cards are gone, so it has to be
-  // wider than the space between two articles inside one story — otherwise the
-  // list reads as one flat run of headlines with occasional labels in it
-  gap: $unit3;
 }
 
 .stories-placeholder {
@@ -26,8 +21,15 @@ $feed-width: $unit12;
 // split into columns that was the width the headlines wanted. What separates
 // one story from the next is its header and the space above it — the card edge
 // was never the thing being read.
+// one story to a section: a rule above, its title as a real heading, its
+// coverage under it. The rule and the air around it are what part two
+// stories; inside one, the rows sit close
 .story {
-  padding: 0;
+  padding: $unit4 0 $unit3;
+
+  &:first-child {
+    padding-top: $unit1;
+  }
 }
 
 // the header line. There is no storyline label above it any more — the
@@ -40,14 +42,13 @@ $feed-width: $unit12;
   align-items: center;
   // flush with the column's gutter: the rows beneath bleed their hover box
   // outwards rather than pushing their text in, so the two share a left edge
-  margin: 0 0 $unit0;
-  font-size: $text0;
-  font-weight: 500;
-  line-height: 1.4;
-  text-transform: uppercase;
-  // small uppercase needs real tracking to stay readable
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
+  margin: 0 0 $unit2;
+  font-family: var(--font-display);
+  font-size: var(--story-title-size);
+  font-weight: var(--story-title-weight);
+  line-height: 1.2;
+  letter-spacing: var(--story-title-tracking);
+  color: var(--color-text);
 }
 
 // renaming or unfiling a story: the caret keeps out of the way until the card
@@ -137,7 +138,9 @@ $feed-width: $unit12;
 // the title needs its colour set outright — the global `*` rule would
 // otherwise paint it --color-text instead of letting it inherit
 .story-title-text {
-  color: var(--color-accent);
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
   // one line, cut with an ellipsis. Two- and three-line headers pushed the
   // stories apart unevenly and buried the articles, which are what is being
   // read; the whole title is a hover away, and renaming is in the menu.
@@ -166,9 +169,12 @@ $feed-width: $unit12;
   // it — $unit1 out, $unit1 back — so the highlight is wider than the text
   // without the text being indented past the heading above it
   margin: 0 (-$unit1);
-  padding: $unit0 $unit1;
-  font-size: $text1;
-  line-height: 1.35;
+  // a hanging indent the width of the bullet and its gap, so a headline that
+  // wraps carries on under its own first word, not under the bullet
+  padding: 5px $unit1 5px calc(#{$unit1} + 13px);
+  text-indent: -13px;
+  font-size: calc(var(--headline-size) - 1px);
+  line-height: var(--headline-leading);
   border-radius: $radius-sm;
   @include transition(background-color);
 
@@ -221,6 +227,9 @@ $feed-width: $unit12;
 }
 
 .story-article {
+  font-family: var(--font-display);
+  font-weight: calc(var(--headline-weight) - 100);
+  letter-spacing: var(--headline-tracking);
   text-decoration: none;
   color: var(--color-text);
   @include transition(color);
@@ -283,105 +292,22 @@ $feed-width: $unit12;
 // The casing stops at the source: `timeAgo` writes "36m", and uppercasing that
 // to "36M" makes 36 minutes read as 36 months.
 .story-article-meta {
-  margin-left: $unit0;
-  font-size: $text0;
-  font-weight: 500;
+  margin-left: $unit2;
+  font-size: var(--meta-size);
+  font-weight: var(--meta-weight);
   color: var(--color-text-muted);
   white-space: nowrap;
-  // the headline is the row's own voice; this is the attribution around it.
-  // Smaller and greyer was not enough at the point where they touch, so the
-  // meta gets a rule to lean on and the eye is told where one ends
-  border-left: 1px solid var(--color-border-strong);
-  padding-left: $unit1;
 }
 
-// The raw feed, folded into the top bar. It used to be a permanent column;
-// on the arc page the stories, facts and chat all want the width,
-// and the unfiled queue is something you check and dismiss rather than read
-// alongside. What stays visible is the count, on the button itself.
-.latest-menu {
-  position: relative;
-}
-
-.latest-dropdown {
-  position: absolute;
-  top: calc(100% + $unit1);
-  right: 0;
-  z-index: 20;
-  width: $feed-width;
-  max-width: calc(100vw - #{$unit4});
-  // tall enough to be the column it replaces, short enough to stay a dropdown
-  max-height: calc(100vh - #{$unit8});
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: $unit1 $unit2 $unit2;
-  background-color: var(--color-surface);
-  border-radius: $radius-lg;
-  box-shadow: var(--shadow-md);
-  @include popover;
-}
-
-// header pinned, list scrolling under it — the Run button must not scroll away
-// while the reader is looking at what it would act on
-.feed {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-// the heading carries the queue depth, with the run button beside it
-.feed-head {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $unit1;
-  margin-bottom: $unit1;
-}
-
+// not filed yet: the count that the button beside it would clear
+// a solid chip, inverted: the one thing on the line that is asking for action
 .feed-uncategorized {
-  margin-left: $unit1;
-  color: var(--color-accent);
-}
-
-.feed-run {
-  display: inline-flex;
-  align-items: center;
-  gap: $unit0;
-  flex-shrink: 0;
-  padding: $unit0 $unit1;
+  padding: 1px $unit1;
+  border-radius: $radius-pill;
+  background-color: var(--color-text);
   font-size: $text0;
-  color: var(--color-text);
-  background: none;
-  border: 1px solid var(--color-border);
-  border-radius: $radius-sm;
-  cursor: pointer;
-  @include transition(background-color, color);
-
-  svg {
-    color: inherit;
-    fill: currentColor;
-  }
-
-  &:hover:not(:disabled) {
-    color: var(--color-accent);
-    background-color: var(--color-bg-hover);
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-}
-
-.feed-heading {
-  margin: 0;
-  font-size: $text0;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
+  font-weight: 500;
+  color: var(--color-bg);
 }
 
 .feed-placeholder {
@@ -391,51 +317,67 @@ $feed-width: $unit12;
   line-height: 1.4;
 }
 
+// the scrolling comes from .col-body, which this carries too
 .feed-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-// the headline is the row, with the meta trailing it inline and the read
-// button parked at the end
+// THE LATEST ROW
+//
+// Time in a narrow column down the left, then the headline on its own line,
+// then the source under it; the read button sits at the end. Rows are parted
+// by hairlines rather than gaps, so a long list still reads as a list.
 .feed-item {
-  position: relative;
-  padding: $unit0 $unit4 $unit0 0;
-  font-size: $text1;
-  line-height: 1.3;
-  border-radius: $radius-sm;
-  @include transition(background-color, opacity);
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  column-gap: $unit3;
+  align-items: start;
+  // the hover fill can reach past the text without moving it: out by the
+  // bleed, back in by the same
+  margin: 0 calc(-1 * var(--row-bleed));
+  padding: var(--row-pad) var(--row-bleed);
+  border-radius: var(--radius-row);
+  @include transition(background-color);
 
   &:hover {
-    background-color: var(--color-bg-hover);
+    background-color: var(--row-hover);
   }
 
   &:hover .feed-action {
     opacity: 1;
   }
+}
 
-  // not filed under a story yet: bolder text plus a dot sitting inline before
-  // it, so wrapped lines start flush left instead of hanging off a gutter
-  &--uncategorized .feed-item-link {
-    font-weight: 600;
+// set to sit on the headline's first line, at the meta's size
+.feed-when {
+  padding-top: calc((var(--headline-size) * var(--headline-leading) - var(--meta-size) * 1.4) / 2);
+  font-size: var(--meta-size);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-text-muted);
 
-    &::before {
-      content: '';
-      display: inline-block;
-      width: $unit1 - 2px;
-      height: $unit1 - 2px;
-      margin-right: $unit1;
-      vertical-align: middle;
-      border-radius: 50%;
-      background-color: var(--color-warning);
-    }
+  time {
+    color: inherit;
   }
 }
 
+.feed-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .feed-item-link {
+  font-family: var(--font-display);
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+  line-height: var(--headline-leading);
+  letter-spacing: var(--headline-tracking);
   text-decoration: none;
   color: var(--color-text);
   @include transition(color);
@@ -445,11 +387,35 @@ $feed-width: $unit12;
   }
 }
 
+.feed-meta {
+  display: flex;
+  align-items: baseline;
+  gap: $unit1;
+  font-size: var(--meta-size);
+  font-weight: var(--meta-weight);
+  color: var(--color-text-muted);
+}
+
+// not filed into a story yet: said in the accent, in the meta line, where it
+// is read with the source rather than shouting from the margin
+.feed-unfiled {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-accent-strong);
+  font-weight: 500;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-accent);
+  }
+}
+
 // same three states as the story rows' button, parked at the row's end
 .feed-action {
-  position: absolute;
-  top: $unit0;
-  right: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -497,20 +463,19 @@ $feed-width: $unit12;
   gap: $unit1;
   width: 100%;
   margin-top: $unit1;
-  padding: $unit1;
-  border: 1px solid var(--color-border);
-  border-radius: $radius-sm;
-  background: none;
+  padding: $unit1 + 2px;
+  border: none;
+  border-radius: var(--radius-control);
+  background-color: var(--color-bg-subtle);
   font-size: $text0;
   font-weight: 500;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   cursor: pointer;
-  @include transition(background-color, border-color, color);
+  @include transition(background-color, color);
+  @include press;
 
   &:hover:not(:disabled) {
-    border-color: var(--color-accent);
-    background-color: var(--color-bg-hover);
-    color: var(--color-accent);
+    background-color: var(--color-bg-active);
   }
 
   &:disabled {
@@ -522,23 +487,12 @@ $feed-width: $unit12;
   animation: spin 1s linear infinite;
 }
 
-// flows inline right after the title, continuing its last line. Same rule as
-// the story rows: the source is uppercased, the relative time is not.
-.feed-meta {
-  display: inline;
-  margin-left: $unit1;
-  font-size: $text0;
-  font-weight: 400;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
 // Who wrote it, in both lists. Uppercased where the relative time beside it is
 // not: `timeAgo` writes "36m", and uppercasing that to "36M" makes 36 minutes
 // read as 36 months.
 .article-source {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--meta-tracking);
+  color: inherit;
 }
 
 // the subreddit that carried a link, demoted behind the outlet that wrote it

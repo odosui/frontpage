@@ -13,4 +13,8 @@ export const HOTKEYS = {
   nextDashboard: 'alt+ArrowRight',
   /** Refresh every source on the arc. */
   refreshAll: 'alt+r',
+  /** Open the arc's Latest, Stories or Facts tab. */
+  tabLatest: 'alt+1',
+  tabStories: 'alt+2',
+  tabFacts: 'alt+3',
 } as const

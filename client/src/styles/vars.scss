@@ -39,6 +39,16 @@ $unit15: 768px;
 $unit16: 960px;
 $unit17: 1024px;
 
+// the measure of the arc's single column: wide enough for a headline and its
+// meta on one line, narrow enough to read down without the eye losing its row
+$reading-width: 880px;
+
+// the side padding that centres a $reading-width column inside whatever is
+// full width — so a panel can scroll at the window's edge while its content
+// stays in the middle. Never less than $unit4, on a screen narrower than the
+// column
+$reading-gutter: max(#{$unit4}, calc((100% - #{$reading-width}) / 2 + #{$unit4}));
+
 // RADII
 //
 // Soft corners, one step per size of thing: a tag, a control, a row or card,
@@ -113,7 +123,7 @@ $radius-pill: 999px;
 // The filled accent button: the one primary action in a place.
 @mixin button-primary {
   border: 1px solid transparent;
-  border-radius: $radius-md;
+  border-radius: var(--radius-control);
   background-color: var(--color-accent);
   color: var(--color-accent-contrast);
   font-weight: 500;
@@ -131,18 +141,19 @@ $radius-pill: 999px;
   }
 }
 
-// The outlined button: everything that is not the primary action.
+// The secondary button: a grey-wash pill, for everything that is not the
+// primary action.
 @mixin button-secondary {
-  border: 1px solid var(--color-border);
-  border-radius: $radius-md;
-  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background-color: var(--color-bg-subtle);
   color: var(--color-text);
   cursor: pointer;
   @include transition(background-color, border-color, color);
   @include press;
 
   &:hover:not(:disabled) {
-    background-color: var(--color-bg-hover);
+    background-color: var(--color-bg-active);
   }
 
   &:disabled {

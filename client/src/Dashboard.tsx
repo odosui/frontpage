@@ -15,9 +15,11 @@ import AddSourceModal from './AddSourceModal'
 import ArticleContentModal from './ArticleContentModal'
 import DashboardEmptyState from './DashboardEmptyState'
 import Facts from './Facts'
+import Feed from './Feed'
 import ConversationsModal from './ConversationsModal'
 import { HOTKEYS, useHotkey } from './hotkeys'
 import Stories from './Stories'
+import ArcTabs from './ui/ArcTabs'
 import { dedupeById } from './utils/dedupeById'
 
 type Loaded = {
@@ -36,10 +38,28 @@ type Loaded = {
 /** How often a page left open re-reads itself, for changes made elsewhere. */
 const REFRESH_MS = 20_000
 
+/** The arc's sections, in the order the tabs show them. */
+type Tab = 'latest' | 'stories' | 'facts'
+const TABS: Tab[] = ['latest', 'stories', 'facts']
+const TAB_KEY = 'frontpage.arcTab'
+
 /**
- * One arc, on its own page: the stories it is made of down the left, what it
- * has established and what that points to in the middle, and an agent to talk
- * to about it on the right.
+ * The tab the reader last had open, so a reload lands where they were. Only a
+ * convenience: storage can be missing or refuse, and then it is Latest.
+ */
+const savedTab = (): Tab => {
+  try {
+    const value = localStorage.getItem(TAB_KEY)
+    return TABS.includes(value as Tab) ? (value as Tab) : 'latest'
+  } catch {
+    return 'latest'
+  }
+}
+
+/**
+ * One arc, on its own page, in three tabs: Latest, everything its sources
+ * collected; Stories, what that was filed into; and Facts, what the stories
+ * established. Conversations with its agents open over the page.
  *
  * The dashboard *is* the arc — it owns its stories, facts and
  * conversations. What it does not own is the sources feeding it: those are
@@ -65,6 +85,15 @@ const Dashboard: React.FC = () => {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showAddSource, setShowAddSource] = useState(false)
+  const [tab, setTabState] = useState<Tab>(savedTab)
+  const setTab = useCallback((next: Tab) => {
+    setTabState(next)
+    try {
+      localStorage.setItem(TAB_KEY, next)
+    } catch {
+      // the tab still changes; it just won't be remembered
+    }
+  }, [])
   const [conversationsOpen, setConversationsOpen] = useState(false)
   const openConversations = useCallback(() => setConversationsOpen(true), [])
   // the article whose stored text is on screen, if any
@@ -399,8 +428,7 @@ const Dashboard: React.FC = () => {
     [dashboardId, load],
   )
 
-  // the arc's controls, its sources and its latest headlines are all rendered
-  // by the top bar
+  // the arc's controls and its sources are rendered by the top bar
   const isRefreshing = refreshing.size > 0
 
   // the first page, freshly re-read, with the pages walked down after it. An
@@ -463,16 +491,6 @@ const Dashboard: React.FC = () => {
       onRemoveSource: removeSource,
       onAddSource: () => setShowAddSource(true),
       onRefreshAll: refreshAll,
-      feed,
-      feedTotal,
-      onLoadMoreFeed: loadMoreFeed,
-      loadingMoreFeed,
-      uncategorized,
-      agentRunning,
-      onRunAgent: runAgent,
-      onExtract: extractContent,
-      onOpenArticle: setOpenArticle,
-      extracting,
     })
     // `refreshing` and `extracting` are rebuilt every render; the flags and the
     // jobs list they derive from cover their changes
@@ -492,14 +510,8 @@ const Dashboard: React.FC = () => {
     refreshSource,
     removeSource,
     refreshAll,
-    runAgent,
-    extractContent,
     isRefreshing,
     sourceErrors,
-    agentRunning,
-    loadMoreFeed,
-    loadingMoreFeed,
-    moreFeed,
     jobs,
   ])
 
@@ -516,6 +528,9 @@ const Dashboard: React.FC = () => {
   useHotkey(HOTKEYS.prevDashboard, () => step(-1))
   useHotkey(HOTKEYS.nextDashboard, () => step(1))
   useHotkey(HOTKEYS.refreshAll, () => refreshAll())
+  useHotkey(HOTKEYS.tabLatest, () => setTab('latest'))
+  useHotkey(HOTKEYS.tabStories, () => setTab('stories'))
+  useHotkey(HOTKEYS.tabFacts, () => setTab('facts'))
 
   if (error) {
     return (
@@ -535,7 +550,58 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="arc">
-      <aside className="arc-stories">
+      <nav className="arc-nav">
+        <ArcTabs
+          idPrefix="arc"
+          active={tab}
+          onChange={setTab}
+          tabs={[
+            {
+              id: 'latest',
+              label: 'Latest',
+              // what is waiting to be filed is the reason to open it
+              count: uncategorized > 0 ? uncategorized : null,
+              countAlert: true,
+              countLabel: `${uncategorized} unfiled`,
+            },
+            { id: 'stories', label: 'Stories', count: dashboard.storyCount },
+            { id: 'facts', label: 'Facts', count: loaded.facts?.length ?? 0 },
+          ]}
+        />
+      </nav>
+
+      {/* every panel stays mounted, hidden when it is not the open one: a
+          half-written fact, an open history or how far down the stories the
+          reader had scrolled all survive a look at another tab */}
+      <section
+        className="arc-panel"
+        id="arc-panel-latest"
+        role="tabpanel"
+        aria-labelledby="arc-tab-latest"
+        hidden={tab !== 'latest'}
+      >
+        <Feed
+          articles={feed}
+          total={feedTotal}
+          onLoadMore={loadMoreFeed}
+          loadingMore={loadingMoreFeed}
+          hasSources={sources.length > 0}
+          uncategorized={uncategorized}
+          running={agentRunning}
+          onRunAgent={runAgent}
+          extracting={extracting}
+          onExtract={extractContent}
+          onOpenContent={setOpenArticle}
+        />
+      </section>
+
+      <section
+        className="arc-panel"
+        id="arc-panel-stories"
+        role="tabpanel"
+        aria-labelledby="arc-tab-stories"
+        hidden={tab !== 'stories'}
+      >
         <Stories
           stories={stories}
           total={dashboard.storyCount}
@@ -549,16 +615,22 @@ const Dashboard: React.FC = () => {
           onRunFacts={runFacts}
           runningFacts={factsRunning}
         />
-      </aside>
+      </section>
 
-      <aside className="arc-facts">
+      <section
+        className="arc-panel"
+        id="arc-panel-facts"
+        role="tabpanel"
+        aria-labelledby="arc-tab-facts"
+        hidden={tab !== 'facts'}
+      >
         <Facts
           dashboardId={dashboardId}
           facts={loaded.facts ?? []}
           version={loaded.factsVersion ?? 0}
           onChanged={load}
         />
-      </aside>
+      </section>
 
       <ConversationsModal
         key={dashboardId}

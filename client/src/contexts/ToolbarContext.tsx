@@ -1,14 +1,10 @@
 import * as React from 'react'
 import { createContext, useContext, useMemo, useState } from 'react'
-import { type Dashboard, type FeedArticle, type Source } from '../api'
+import { type Dashboard, type Source } from '../api'
 
 /**
  * The dashboard's controls live in the top bar, which is rendered outside the
  * router. The Dashboard publishes them here and the TopBar picks them up.
- *
- * The raw feed rides along too: it used to be a column on the page, and is now
- * a dropdown off the bar, so the page has to hand it over the same way it hands
- * over the source list.
  */
 export interface DashboardTools {
   dashboards: Dashboard[]
@@ -36,20 +32,6 @@ export interface DashboardTools {
   onRemoveSource: (id: string) => void
   onAddSource: () => void
   onRefreshAll: () => void
-
-  /** The Latest dropdown: everything collected, filed or not. */
-  feed: FeedArticle[]
-  /** How many the dashboard holds in all, so the list knows if more remain. */
-  feedTotal: number
-  /** Walks one page further down the feed and appends it. */
-  onLoadMoreFeed: () => void
-  loadingMoreFeed: boolean
-  uncategorized: number
-  agentRunning: boolean
-  onRunAgent: () => void
-  onExtract: (articleId: number) => void
-  onOpenArticle: (articleId: number) => void
-  extracting: Set<number>
 }
 
 interface ToolbarValue {
