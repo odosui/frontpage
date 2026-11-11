@@ -595,6 +595,8 @@ const Dashboard: React.FC = () => {
           extracting={extracting}
           onExtract={extractContent}
           onOpenContent={setOpenArticle}
+          onRefresh={refreshAll}
+          refreshing={isRefreshing}
           actionsSlot={actionsSlot}
           active={tab === 'latest'}
         />

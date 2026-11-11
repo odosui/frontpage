@@ -50,6 +50,27 @@
   // small capitals need real tracking to stay readable
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
+
+  // a coloured chevron opening the label, drawn rather than typed so it
+  // keeps its weight at this size. It sits in the time column, its right edge
+  // on the times' right edge, so the label's text still starts on the
+  // headlines' edge and the chevron extends the column of times above it
+  &::before {
+    content: '';
+    flex: none;
+    box-sizing: border-box;
+    width: 7px;
+    height: 7px;
+    // out into the time column by the gap and its own width, then back by
+    // the gap: the chevron takes no room from the text
+    margin-left: calc(-1 * (var(--row-gap) + 7px));
+    margin-right: var(--row-gap);
+    border-top: 2px solid var(--color-kicker);
+    border-right: 2px solid var(--color-kicker);
+    // rotated, the square's corner points right; nudged left so the point,
+    // not the square's box, meets the times' edge
+    transform: translateX(-2px) rotate(45deg);
+  }
 }
 
 // renaming or unfiling a story: the caret keeps out of the way until the card
@@ -83,6 +104,11 @@
 
   &:hover {
     background-color: var(--color-bg-hover);
+  }
+
+  // a touch screen has no hover to reveal it with, so it is always there
+  @media (hover: none) {
+    opacity: 1;
   }
 }
 
@@ -170,6 +196,74 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+// PULL TO REFRESH
+//
+// On a touch screen, dragging Latest down from its top re-reads every source
+// (ui/usePullToRefresh). The list moves down by --pull, opening a gap at the
+// top with the spinner in the middle of it. It follows the finger exactly
+// while held, then eases back, or to where it rests while the refresh runs.
+.feed {
+  position: relative;
+  // the spinner starts tucked above the list: keep it off the tab bar
+  overflow: hidden;
+}
+
+.feed-body {
+  // the pull is handled here, not chained out to the page or the browser's
+  // own pull-to-refresh
+  overscroll-behavior-y: contain;
+  transform: translateY(var(--pull, 0px));
+  @include transition(transform, $speed: slow);
+
+  .feed.is-pulling & {
+    transition: none;
+  }
+}
+
+.pull-indicator {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $unit5;
+  height: $unit5;
+  margin-left: -$unit5 * 0.5;
+  border-radius: 50%;
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  // centred in the gap the pull has opened, turning a little as it grows
+  opacity: var(--pull-progress, 0);
+  transform: translateY(calc(var(--pull, 0px) / 2 - 50%))
+    rotate(calc(var(--pull-progress, 0) * 270deg));
+  @include transition(transform, opacity, color, $speed: slow);
+
+  .feed.is-pulling & {
+    transition: color var(--motion-fast) var(--motion-ease);
+  }
+
+  svg {
+    fill: currentColor;
+  }
+
+  &.is-armed {
+    color: var(--color-text);
+  }
+
+  // let go past the line: held in the open gap, spinning, until it is done
+  &.is-refreshing {
+    opacity: 1;
+    color: var(--color-text);
+
+    svg {
+      animation: spin 1s linear infinite;
+    }
+  }
 }
 
 // THE ARTICLE ROW
@@ -345,6 +439,12 @@
   &.has-content {
     opacity: 1;
     color: var(--color-text);
+  }
+
+  // no hover on a touch screen: the fetch button shows, quieter than the
+  // book that opens text already stored
+  @media (hover: none) {
+    opacity: 1;
   }
 
   &.is-busy {

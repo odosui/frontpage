@@ -1,4 +1,5 @@
 @use '../vars' as *;
+@use '../breakpoints' as *;
 
 // Panel dropping down from under the top bar, over everything else
 
@@ -28,6 +29,18 @@
   border-radius: 0 0 $radius-md $radius-md;
   box-shadow: var(--shadow-lg);
   @include popover;
+}
+
+// on a phone it takes the width, an even margin either side, rather than
+// leaving a sliver of the page showing down the left
+@media (max-width: #{$screen-sm-min - 0.02px}) {
+  .jobs-panel {
+    left: $unit1;
+    right: $unit1;
+    bottom: $unit1;
+    width: auto;
+    max-width: none;
+  }
 }
 
 .jobs-panel-header {

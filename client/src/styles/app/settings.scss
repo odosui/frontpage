@@ -1,4 +1,5 @@
 @use '../vars' as *;
+@use '../breakpoints' as *;
 
 .settings {
   flex: 1;
@@ -31,8 +32,10 @@
 
 .settings-section-head {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: baseline;
   justify-content: space-between;
+  gap: $unit0 $unit2;
   margin-bottom: $unit3;
 }
 
@@ -406,5 +409,26 @@
 
   &.is-error {
     color: var(--color-danger);
+  }
+}
+
+// ON A PHONE
+//
+// Less frame around each section, so the content keeps the width; and the
+// tables, which have more columns than a phone has room for, scroll sideways
+// inside their section instead of pushing the page wider.
+@media (max-width: #{$screen-sm-min - 0.02px}) {
+  .settings {
+    padding: $unit3 var(--gutter);
+  }
+
+  .settings-section {
+    padding: $unit3;
+  }
+
+  .settings-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }

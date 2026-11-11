@@ -1,3 +1,5 @@
+@use 'breakpoints' as *;
+
 // THE THEME
 //
 // Every colour, typeface, size, shape, shadow and motion value the app uses,
@@ -47,6 +49,9 @@
   // spends grey, amber, orange and red, and success is green: this must not
   // be mistaken for a score
   --color-unfiled: #2f7cf6;
+  // the chevron that opens a story's label. Violet: blue already means "not
+  // filed" and the warm colours are importance, so this can mean nothing else
+  --color-kicker: #7c5cff;
 
   // elevation: barely there — a hairline and a long, faint shadow
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
@@ -76,6 +81,9 @@
   // its text, how round that fill is, and the fill itself. Rows are parted
   // by space, never by rules
   --row-pad: 12px;
+  // the page's side margin, at its narrowest: the most a column of text ever
+  // keeps clear of the window's edge
+  --gutter: 24px;
   // a row's two text edges: the time in a narrow column, then a gap, then
   // the headline. Story labels start on the headline's edge, so labels and
   // headlines share one line down the page and the times hang to the left
@@ -126,6 +134,7 @@
   --color-orange: #ff8b3e;
   --color-danger: #ff6369;
   --color-unfiled: #5b9cff;
+  --color-kicker: #a28bff;
 
   // dark needs a light ring: black shadows on a near-black page are invisible
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
@@ -133,6 +142,21 @@
   --shadow-lg: 0 12px 80px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
 
   --row-hover: rgba(255, 255, 255, 0.05);
+}
+
+// ON A PHONE
+//
+// The same layout, tightened: a narrower margin, a time column only as wide
+// as "42m" with the unfiled dot beside it, and a smaller step to the
+// headline, so the headline gets the width. Everything measured from these —
+// rows, story labels and their chevron, the tabs — follows on its own.
+@media (max-width: #{$screen-sm-min - 0.02px}) {
+  :root {
+    --gutter: 16px;
+    --row-when: 2.25rem;
+    --row-gap: 12px;
+    --row-bleed: 10px;
+  }
 }
 
 // motion is a nicety, never a requirement: with reduced motion asked for,

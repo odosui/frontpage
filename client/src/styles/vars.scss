@@ -45,9 +45,9 @@ $reading-width: 880px;
 
 // the side padding that centres a $reading-width column inside whatever is
 // full width — so a panel can scroll at the window's edge while its content
-// stays in the middle. Never less than $unit4, on a screen narrower than the
-// column
-$reading-gutter: max(#{$unit4}, calc((100% - #{$reading-width}) / 2 + #{$unit4}));
+// stays in the middle. Never less than the gutter, on a screen narrower than the
+// column. The minimum is the theme's --gutter, which a phone narrows
+$reading-gutter: max(var(--gutter), calc((100% - #{$reading-width}) / 2 + var(--gutter)));
 
 // RADII
 //

@@ -1,4 +1,5 @@
 @use '../vars' as *;
+@use '../breakpoints' as *;
 
 .topbar {
   position: relative;
@@ -78,6 +79,7 @@
   background: none;
   color: var(--color-text-muted);
   font-size: $text1;
+  white-space: nowrap;
   cursor: pointer;
   @include transition(color, background-color);
   @include press;
@@ -258,6 +260,10 @@
   padding-right: $unit1;
   opacity: 0;
   @include transition(opacity);
+
+  @media (hover: none) {
+    opacity: 1;
+  }
 }
 
 .dash-switcher-action {
@@ -367,4 +373,39 @@
   font-size: $text0;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+// ON A PHONE
+//
+// The bar keeps every control but drops the words it can spare: conversations
+// and jobs become their icons, the label still there for screen readers and
+// as the tooltip. Controls sit closer and the bar's ends come in to the page
+// gutter, so nothing runs off the right edge.
+@media (max-width: #{$screen-sm-min - 0.02px}) {
+  .topbar {
+    gap: $unit0;
+    padding: 0 $unit1;
+  }
+
+  .topbar-actions {
+    gap: 2px;
+  }
+
+  .topbar-btn,
+  .topbar-jobs {
+    padding: 0 $unit1;
+  }
+
+  .topbar-label,
+  .topbar-jobs-label {
+    display: none;
+  }
+
+  // an icon alone on a pill: make it a circle, the size of the other icons
+  .topbar-btn:has(.topbar-label),
+  .topbar-jobs {
+    width: $unit5;
+    justify-content: center;
+    padding: 0;
+  }
 }

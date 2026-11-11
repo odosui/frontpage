@@ -77,9 +77,11 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
               onClick={tools.onOpenConversations}
               aria-haspopup="dialog"
               aria-expanded={tools.conversationsOpen}
+              aria-label="Conversations"
+              title="Conversations"
             >
               <DependabotIcon size={16} />
-              Conversations
+              <span className="topbar-label">Conversations</span>
             </button>
           </>
         )}
@@ -91,6 +93,7 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
           onClick={onToggleJobs}
           aria-label="Jobs"
           aria-expanded={jobsOpen}
+          title={jobsLabel(activeCount)}
         >
           <ZapIcon size={16} />
           <span className="topbar-jobs-label">

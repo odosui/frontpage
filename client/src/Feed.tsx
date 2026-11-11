@@ -2,6 +2,7 @@ import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { type FeedArticle } from './api'
 import ArticleRow from './ui/ArticleRow'
 import PanelActions from './ui/PanelActions'
+import { usePullToRefresh } from './ui/usePullToRefresh'
 
 type Props = {
   articles: FeedArticle[]
@@ -16,6 +17,10 @@ type Props = {
   extracting: Set<number>
   onExtract: (articleId: number) => void
   onOpenContent: (articleId: number) => void
+  /** Re-reads every source; what pulling the list down does on a phone. */
+  onRefresh: () => void
+  /** A source is being re-read right now. */
+  refreshing: boolean
   /** The tab bar's action slot, and whether this is the open tab. */
   actionsSlot: HTMLElement | null
   active: boolean
@@ -39,11 +44,30 @@ const Feed = ({
   extracting,
   onExtract,
   onOpenContent,
+  onRefresh,
+  refreshing,
   actionsSlot,
   active,
 }: Props) => {
+  const pull = usePullToRefresh(onRefresh, refreshing, hasSources)
+
   return (
-    <div className="feed">
+    <div
+      className={`feed${pull.dragging ? ' is-pulling' : ''}`}
+      style={{ '--pull': `${pull.offset}px` } as React.CSSProperties}
+    >
+      {/* pulled down from the top on a touch screen: turns with the pull,
+          darkens once letting go would refresh, spins while it does */}
+      <span
+        className={`pull-indicator${pull.armed ? ' is-armed' : ''}${
+          pull.refreshing ? ' is-refreshing' : ''
+        }`}
+        style={{ '--pull-progress': pull.progress } as React.CSSProperties}
+        aria-hidden="true"
+      >
+        <SyncIcon size={14} />
+      </span>
+
       <PanelActions slot={actionsSlot} active={active}>
         <button
           className={`col-run${running ? ' is-busy' : ''}`}
@@ -69,7 +93,7 @@ const Feed = ({
       </PanelActions>
 
       {articles.length === 0 ? (
-        <div className="col-body">
+        <div className="col-body feed-body" ref={pull.ref}>
           <p className="feed-placeholder">
             {hasSources
               ? 'No articles yet — hit refresh on a source.'
@@ -77,7 +101,7 @@ const Feed = ({
           </p>
         </div>
       ) : (
-        <div className="col-body feed-list">
+        <div className="col-body feed-body feed-list" ref={pull.ref}>
           {articles.map((article) => (
             <ArticleRow
               key={article.id}

@@ -120,6 +120,30 @@
   transition-timing-function: var(--motion-ease);
 }
 
+// on a phone the tabs take the whole width, so the open tab's actions drop to
+// a line of their own under them, starting on the same edge as the content
+@media (max-width: #{$screen-sm-min - 0.02px}) {
+  .arc-nav {
+    flex-wrap: wrap;
+    row-gap: $unit1;
+  }
+
+  // out by the bleed, like the tabs, with the pill's padding the bleed: the
+  // icon then starts on the content's edge
+  .arc-nav-actions {
+    flex-basis: 100%;
+    margin-left: calc(-1 * var(--row-bleed));
+
+    .col-run {
+      padding-inline: var(--row-bleed) $unit2;
+    }
+
+    &:empty {
+      display: none;
+    }
+  }
+}
+
 // THE PANEL
 //
 // The open tab's content, one centred column the same width as the tabs, so
