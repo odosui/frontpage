@@ -1,7 +1,6 @@
-import { BookIcon, DownloadIcon, PlayIcon, SyncIcon } from '@primer/octicons-react'
+import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { type FeedArticle } from './api'
-import ArticleSource from './ui/ArticleSource'
-import ArticleTime from './ui/ArticleTime'
+import ArticleRow from './ui/ArticleRow'
 
 type Props = {
   articles: FeedArticle[]
@@ -78,42 +77,13 @@ const Feed = ({
       ) : (
         <div className="col-body feed-list">
           {articles.map((article) => (
-            <div
+            <ArticleRow
               key={article.id}
-              className={`feed-item${
-                article.uncategorized ? ' feed-item--uncategorized' : ''
-              }`}
-            >
-              {/* a wire layout: when, in a column of its own down the left,
-                  so the list can be scanned by time; then the headline on a
-                  line of its own; then who ran it, quietly, underneath */}
-              <span className="feed-when">
-                <ArticleTime article={article} />
-              </span>
-              <div className="feed-main">
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="feed-item-link"
-                  title={article.title}
-                >
-                  {article.title}
-                </a>
-                <span className="feed-meta">
-                  <ArticleSource article={article} />
-                  {article.uncategorized && (
-                    <span className="feed-unfiled">not filed</span>
-                  )}
-                </span>
-              </div>
-              <ContentButton
-                article={article}
-                busy={extracting.has(article.id)}
-                onExtract={onExtract}
-                onOpen={onOpenContent}
-              />
-            </div>
+              article={article}
+              busy={extracting.has(article.id)}
+              onExtract={onExtract}
+              onOpen={onOpenContent}
+            />
           ))}
 
           {/* the foot of the list: what is showing against what there is, and
@@ -137,51 +107,6 @@ const Feed = ({
         </div>
       )}
     </div>
-  )
-}
-
-/** Fetch the article's text, wait for the job, or open what was stored. */
-const ContentButton = ({
-  article,
-  busy,
-  onExtract,
-  onOpen,
-}: {
-  article: FeedArticle
-  busy: boolean
-  onExtract: (articleId: number) => void
-  onOpen: (articleId: number) => void
-}) => {
-  if (busy) {
-    return (
-      <span className="feed-action is-busy" title="Reading the page…">
-        <SyncIcon size={14} />
-      </span>
-    )
-  }
-
-  if (article.hasContent) {
-    return (
-      <button
-        className="feed-action has-content"
-        onClick={() => onOpen(article.id)}
-        title="Read the stored text"
-        aria-label={`Read the stored text of ${article.title}`}
-      >
-        <BookIcon size={14} />
-      </button>
-    )
-  }
-
-  return (
-    <button
-      className="feed-action"
-      onClick={() => onExtract(article.id)}
-      title="Fetch this article's text"
-      aria-label={`Fetch the text of ${article.title}`}
-    >
-      <DownloadIcon size={14} />
-    </button>
   )
 }
 

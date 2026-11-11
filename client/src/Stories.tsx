@@ -1,12 +1,6 @@
-import {
-  BookIcon,
-  DownloadIcon,
-  PlayIcon,
-  SyncIcon,
-} from '@primer/octicons-react'
+import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { type StoryFeedEntry } from './api'
-import ArticleSource from './ui/ArticleSource'
-import ArticleTime from './ui/ArticleTime'
+import ArticleRow from './ui/ArticleRow'
 import StoryMenu from './ui/StoryMenu'
 
 type Props = {
@@ -123,41 +117,14 @@ const Stories = ({
             </h2>
             <div className="story-articles">
               {story.articles.map((article) => (
-                <div key={article.id} className="story-article-row">
-                  <span
-                    className={`story-article-dot is-${band(article.importance)}`}
-                    title={
-                      article.importance === null
-                        ? 'Not scored yet'
-                        : `Importance ${article.importance}/10`
-                    }
-                  />
-                  {/* one run of text, not a stack of boxes: the headline, who
-                    ran it and when, and the button, all in a single flow that
-                    wraps where the words do. The meta is kept unbreakable so
-                    "NOVAYA · 6h" travels to the next line together rather than
-                    splitting across it. Tags are still collected and still
-                    filed — just not shown here. */}
-                  <a
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="story-article"
-                    title={article.title}
-                  >
-                    {article.title}
-                  </a>{' '}
-                  <span className="story-article-meta">
-                    <ArticleSource article={article} /> ·{' '}
-                    <ArticleTime article={article} />
-                  </span>
-                  <ContentButton
-                    article={article}
-                    busy={extracting.has(article.id)}
-                    onExtract={onExtract}
-                    onOpen={onOpenContent}
-                  />
-                </div>
+                <ArticleRow
+                  key={article.id}
+                  article={article}
+                  busy={extracting.has(article.id)}
+                  onExtract={onExtract}
+                  onOpen={onOpenContent}
+                  showImportance
+                />
               ))}
             </div>
           </article>
@@ -174,68 +141,6 @@ function emptyState(hasSources: boolean, hasArticles: boolean): string {
   }
   if (!hasArticles) return 'No articles yet — hit refresh on a source.'
   return 'Nothing filed under this dashboard yet — run the categorizing agent.'
-}
-
-/**
- * One button with three states: fetch the article's text, wait while a job
- * does it, or open what was stored. It keeps the same size throughout, so the
- * meta line does not reflow when the text arrives.
- */
-const ContentButton = ({
-  article,
-  busy,
-  onExtract,
-  onOpen,
-}: {
-  article: StoryFeedEntry['articles'][number]
-  busy: boolean
-  onExtract: (articleId: number) => void
-  onOpen: (articleId: number) => void
-}) => {
-  if (busy) {
-    return (
-      <span className="story-article-action is-busy" title="Reading the page…">
-        <SyncIcon size={14} />
-      </span>
-    )
-  }
-
-  if (article.hasContent) {
-    return (
-      <button
-        className="story-article-action has-content"
-        onClick={() => onOpen(article.id)}
-        title="Read the stored text"
-        aria-label={`Read the stored text of ${article.title}`}
-      >
-        <BookIcon size={14} />
-      </button>
-    )
-  }
-
-  return (
-    <button
-      className="story-article-action"
-      onClick={() => onExtract(article.id)}
-      title="Fetch this article's text"
-      aria-label={`Fetch the text of ${article.title}`}
-    >
-      <DownloadIcon size={14} />
-    </button>
-  )
-}
-
-/**
- * The 1-10 score in five colour bands — the dot carries the reading, the exact
- * number is in its tooltip.
- */
-function band(importance: number | null): string {
-  if (importance === null) return 'none'
-  if (importance <= 2) return 'lowest'
-  if (importance <= 4) return 'low'
-  if (importance <= 6) return 'mid'
-  if (importance <= 8) return 'high'
-  return 'highest'
 }
 
 export default Stories

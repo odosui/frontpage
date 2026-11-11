@@ -18,6 +18,9 @@
   --color-bg-hover: rgba(64, 64, 64, 0.06);
   --color-bg-active: rgba(64, 64, 64, 0.12);
   --color-surface: #ffffff;
+  // the top bar: an off-white band that sets it apart from the page by tone
+  // alone, without a rule under it
+  --color-bar: #f7f7f7;
   --color-overlay: rgba(20, 20, 20, 0.32);
 
   // text
@@ -99,6 +102,7 @@
   --color-bg-hover: rgba(255, 255, 255, 0.08);
   --color-bg-active: rgba(255, 255, 255, 0.14);
   --color-surface: #181818;
+  --color-bar: #171717;
   --color-overlay: rgba(0, 0, 0, 0.6);
 
   --color-text: #f2f2f2;

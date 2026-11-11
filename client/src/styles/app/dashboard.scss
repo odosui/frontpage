@@ -21,14 +21,13 @@
 // split into columns that was the width the headlines wanted. What separates
 // one story from the next is its header and the space above it — the card edge
 // was never the thing being read.
-// one story to a section: a rule above, its title as a real heading, its
-// coverage under it. The rule and the air around it are what part two
-// stories; inside one, the rows sit close
+// one story to a section: its title as a real heading, its coverage under
+// it in the same rows as Latest. The title sits closer to its first article
+// than the articles sit to each other, so it reads as the head of that
+// group; stories are parted by well over that, so groups never run together
 .story {
-  padding: $unit4 0 $unit3;
-
-  &:first-child {
-    padding-top: $unit1;
+  & + & {
+    margin-top: $unit4;
   }
 }
 
@@ -42,7 +41,8 @@
   align-items: center;
   // flush with the column's gutter: the rows beneath bleed their hover box
   // outwards rather than pushing their text in, so the two share a left edge
-  margin: 0 0 $unit2;
+  // with the first row's own padding, the same 8px the rows keep between them
+  margin: 0 0 $unit0;
   font-family: var(--font-display);
   font-size: var(--story-title-size);
   font-weight: var(--story-title-weight);
@@ -156,149 +156,6 @@
   flex-direction: column;
 }
 
-// one line of running text — dot, headline, source, time, button — rather than
-// a stack of blocks. Everything after the headline is small and grey and wraps
-// along with it, so the row costs the two lines the headline needed and no
-// more, and the eye reads it as one sentence instead of four aligned boxes.
-//
-// No hanging gutter for the marker: it sits in the flow as the line's first
-// character, and the lines that wrap start at the row's own edge rather than
-// indenting to clear a column the dot only occupies on the first line.
-.story-article-row {
-  // the words sit on the column's gutter and the hover box reaches back into
-  // it — $unit1 out, $unit1 back — so the highlight is wider than the text
-  // without the text being indented past the heading above it
-  margin: 0 (-$unit1);
-  // a hanging indent the width of the bullet and its gap, so a headline that
-  // wraps carries on under its own first word, not under the bullet
-  padding: 5px $unit1 5px calc(#{$unit1} + 13px);
-  text-indent: -13px;
-  font-size: calc(var(--headline-size) - 1px);
-  line-height: var(--headline-leading);
-  border-radius: $radius-sm;
-  @include transition(background-color);
-
-  &:hover {
-    background-color: var(--color-bg-hover);
-  }
-
-  &:hover .story-article-action,
-  .story-article-action:focus-visible,
-  .story-article-action.has-content,
-  .story-article-action.is-busy {
-    opacity: 1;
-  }
-}
-
-// trailing the meta in the same line of text rather than parked in the corner.
-// it holds its box whether or not it is showing, so revealing it on hover does
-// not reflow the sentence it sits in
-.story-article-action {
-  display: inline-flex;
-  vertical-align: text-bottom;
-  margin-left: $unit1;
-  align-items: center;
-  justify-content: center;
-  width: $unit3;
-  height: $unit3;
-  padding: 0;
-  border: none;
-  border-radius: $radius-md;
-  background: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  opacity: 0;
-  @include transition(opacity, color, background-color);
-
-  &:hover {
-    color: var(--color-accent);
-    background-color: var(--color-bg-hover);
-  }
-
-  // already read: a quiet standing mark rather than a call to action
-  &.has-content {
-    color: var(--color-warning);
-  }
-
-  &.is-busy {
-    cursor: default;
-    animation: spin 1s linear infinite;
-  }
-}
-
-.story-article {
-  font-family: var(--font-display);
-  font-weight: calc(var(--headline-weight) - 100);
-  letter-spacing: var(--headline-tracking);
-  text-decoration: none;
-  color: var(--color-text);
-  @include transition(color);
-
-  .story-article-row:hover & {
-    color: var(--color-accent);
-  }
-}
-
-/**
- * The agent's 1-10 score, as a dot in the gutter: grey for trivia climbing to
- * red for the things that change the world. The exact number is the tooltip.
- */
-.story-article-dot {
-  // inline-block rather than inline: a bare span ignores width and height and
-  // collapses to nothing. `middle` lands it on the first line's x-height,
-  // which is where a bullet reads as belonging to the words after it
-  display: inline-block;
-  vertical-align: middle;
-  width: $unit0 + 1px;
-  height: $unit0 + 1px;
-  margin-right: $unit1;
-  border-radius: 50%;
-  background-color: var(--color-border-strong);
-
-  &.is-lowest {
-    background-color: var(--color-border-strong);
-  }
-
-  &.is-low {
-    background-color: var(--color-text-muted);
-  }
-
-  &.is-mid {
-    background-color: var(--color-warning);
-  }
-
-  &.is-high {
-    background-color: var(--color-orange);
-  }
-
-  &.is-highest {
-    background-color: var(--color-danger);
-  }
-
-  // never scored: an outline, so it reads as absent rather than as a low score
-  &.is-none {
-    background-color: transparent;
-    box-shadow: inset 0 0 0 1px var(--color-border-strong);
-  }
-}
-
-// source, time and tags on one wrapping line under the headline. It wraps
-// rather than clipping, so the time is always on the card however narrow the
-// column gets — that is the whole reason it is not inline with the title.
-// who ran it and when, trailing the headline in the same line. Held together
-// as one unbreakable run so the pair wraps as a unit — a source stranded at
-// the end of one line with its time on the next reads as two facts.
-//
-// The casing stops at the source: `timeAgo` writes "36m", and uppercasing that
-// to "36M" makes 36 minutes read as 36 months.
-.story-article-meta {
-  margin-left: $unit2;
-  font-size: var(--meta-size);
-  font-weight: var(--meta-weight);
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
 // not filed yet: the count that the button beside it would clear
 // a solid chip, inverted: the one thing on the line that is asking for action
 .feed-uncategorized {
@@ -324,18 +181,18 @@
   gap: 2px;
 }
 
-// THE LATEST ROW
+// THE ARTICLE ROW
 //
-// Time in a narrow column down the left, then the headline on its own line,
-// then the source under it; the read button sits at the end. Rows are parted
-// by hairlines rather than gaps, so a long list still reads as a list.
-.feed-item {
+// One article, the same in Latest and in Stories (ui/ArticleRow): the time in
+// a narrow column down the left, then the headline on a line of its own, then
+// the source under it, and the read button at the end. Rows are parted by
+// space; hovering one fills it, the fill reaching past the text without
+// moving it.
+.article-row {
   display: grid;
   grid-template-columns: 3rem minmax(0, 1fr) auto;
   column-gap: $unit3;
   align-items: start;
-  // the hover fill can reach past the text without moving it: out by the
-  // bleed, back in by the same
   margin: 0 calc(-1 * var(--row-bleed));
   padding: var(--row-pad) var(--row-bleed);
   border-radius: var(--radius-row);
@@ -345,18 +202,21 @@
     background-color: var(--row-hover);
   }
 
-  &:hover .feed-action {
+  &:hover .article-row-action {
     opacity: 1;
   }
 }
 
-// set to sit on the headline's first line, at the meta's size
-.feed-when {
-  padding-top: calc((var(--headline-size) * var(--headline-leading) - var(--meta-size) * 1.4) / 2);
+// the time, and in Stories the importance dot before it, set to sit on the
+// headline's first line at the meta's size
+.article-row-when {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: calc(var(--headline-size) * var(--headline-leading));
   font-size: var(--meta-size);
-  line-height: 1.4;
   font-variant-numeric: tabular-nums;
-  text-align: right;
   white-space: nowrap;
   color: var(--color-text-muted);
 
@@ -365,14 +225,14 @@
   }
 }
 
-.feed-main {
+.article-row-main {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
-.feed-item-link {
+.article-row-title {
   font-family: var(--font-display);
   font-size: var(--headline-size);
   font-weight: var(--headline-weight);
@@ -383,11 +243,17 @@
   @include transition(color);
 
   &:hover {
-    color: var(--color-accent);
+    color: var(--color-text-muted);
+  }
+
+  // not filed into a story yet: set bold, so the queue the File button would
+  // clear can be picked out by eye down the whole list
+  .article-row.is-unfiled & {
+    font-weight: 650;
   }
 }
 
-.feed-meta {
+.article-row-meta {
   display: flex;
   align-items: baseline;
   gap: $unit1;
@@ -396,9 +262,9 @@
   color: var(--color-text-muted);
 }
 
-// not filed into a story yet: said in the accent, in the meta line, where it
-// is read with the source rather than shouting from the margin
-.feed-unfiled {
+// said in the meta line, where it is read with the source rather than
+// shouting from the margin
+.article-row-unfiled {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -414,8 +280,42 @@
   }
 }
 
-// same three states as the story rows' button, parked at the row's end
-.feed-action {
+// the agent's 1-10 score, as a dot: grey for trivia climbing to red for the
+// things that change the world. The exact number is the tooltip
+.article-importance {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-border-strong);
+
+  &.is-low {
+    background-color: var(--color-text-muted);
+  }
+
+  &.is-mid {
+    background-color: var(--color-warning);
+  }
+
+  &.is-high {
+    background-color: var(--color-orange);
+  }
+
+  &.is-highest {
+    background-color: var(--color-danger);
+  }
+
+  // never scored: an outline, so it reads as absent rather than as a low score
+  &.is-none {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  }
+}
+
+// fetch, wait or read: centred on the headline's first line, hidden until the
+// row is hovered unless there is something to read
+.article-row-action {
+  margin-top: calc((var(--headline-size) * var(--headline-leading) - #{$unit3}) / 2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -434,13 +334,15 @@
     fill: currentColor;
   }
 
-  &:hover {
-    color: var(--color-accent);
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    color: var(--color-text);
   }
 
   &.has-content {
     opacity: 1;
-    color: var(--color-accent);
+    color: var(--color-text);
   }
 
   &.is-busy {

@@ -245,7 +245,7 @@
 // The only thing on the page that scrolls, and the gutter every panel is
 // measured from: $unit4 to the text on both sides, matching the tabs above. Rows that want
 // a hover highlight wider than their words bleed back into it rather than
-// pushing the text in — see .story-article-row.
+// pushing the text in — see .article-row.
 .col-body {
   flex: 1;
   min-height: 0;
