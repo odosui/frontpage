@@ -2,10 +2,10 @@ import * as settings from "../../models/settings";
 import { modelExists } from "./catalog";
 
 const DEFAULT_SMALL_MODEL = "google/gemini-3.1-flash-lite";
-// picked by benchmarking ten models over the same 50-article batch: clean
-// running arcs and the best coverage per second, at a fifth of the cost of
-// the models that matched it on quality
-const DEFAULT_BIG_MODEL = "openai/gpt-5.6-sol";
+// the fastest model in a nine-model benchmark of the categorizing agent over
+// the same 50-article batch (2026-11-11): ~34s a batch against ~44s for
+// gpt-5.6-sol, at a bit over half its cost, with every batch fully covered
+const DEFAULT_BIG_MODEL = "anthropic/claude-sonnet-5.5";
 
 /** The settings keys these live under. Also what the api patches. */
 export const SMALL_MODEL_KEY = "ai.model.small";
