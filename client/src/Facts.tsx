@@ -1,4 +1,3 @@
-import { PlayIcon, SyncIcon } from '@primer/octicons-react'
 import { useCallback, useEffect, useState } from 'react'
 import api, {
   DEFAULT_CONFIDENCE,
@@ -19,14 +18,6 @@ type Props = {
   version: number
   /** Called after any change, so the page reloads what it holds. */
   onChanged: () => void
-  /** Queues the predictions agent over these facts. */
-  onRunPredictions: () => void
-  /** Whether that run is in flight right now. */
-  runningPredictions: boolean
-  /** Whether there is anything to forecast — no predictions, nothing to run. */
-  hasPredictions: boolean
-  /** What went wrong starting or running that agent, if anything. */
-  predictionsError: string | null
 }
 
 /**
@@ -46,10 +37,6 @@ const Facts = ({
   facts,
   version,
   onChanged,
-  onRunPredictions,
-  runningPredictions,
-  hasPredictions,
-  predictionsError,
 }: Props) => {
   const [adding, setAdding] = useState(false)
   const [content, setContent] = useState('')
@@ -133,29 +120,6 @@ const Facts = ({
         </h2>
         <div className="col-tools">
           <button
-            className={`col-run${runningPredictions ? ' is-busy' : ''}`}
-            onClick={onRunPredictions}
-            disabled={
-              runningPredictions || facts.length === 0 || !hasPredictions
-            }
-            title={
-              facts.length === 0
-                ? 'Establish facts first'
-                : !hasPredictions
-                  ? 'Add a prediction to forecast first'
-                  : runningPredictions
-                    ? 'Forecasting from the facts…'
-                    : 'Forecast the predictions from the established facts'
-            }
-          >
-            {runningPredictions ? (
-              <SyncIcon size={12} className="col-run-spin" />
-            ) : (
-              <PlayIcon size={12} />
-            )}
-            {runningPredictions ? 'Predicting' : 'Predictions'}
-          </button>
-          <button
             className="col-btn"
             onClick={() => setAdding((was) => !was)}
             title="Write down a fact"
@@ -207,11 +171,6 @@ const Facts = ({
         )}
 
         {error && <p className="fact-error">{error}</p>}
-        {predictionsError && (
-          <p className="fact-error" role="alert">
-            {predictionsError}
-          </p>
-        )}
 
         {facts.length === 0 && !adding ? (
           <p className="facts-placeholder">

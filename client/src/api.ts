@@ -32,7 +32,7 @@ export default {
   setDashboardPrompt: (id: string, prompt: string) =>
     apiJson('patch', `/dashboards/${seg(id)}`, { prompt }),
 
-  /** The whole arc: stories, facts, predictions, sources and the latest feed. */
+  /** The whole arc: stories, facts, sources and the latest feed. */
   getDashboard: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}`),
   /**
@@ -80,16 +80,6 @@ export default {
     api('delete', `/dashboards/${seg(dashboardId)}/facts/${seg(id)}`),
   factsHistory: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}/facts/history`),
-
-  // Predictions
-  createPrediction: (dashboardId: string, content: string) =>
-    apiJson('post', `/dashboards/${seg(dashboardId)}/predictions`, { content }),
-  updatePrediction: (dashboardId: string, id: number, content: string) =>
-    apiJson('patch', `/dashboards/${seg(dashboardId)}/predictions/${seg(id)}`, {
-      content,
-    }),
-  deletePrediction: (dashboardId: string, id: number) =>
-    api('delete', `/dashboards/${seg(dashboardId)}/predictions/${seg(id)}`),
 
   // One article's own text
   extractArticleContent: (dashboardId: string, articleId: number) =>
@@ -500,44 +490,6 @@ export type FactPatch = {
   confidence?: number
   /** Left out, the fact keeps the articles it already cites. */
   articleIds?: number[]
-}
-
-/** 1 highly unlikely, 5 highly likely — the same five rungs a fact's confidence uses. */
-export const LIKELIHOOD_LABELS: Record<number, string> = {
-  1: 'highly unlikely',
-  2: 'unlikely',
-  3: 'even odds',
-  4: 'likely',
-  5: 'highly likely',
-}
-
-export const MIN_LIKELIHOOD = 1
-export const MAX_LIKELIHOOD = 5
-
-/** One estimate of a prediction's odds, and why it was made. */
-export type Forecast = {
-  id: number
-  likelihood: number
-  /** What it was before; null for the first forecast. */
-  previous: number | null
-  reasoning: string
-  author: 'analyst' | 'reader'
-  createdAt: string
-}
-
-/**
- * A claim about what happens next. The reader writes it; the analyst puts the
- * likelihood on it, and every move it makes is kept with its reasoning.
- */
-export type Prediction = {
-  id: number
-  content: string
-  /** 1-5; see LIKELIHOOD_LABELS. Null until it has been forecast. */
-  likelihood: number | null
-  /** Newest first. */
-  forecasts: Forecast[]
-  createdAt: string
-  updatedAt: string
 }
 
 /** One story with the articles this dashboard filed under it. */

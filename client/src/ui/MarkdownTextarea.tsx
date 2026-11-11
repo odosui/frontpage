@@ -14,7 +14,7 @@ type Props = {
 }
 
 /**
- * The box facts and predictions are written in. A plain textarea plus cmd-B
+ * The box facts are written in. A plain textarea plus cmd-B
  * (ctrl-B elsewhere), which wraps the selection in `**` — the one piece of
  * markup this text uses, and the one the panes render.
  *

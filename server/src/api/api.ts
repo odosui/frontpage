@@ -4,7 +4,6 @@ import * as queue from "../jobs/queue";
 import { JOB_STATUSES, JobStatus } from "../jobs/types";
 import { AGENT_KINDS, getAgent } from "../components/agents/definitions";
 import { factsAgent } from "../components/agents/definitions/facts";
-import { predictionsAgent } from "../components/agents/definitions/predictions";
 import { dashboardContext } from "../components/agents/runtime/context";
 import { startChat } from "../components/agents/runtime/chat";
 import {
@@ -22,7 +21,6 @@ import * as agentSessions from "../models/agentSessions";
 import * as articles from "../models/articles";
 import * as dashboards from "../models/dashboards";
 import * as facts from "../models/facts";
-import * as predictions from "../models/predictions";
 import * as proposals from "../models/proposals";
 import * as sources from "../models/sources";
 import * as stories from "../models/stories";
@@ -152,7 +150,7 @@ export const createApi = async () => {
      * and what it tells its agents. Either may come on its own.
      *
      * The name only moves the label — the id is the url the reader may have
-     * kept and the key every story, fact and prediction hangs off, so it stays.
+     * kept and the key every story and fact hangs off, so it stays.
      */
     updateDashboard: async (
       id: string,
@@ -202,7 +200,6 @@ export const createApi = async () => {
         feedTotal,
         storyFeed,
         known,
-        claims,
         uncategorized,
       ] = await Promise.all([
         sources.forDashboard(id),
@@ -210,7 +207,6 @@ export const createApi = async () => {
         articles.count(id),
         stories.feed(id, MAX_STORIES),
         facts.current(id),
-        predictions.forDashboard(id),
         articles.uncategorizedCount(id, DEFAULT_WINDOW_DAYS),
       ]);
 
@@ -225,7 +221,6 @@ export const createApi = async () => {
         // which revision the page is looking at, so the history panel can say
         // so without a second request on every load
         factsVersion: known?.version ?? 0,
-        predictions: claims,
         uncategorized,
       });
     },
@@ -332,51 +327,6 @@ export const createApi = async () => {
         return error(404, "this dashboard does not read that source");
       }
       return ok({ sources: await sources.forDashboard(id) });
-    },
-
-    // Predictions
-
-    /**
-     * The reader writes the claim; the likelihood is left alone. Putting a
-     * number on it is the analyst's job, through FORECAST.
-     */
-    createPrediction: async (id: string, body: { content?: string }) => {
-      const content = (body?.content ?? "").trim();
-      if (!content) return error(400, "content is required");
-      if (!(await dashboards.exists(id))) {
-        return error(404, "dashboard not found");
-      }
-
-      return ok({ prediction: await predictions.create(id, content) });
-    },
-
-    updatePrediction: async (
-      id: string,
-      predictionId: string,
-      body: { content?: string },
-    ) => {
-      const numeric = Number(predictionId);
-      if (!Number.isFinite(numeric)) {
-        return error(400, "prediction id must be a number");
-      }
-      const content = (body?.content ?? "").trim();
-      if (!content) return error(400, "content is required");
-
-      const updated = await predictions.updateContent(id, numeric, content);
-      if (!updated) return error(404, "prediction not found");
-      return ok({ prediction: updated });
-    },
-
-    deletePrediction: async (id: string, predictionId: string) => {
-      const numeric = Number(predictionId);
-      if (!Number.isFinite(numeric)) {
-        return error(400, "prediction id must be a number");
-      }
-
-      if (!(await predictions.remove(id, numeric))) {
-        return error(404, "prediction not found");
-      }
-      return ok({ success: true });
     },
 
     // Facts
@@ -627,9 +577,7 @@ export const createApi = async () => {
       const job = await queue.enqueue(
         kind === factsAgent.kind
           ? { type: "run_facts", payload: { dashboardId: id } }
-          : kind === predictionsAgent.kind
-            ? { type: "run_predictions", payload: { dashboardId: id } }
-            : { type: "run_agent", payload: { kind, dashboardId: id } },
+          : { type: "run_agent", payload: { kind, dashboardId: id } },
       );
       return ok({ job });
     },
@@ -651,15 +599,12 @@ export const createApi = async () => {
       // message: the first question is nearly always about something already
       // there, and a turn spent looking it up is a turn they wait through for
       // nothing.
-      const [storyFeed, claims] = await Promise.all([
-        stories.feed(id, MAX_STORIES),
-        predictions.forDashboard(id),
-      ]);
+      const storyFeed = await stories.feed(id, MAX_STORIES);
 
       const { sessionId } = await startChat(getAgent(kind), {
         model: await bigModel(),
         dashboardId: id,
-        context: dashboardContext(dashboard.name, storyFeed, claims),
+        context: dashboardContext(dashboard.name, storyFeed),
       });
       return ok({ session: await agentSessions.get(sessionId) });
     },

@@ -306,7 +306,7 @@ $feed-width: $unit12;
 }
 
 // The raw feed, folded into the top bar. It used to be a permanent column;
-// on the arc page the stories, facts, predictions and chat all want the width,
+// on the arc page the stories, facts and chat all want the width,
 // and the unfiled queue is something you check and dismiss rather than read
 // alongside. What stays visible is the count, on the button itself.
 .latest-menu {

@@ -6,7 +6,6 @@ import api, {
   type Fact,
   type FeedArticle,
   type NewSource,
-  type Prediction,
   type Source,
   type StoryFeedEntry,
 } from './api'
@@ -18,7 +17,6 @@ import DashboardEmptyState from './DashboardEmptyState'
 import Facts from './Facts'
 import ConversationsModal from './ConversationsModal'
 import { HOTKEYS, useHotkey } from './hotkeys'
-import Predictions from './Predictions'
 import Stories from './Stories'
 import { dedupeById } from './utils/dedupeById'
 
@@ -32,7 +30,6 @@ type Loaded = {
   facts: Fact[]
   /** Which revision of the facts the page is looking at; 0 when there is none. */
   factsVersion: number
-  predictions: Prediction[]
   uncategorized: number
 }
 
@@ -44,7 +41,7 @@ const REFRESH_MS = 20_000
  * has established and what that points to in the middle, and an agent to talk
  * to about it on the right.
  *
- * The dashboard *is* the arc — it owns its stories, facts, predictions and
+ * The dashboard *is* the arc — it owns its stories, facts and
  * conversations. What it does not own is the sources feeding it: those are
  * independent, assigned to it, and shared with whatever other arcs read the
  * same outlet.
@@ -263,55 +260,6 @@ const Dashboard: React.FC = () => {
       .catch(() => undefined)
   }, [dashboardId, refreshJobs])
 
-  const [startingPredictions, setStartingPredictions] = useState(false)
-  const [predictionJob, setPredictionJob] = useState<{
-    id: string
-    dashboardId: string
-  } | null>(null)
-  const [predictionsError, setPredictionsError] = useState<string | null>(null)
-  const predictionRequest = useRef(false)
-  const predictionsRunning =
-    startingPredictions ||
-    (predictionJob?.dashboardId === dashboardId &&
-      !jobs.some((job) => job.id === predictionJob.id)) ||
-    jobs.some(
-      (job) =>
-        job.type === 'run_predictions' &&
-        job.payload.dashboardId === dashboardId &&
-        (job.status === 'queued' || job.status === 'running'),
-    )
-
-  const runPredictions = useCallback(async () => {
-    if (predictionRequest.current || predictionsRunning) return
-    predictionRequest.current = true
-    setStartingPredictions(true)
-    setPredictionsError(null)
-    try {
-      const { job } = await api.runAgent(dashboardId, 'predictions_agent')
-      setPredictionJob({ id: job.id, dashboardId })
-      refreshJobs()
-    } catch (err) {
-      setPredictionsError((err as Error).message)
-    } finally {
-      predictionRequest.current = false
-      setStartingPredictions(false)
-    }
-  }, [dashboardId, predictionsRunning, refreshJobs])
-
-  // A short run may finish before the job poll first observes it running.
-  useEffect(() => {
-    if (predictionJob?.dashboardId !== dashboardId) return
-    const job = jobs.find((item) => item.id === predictionJob.id)
-    if (job?.status === 'succeeded' || job?.status === 'failed') {
-      setPredictionJob(null)
-      if (job.status === 'failed')
-        setPredictionsError(job.error || 'Prediction run failed')
-      load()
-    }
-  }, [jobs, predictionJob, dashboardId, load])
-
-  useEffect(() => setPredictionsError(null), [dashboardId])
-
   const factsRunning = jobs.some(
     (job) =>
       job.type === 'run_facts' &&
@@ -333,8 +281,7 @@ const Dashboard: React.FC = () => {
       // reloads on the same terms as a categorizing run does
       if (
         job.type === 'run_agent' ||
-        job.type === 'run_facts' ||
-        job.type === 'run_predictions'
+        job.type === 'run_facts'
       ) {
         if (
           job.payload.dashboardId === dashboardId &&
@@ -610,20 +557,8 @@ const Dashboard: React.FC = () => {
           facts={loaded.facts ?? []}
           version={loaded.factsVersion ?? 0}
           onChanged={load}
-          onRunPredictions={runPredictions}
-          runningPredictions={predictionsRunning}
-          hasPredictions={loaded.predictions.length > 0}
-          predictionsError={predictionsError}
         />
       </aside>
-
-      <section className="arc-predictions">
-        <Predictions
-          dashboardId={dashboardId}
-          predictions={loaded.predictions ?? []}
-          onChanged={load}
-        />
-      </section>
 
       <ConversationsModal
         key={dashboardId}

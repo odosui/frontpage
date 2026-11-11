@@ -1,8 +1,8 @@
 @use '../vars' as *;
 @use '../breakpoints' as *;
 
-// One arc across three equal columns: the stories it is made of, what it has
-// established, and what that points to. Each scrolls on its own, so reading
+// One arc across two equal columns: the stories it is made of and what it has
+// established. Each scrolls on its own, so reading
 // one never moves the others. The agent lives in the floating chat above it.
 //
 // This is the whole app now — a dashboard *is* an arc. The raw feed that used
@@ -17,17 +17,16 @@
   overflow: hidden;
 }
 
-// every column is a third, and none of them may push the others out: without
+// every column is a half, and none of them may push the others out: without
 // min-width a long headline or url would widen its own column past its share.
 //
-// All four are the same shell: a header that stays put over a body that
+// All of them are the same shell: a header that stays put over a body that
 // scrolls under it. The column itself never scrolls — the body inside it does
 // — which is what keeps every heading on screen without a single
 // `position: sticky` or the stacking it drags in.
 .arc-stories,
-.arc-facts,
-.arc-predictions {
-  flex: 0 0 calc(100% / 3);
+.arc-facts {
+  flex: 0 0 50%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -37,13 +36,12 @@
 // one rule between two columns. Stories used to draw its own on the right
 // while the other three drew one on the left, which put two lines in the first
 // gap and one in the others
-.arc-facts,
-.arc-predictions {
+.arc-facts {
   border-left: 1px solid var(--borderColor);
 }
 
 // no arcs at all: the one screen in the app with nothing behind it, so it
-// says what a dashboard is rather than showing an empty four-column frame
+// says what a dashboard is rather than showing an empty frame
 .arc--empty {
   align-items: center;
   justify-content: center;
@@ -97,12 +95,11 @@
   color: var(--lighter);
 }
 
-// stories, facts, predictions and chat are all one kind of column — a heading
+// stories, facts and chat are all one kind of column — a heading
 // that stays put over a pane that scrolls — so they share the shape and differ
 // only in contents
 .stories,
 .facts,
-.predictions,
 .chat {
   flex: 1;
   min-height: 0;
@@ -112,10 +109,10 @@
 
 // THE COLUMN HEAD
 //
-// One header for all four columns, so they line up across the page whatever
+// One header for every column, so they line up across the page whatever
 // each of them carries: the stories column has a button that says what it
-// does, facts has two icons, predictions one, chat only its model. The
-// min-height is what holds the four baselines together — a header with no
+// does, facts has its icons, chat only its model. The
+// min-height is what holds the baselines together — a header with no
 // button in it would otherwise sit shorter than its neighbours.
 .col-head {
   flex: none;
@@ -207,9 +204,8 @@
   }
 }
 
-// the two buttons on this page that start an agent — facts, in the stories
-// header, and predictions, in the facts one. Unlike the icon buttons beside
-// them they say what they do: small and outlined rather than filled, since
+// the button on this page that starts an agent — facts, in the stories
+// header. Unlike the icon buttons beside it it says what it does: small and outlined rather than filled, since
 // starting a run is a deliberate act, not the column's primary one.
 .col-run {
   flex: none;
@@ -237,7 +233,7 @@
     color: var(--color-accent);
   }
 
-  // nothing to read yet, or nothing to forecast from
+  // nothing to read yet
   &:disabled {
     cursor: default;
     opacity: 0.5;
@@ -800,182 +796,6 @@
   margin: 0 0 $unit1;
   font-size: $text0;
   color: $red;
-}
-
-// what the arc points to and has not settled
-
-.predictions-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: $unit0;
-}
-
-// same bleed as a fact row: the claim lines up with the heading above it, and
-// the target around it is wider than the words
-.prediction {
-  margin: 0 (-$unit1);
-  border-radius: $unit1;
-
-  &.is-editing {
-    padding: $unit1;
-    background-color: var(--color-bg-hover);
-  }
-}
-
-// the claim and its odds: one target, because opening the history is what a
-// reader wants from it and there is nothing else to click. the claim leads and
-// the badge closes the row, right-aligned down the column
-.prediction-body {
-  display: flex;
-  align-items: baseline;
-  gap: $unit1;
-  width: 100%;
-  // the row's own inset: the claim lands on the column's gutter while the
-  // target the reader clicks reaches out past it
-  padding: $unit1;
-  border: none;
-  border-radius: $unit1;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.12s ease;
-
-  &:hover {
-    background-color: var(--color-bg-hover);
-  }
-}
-
-// a badge, on a red-to-green ramp: the claim is what is read, and the rung is
-// the judgement it lands on, so it sits at the end of the row where the eye
-// arrives last. it carries the number rather than the word — five of them
-// stacked down a list, the colour says which way it leans and the claim is
-// what deserves the width. the label itself is on the title, a hover away.
-//
-// the tint is mixed from the badge's own colour rather than written out five
-// times, so a rung's fill and its text can never drift apart — and the mix
-// follows the text colour into dark mode by itself
-.prediction-odds {
-  flex: none;
-  width: $unit5;
-  padding: 2px $unit0;
-  border-radius: $unit0;
-  font-size: $text0;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.3;
-  text-align: center;
-  color: var(--lighter);
-  background-color: color-mix(in srgb, currentColor 14%, transparent);
-
-  &.is-none {
-    color: var(--lighter);
-  }
-
-  &.is-1 {
-    color: $red;
-  }
-
-  &.is-2 {
-    color: $bleackOrange;
-  }
-
-  &.is-3 {
-    color: var(--color-marker-amber);
-  }
-
-  &.is-4 {
-    color: $green-lighter;
-  }
-
-  &.is-5 {
-    color: $green;
-  }
-}
-
-.prediction-content {
-  // takes what the badge leaves, so the badges line up down the column
-  flex: 1;
-  min-width: 0;
-  font-size: $text1;
-  line-height: 1.4;
-  color: var(--color-text);
-}
-
-// folded away until asked for: the current number answers most questions, and
-// the history answers the one it cannot
-.prediction-history {
-  margin: $unit1 0 0 $unit2;
-  padding-left: $unit2;
-  border-left: 2px solid var(--borderColor);
-}
-
-.prediction-moves {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: $unit2;
-}
-
-.prediction-move-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: $unit1;
-}
-
-.prediction-move-odds {
-  font-size: $text0;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text);
-}
-
-.prediction-move-when {
-  flex: none;
-  font-size: $text0;
-  color: var(--lighter);
-}
-
-.prediction-move-why {
-  margin: $unit0 0 0;
-  font-size: $text0;
-  line-height: 1.5;
-  color: var(--lighter);
-}
-
-.prediction-empty {
-  margin: 0;
-  font-size: $text0;
-  color: var(--lighter);
-}
-
-.prediction-input {
-  width: 100%;
-  padding: $unit1;
-  border: 1px solid var(--borderColor);
-  border-radius: $unit1;
-  background-color: var(--surface-bg);
-  font-size: $text1;
-  line-height: 1.4;
-  color: var(--color-text);
-  resize: vertical;
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
-}
-
-.prediction-actions {
-  display: flex;
-  align-items: center;
-  gap: $unit1;
-  margin-top: $unit1;
 }
 
 // which model is answering, quietly — it is the one thing about the session

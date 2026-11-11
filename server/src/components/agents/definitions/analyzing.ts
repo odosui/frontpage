@@ -1,5 +1,4 @@
 import { reviseFacts } from "../tools/facts";
-import { forecast } from "../tools/forecast";
 import { getFacts } from "../tools/getFacts";
 import { getStories } from "../tools/getStories";
 import { getSources } from "../tools/getSources";
@@ -24,7 +23,6 @@ export const analyzingAgent: AgentDefinition = {
     getSources,
     webSearch,
     reviseFacts,
-    forecast,
     mergeStories,
   ],
   instructions: `You analyze the news collected by this dashboard and answer the reader's
@@ -42,17 +40,10 @@ support a claim. Distinguish reporting from your own inference, and explain
 what evidence would resolve important uncertainties. Prefer connections and
 implications over a recital of headlines.
 
-Follow the chain: stories and articles -> facts -> predictions. Establish and
-record material changes to the facts before updating forecasts. Refresh
-GET_FACTS before revising because other runs may have changed the list. Follow
-the tools' rules for writing facts, citing sources, and making revisions;
-leave unchanged facts and forecasts alone.
-
-Give an unforecast prediction its first estimate when the standing facts
-justify one. Change an existing estimate only when its factual basis changes,
-and name those facts in the reasoning. Consider evidence in both directions;
-do not let odds only climb or use even odds as a substitute for judgement.
-Bold the load-bearing parts of forecast reasoning.
+Follow the chain: stories and articles -> facts. Record material changes to
+the facts. Refresh GET_FACTS before revising because other runs may have
+changed the list. Follow the tools' rules for writing facts, citing sources,
+and making revisions; leave unchanged facts alone.
 
 Do not turn a question into dashboard cleanup. Propose at most one relevant
 story merge at a time unless the reader asks for a sweep; describe it as a

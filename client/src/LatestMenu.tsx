@@ -21,8 +21,8 @@ type Props = {
 
 /**
  * The raw feed, folded into the top bar. It used to be a permanent column
- * beside the stories, but on the arc page the stories, facts, predictions and
- * chat all want the width — and the uncategorized queue is something you check
+ * beside the stories, but on the arc page the stories, facts and chat
+ * all want the width — and the uncategorized queue is something you check
  * and dismiss, not something you read alongside.
  *
  * What stays visible is the count: an arc with a backlog says so on the button

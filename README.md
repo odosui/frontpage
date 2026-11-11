@@ -16,21 +16,20 @@ AI-powered news aggregator and analyst — an LLM harness for making sense of cu
 
 ```mermaid
 flowchart LR
-  S[Sources] --> A[Articles] --> T[Stories] --> F[Facts] --> P[Predictions]
+  S[Sources] --> A[Articles] --> T[Stories] --> F[Facts]
 ```
 
 1. You add sources — RSS, web pages, or subreddits.
 2. Frontpage extracts the headlines and groups them into stories.
 3. It reads the recent stories and updates the arc's facts.
-4. The facts set the likelihood of the predictions you have written.
 
-An agent runs each step. You can step in at any point, or just talk to the agent in a chat panel: it reads articles, revises facts, moves forecasts, and searches the web when you supply a Brave API key.
+An agent runs each step. You can step in at any point, or just talk to the agent in a chat panel: it reads articles, revises facts, and searches the web when you supply a Brave API key.
 
 ## Features
 
 - Sources shared across dashboards: fetched once, filed separately
 - Stories: several outlets covering one event, merged
-- Facts and predictions per arc, versioned, with the reasoning kept
+- Facts per arc, versioned, with the reasoning kept
 - An analyst you can talk to about what it has collected
 - Any model on OpenRouter
 - Self-hosted and open source, with your data in your own PostgreSQL

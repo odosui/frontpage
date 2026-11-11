@@ -101,8 +101,7 @@ export const reviseFacts: AgentTool = {
 /**
  * The changes as the model wrote them:
  * `[-]id`, quoted lines, and bare numbers, in any mixture. They are told apart
- * by shape rather than by position, the way FORECAST tells a likelihood from
- * its reasoning — an `fN` names a fact to change, `-fN` deletes it, a quoted
+ * by shape rather than by position — an `fN` names a fact to change, `-fN` deletes it, a quoted
  * line straight after an id is that fact's new wording and anywhere else is a
  * new fact, a bare 1-5 is confidence, and a larger number is an article.
  * Nothing here is confusable with anything else, so the model never has to

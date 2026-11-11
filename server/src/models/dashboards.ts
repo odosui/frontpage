@@ -3,8 +3,8 @@ import { slugify } from "../utils/slug";
 
 /**
  * A dashboard is the running arc — what used to be a storyline. It owns the
- * stories filed under it, the facts they establish, the predictions they point
- * to, and the conversations about them. The sources it reads are assigned to
+ * stories filed under it, the facts they establish, and the conversations
+ * about them. The sources it reads are assigned to
  * it rather than owned by it; see `models/sources`.
  */
 export type Dashboard = {
@@ -106,7 +106,7 @@ export async function setPrompt(
 
 /**
  * Only the display name moves. The id is the url the reader may have kept and
- * the key every story, fact and prediction hangs off, so renaming an arc from
+ * the key every story and fact hangs off, so renaming an arc from
  * "Iran talks" to "Iran nuclear talks" leaves all of that where it is.
  */
 export async function rename(id: string, name: string): Promise<Dashboard | null> {

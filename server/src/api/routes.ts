@@ -181,30 +181,6 @@ export const createRoutes = (api: Api): RouteConfig[] => [
       api.deleteFact(pathParams.dashboardId ?? "", pathParams.id ?? ""),
   },
 
-  // Predictions: the reader writes the claim, the analyst puts odds on it
-  {
-    method: "post",
-    path: "/api/dashboards/:dashboardId/predictions",
-    handler: async ({ pathParams, body }) =>
-      api.createPrediction(pathParams.dashboardId ?? "", body),
-  },
-  {
-    method: "patch",
-    path: "/api/dashboards/:dashboardId/predictions/:id",
-    handler: async ({ pathParams, body }) =>
-      api.updatePrediction(
-        pathParams.dashboardId ?? "",
-        pathParams.id ?? "",
-        body,
-      ),
-  },
-  {
-    method: "delete",
-    path: "/api/dashboards/:dashboardId/predictions/:id",
-    handler: async ({ pathParams }) =>
-      api.deletePrediction(pathParams.dashboardId ?? "", pathParams.id ?? ""),
-  },
-
   // One article's own text
   {
     method: "post",

@@ -52,9 +52,8 @@ const Stories = ({
   onRunFacts,
   runningFacts,
 }: Props) => {
-  // the shared column header, the same one facts, predictions and chat carry,
-  // so the four read as four panes of one page rather than a list with three
-  // panes beside it
+  // the shared column header, the same one facts and chat carry, so they read
+  // as panes of one page rather than a list with panes beside it
   const head = (
     <header className="col-head">
       <h2 className="col-heading">
