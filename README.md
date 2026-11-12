@@ -19,17 +19,10 @@ flowchart LR
   S[Sources] --> A[Articles] --> T[Stories] --> F[Facts]
 ```
 
-1. You add sources — RSS, web pages, or subreddits.
-2. Frontpage extracts the headlines and groups them into stories, scoring each article's importance.
-3. It reads the recent stories and updates the arc's facts.
-
-Each dashboard has three tabs, one per step:
-
-- **Latest** — everything the sources collected, newest first. Articles not yet filed into a story are marked with a blue dot.
-- **Stories** — the events, each with the coverage filed under it and a 1–10 importance meter per article.
-- **Facts** — what the coverage establishes, with a confidence for each and links to the articles it rests on. Every revision is kept.
-
-An agent runs each step. You can step in at any point, or just talk to the agent in Conversations: it reads articles, revises facts, and searches the web when you supply a Brave API key.
+1. Add sources: RSS, subreddits, web pages.
+2. Connect your favorite models via OpenRouter.
+3. Frontpage extracts the headlines and groups them into stories.
+4. Then it reads full texts and extract facts.
 
 ## Screenshots
 
@@ -52,10 +45,10 @@ An agent runs each step. You can step in at any point, or just talk to the agent
 
 ## Features
 
-- Sources shared across dashboards: fetched once, filed separately
-- Stories: several outlets covering one event, merged
-- Facts per arc, versioned, with the reasoning kept
-- An analyst you can talk to about what it has collected
+- Slick UI
+- Multiple dashboards with their own sources
+- RSS, subreddits, plan websites
+- An analyst with web access (BYO Brave API key) you can talk to
 - Any model on OpenRouter
 - Self-hosted and open source, with your data in your own PostgreSQL
 
@@ -91,7 +84,7 @@ docker run -d \
 
 ## Accounts
 
-The API is behind a login and there is no sign-up page — accounts are made from the command line. Set `FRONTPAGE_SECRET` to a long random string first: it signs the session cookies, and the server refuses to start in production without it.
+The API is behind a login and there is no sign-up page. Set `FRONTPAGE_SECRET` to a long random string first: it signs the session cookies, and the server refuses to start in production without it.
 
 ```bash
 FRONTPAGE_SECRET=$(openssl rand -hex 32)     # keep it; changing it signs everyone out
