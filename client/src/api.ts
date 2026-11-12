@@ -51,15 +51,6 @@ export default {
     ),
   getStories: (dashboardId: string) =>
     api('get', `/dashboards/${seg(dashboardId)}/stories`),
-  renameStory: (dashboardId: string, storyId: number, title: string) =>
-    apiJson(
-      'patch',
-      `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`,
-      { title },
-    ),
-  /** Unfiles the story; its articles go back into the dashboard's queue. */
-  deleteStory: (dashboardId: string, storyId: number) =>
-    api('delete', `/dashboards/${seg(dashboardId)}/stories/${seg(storyId)}`),
 
   // Which sources this dashboard reads
   listDashboardSources: (dashboardId: string) =>

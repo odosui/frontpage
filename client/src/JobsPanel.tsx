@@ -1,18 +1,7 @@
 import { XIcon } from '@primer/octicons-react'
-import { useEffect, useState } from 'react'
-import { JOB_STATUSES, type Job, type JobStatus } from './api'
+import { useEffect } from 'react'
+import { type Job } from './api'
 import { useJobs } from './contexts/JobsContext'
-
-type Filter = 'all' | JobStatus
-
-const FILTERS: Filter[] = ['all', ...JOB_STATUSES]
-
-const STATUS_LABEL: Record<JobStatus, string> = {
-  queued: 'Queued',
-  running: 'Running',
-  succeeded: 'Done',
-  failed: 'Failed',
-}
 
 interface JobsPanelProps {
   /** Settled into place; false while it is still arriving or leaving. */
@@ -22,8 +11,7 @@ interface JobsPanelProps {
 
 /** Drops down from under the top bar, over the dashboard. */
 const JobsPanel: React.FC<JobsPanelProps> = ({ shown, onClose }) => {
-  const { jobs, stats } = useJobs()
-  const [filter, setFilter] = useState<Filter>('all')
+  const { jobs } = useJobs()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -32,9 +20,6 @@ const JobsPanel: React.FC<JobsPanelProps> = ({ shown, onClose }) => {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
-
-  const visible =
-    filter === 'all' ? jobs : jobs.filter((job) => job.status === filter)
 
   return (
     <>
@@ -51,29 +36,12 @@ const JobsPanel: React.FC<JobsPanelProps> = ({ shown, onClose }) => {
           </button>
         </header>
 
-        <div className="jobs-filters">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              className={`jobs-filter${filter === f ? ' is-active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === 'all' ? 'All' : STATUS_LABEL[f]}
-              <span className="jobs-filter-count">
-                {f === 'all' ? jobs.length : (stats[f] ?? 0)}
-              </span>
-            </button>
-          ))}
-        </div>
-
         <div className="jobs-panel-body">
-          {visible.length === 0 ? (
-            <p className="jobs-empty">
-              {jobs.length === 0 ? 'No jobs yet' : `No ${filter} jobs`}
-            </p>
+          {jobs.length === 0 ? (
+            <p className="jobs-empty">No jobs yet</p>
           ) : (
             <ul className="jobs-list">
-              {visible.map((job) => (
+              {jobs.map((job) => (
                 <JobRow key={job.id} job={job} />
               ))}
             </ul>

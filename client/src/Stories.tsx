@@ -1,8 +1,8 @@
 import { PlayIcon, SyncIcon } from '@primer/octicons-react'
+import { useCallback, useState } from 'react'
 import { type StoryFeedEntry } from './api'
 import ArticleRow from './ui/ArticleRow'
 import PanelActions from './ui/PanelActions'
-import StoryMenu from './ui/StoryMenu'
 
 type Props = {
   stories: StoryFeedEntry[]
@@ -19,8 +19,6 @@ type Props = {
   extracting: Set<number>
   onExtract: (articleId: number) => void
   onOpenContent: (articleId: number) => void
-  onRename?: (storyId: number, title: string) => void
-  onDelete?: (storyId: number) => void
   /** Queues the facts agent over these stories. */
   onRunFacts: () => void
   /** Whether that run is in flight right now. */
@@ -45,13 +43,22 @@ const Stories = ({
   extracting,
   onExtract,
   onOpenContent,
-  onRename,
-  onDelete,
   onRunFacts,
   runningFacts,
   actionsSlot,
   active,
 }: Props) => {
+  // the stories folded shut, by id. Kept while the page is open, so the
+  // list re-reading itself every few seconds leaves them as they were
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set())
+  const toggle = useCallback((id: number) => {
+    setCollapsed((was) => {
+      const next = new Set(was)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+  }, [])
+
   // the panel's action, lent to the tab bar while this tab is open
   const head = (
     <PanelActions slot={actionsSlot} active={active}>
@@ -94,38 +101,59 @@ const Stories = ({
     <div className="stories">
       {head}
       <div className="col-body stories-list">
-        {stories.map((story) => (
-          <article key={story.id} className="story">
-            <h2 className="story-title">
-              {/* one line, cut with an ellipsis; the whole of it is in the
-                  tooltip for the titles that do not fit */}
-              <span className="story-title-text" title={story.title}>
-                {story.title}
-              </span>
-              {(onRename || onDelete) && (
-                <StoryMenu
-                  title={story.title}
-                  onRename={
-                    onRename ? (title) => onRename(story.id, title) : undefined
-                  }
-                  onDelete={onDelete ? () => onDelete(story.id) : undefined}
-                />
-              )}
-            </h2>
-            <div className="story-articles">
-              {story.articles.map((article) => (
-                <ArticleRow
-                  key={article.id}
-                  article={article}
-                  busy={extracting.has(article.id)}
-                  onExtract={onExtract}
-                  onOpen={onOpenContent}
-                  showImportance
-                />
-              ))}
-            </div>
-          </article>
-        ))}
+        {stories.map((story) => {
+          const isCollapsed = collapsed.has(story.id)
+          const bodyId = `story-${story.id}-articles`
+          return (
+            <article
+              key={story.id}
+              className={`story${isCollapsed ? ' is-collapsed' : ''}`}
+            >
+              <h2 className="story-title">
+                {/* the whole label is the switch: a click folds the story's
+                    articles away under it, and another brings them back */}
+                <button
+                  type="button"
+                  className="story-toggle"
+                  onClick={() => toggle(story.id)}
+                  aria-expanded={!isCollapsed}
+                  aria-controls={bodyId}
+                >
+                  {/* one line, cut with an ellipsis; the whole of it is in
+                      the tooltip for the titles that do not fit */}
+                  <span className="story-title-text" title={story.title}>
+                    {story.title}
+                  </span>
+                  {/* folded, the label says how much is under it */}
+                  <span className="story-title-count" aria-hidden={!isCollapsed}>
+                    {story.articles.length}
+                  </span>
+                </button>
+              </h2>
+              {/* a grid row that eases between its content's height and
+                  nothing, so the fold animates without measuring anything.
+                  Folded, what is inside can't be tabbed into */}
+              <div
+                className="story-body"
+                id={bodyId}
+                {...({ inert: isCollapsed } as Record<string, unknown>)}
+              >
+                <div className="story-articles">
+                  {story.articles.map((article) => (
+                    <ArticleRow
+                      key={article.id}
+                      article={article}
+                      busy={extracting.has(article.id)}
+                      onExtract={onExtract}
+                      onOpen={onOpenContent}
+                      showImportance
+                    />
+                  ))}
+                </div>
+              </div>
+            </article>
+          )
+        })}
         {/* the page asks for the newest hundred; a capped list says so at
             its foot, where running out is noticed */}
         {total > stories.length && (

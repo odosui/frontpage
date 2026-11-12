@@ -152,9 +152,9 @@
   }
 }
 
-// the text swaps between "No jobs running" and "N jobs running" as work comes
-// and goes. Both labels sit in one grid cell, so the width is the longest real
-// string — no guessed measure, and nothing to trim off the end.
+// the text swaps between "No jobs" and "N jobs running" as work comes and
+// goes. Both labels sit in one grid cell, so the width is whichever is the
+// longer of them — no guessed measure, and nothing to trim off the end.
 .topbar-jobs-label {
   display: grid;
   text-align: left;

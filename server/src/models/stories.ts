@@ -146,35 +146,6 @@ export async function detail(
   };
 }
 
-/** Renames a story in place; the slug follows, so later runs match the new one. */
-export async function rename(
-  dashboardId: string,
-  storyId: number,
-  title: string,
-): Promise<boolean> {
-  const trimmed = title.trim();
-  if (!trimmed) throw new Error("a story needs a title");
-
-  const { rowCount } = await query(
-    `update stories set title = $3, slug = $4
-      where dashboard_id = $1 and id = $2`,
-    [dashboardId, storyId, trimmed, slugify(trimmed)],
-  );
-  return (rowCount ?? 0) > 0;
-}
-
-/** Unfiles a story and everything under it; the articles return to the queue. */
-export async function remove(
-  dashboardId: string,
-  storyId: number,
-): Promise<boolean> {
-  const { rowCount } = await query(
-    "delete from stories where dashboard_id = $1 and id = $2",
-    [dashboardId, storyId],
-  );
-  return (rowCount ?? 0) > 0;
-}
-
 export type MergeResult = {
   /** The story that survived, with everything now under it. */
   storyId: number;

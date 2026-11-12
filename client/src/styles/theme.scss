@@ -49,7 +49,7 @@
   // spends grey, amber, orange and red, and success is green: this must not
   // be mistaken for a score
   --color-unfiled: #2f7cf6;
-  // the chevron that opens a story's label. Violet: blue already means "not
+  // the short rule under a story's label. Violet: blue already means "not
   // filed" and the warm colours are importance, so this can mean nothing else
   --color-kicker: #7c5cff;
 
@@ -87,8 +87,10 @@
   // a row's two text edges: the time in a narrow column, then a gap, then
   // the headline. Story labels start on the headline's edge, so labels and
   // headlines share one line down the page and the times hang to the left
-  --row-when: 3rem;
-  --row-gap: 16px;
+  // exactly as wide as the widest time, "59m", at the meta size: a time of
+  // two digits then starts on the content's edge, under the first tab label
+  --row-when: 27.2px;
+  --row-gap: 13px;
   --row-bleed: 14px;
   --radius-row: 16px;
   --row-hover: rgba(64, 64, 64, 0.05);
@@ -146,15 +148,13 @@
 
 // ON A PHONE
 //
-// The same layout, tightened: a narrower margin, a time column only as wide
-// as "42m" with the unfiled dot beside it, and a smaller step to the
+// The same layout, tightened: a narrower margin and a smaller step to the
 // headline, so the headline gets the width. Everything measured from these —
-// rows, story labels and their chevron, the tabs — follows on its own.
+// rows, story labels and their underline, the tabs — follows on its own.
 @media (max-width: #{$screen-sm-min - 0.02px}) {
   :root {
     --gutter: 16px;
-    --row-when: 2.25rem;
-    --row-gap: 12px;
+    --row-gap: 10px;
     --row-bleed: 10px;
   }
 }

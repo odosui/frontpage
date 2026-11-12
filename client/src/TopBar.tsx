@@ -97,8 +97,8 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
         >
           <ZapIcon size={16} />
           <span className="topbar-jobs-label">
-            {/* holds the width open at the longest label, so the button
-                doesn't resize as jobs come and go */}
+            {/* holds the width open at least at the idle label, so it never
+                shrinks below it */}
             <span className="topbar-jobs-sizer" aria-hidden="true">
               {jobsLabel(0)}
             </span>
@@ -120,7 +120,7 @@ const TopBar: React.FC<TopBarProps> = ({ jobsOpen, onToggleJobs }) => {
 }
 
 function jobsLabel(activeCount: number): string {
-  if (activeCount === 0) return 'No jobs running'
+  if (activeCount === 0) return 'No jobs'
   return `${activeCount} job${activeCount > 1 ? 's' : ''} running`
 }
 

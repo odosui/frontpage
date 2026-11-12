@@ -402,34 +402,6 @@ const Dashboard: React.FC = () => {
     [dashboardId],
   )
 
-  const renameStory = useCallback(
-    (storyId: number, title: string) => {
-      api
-        .renameStory(dashboardId, storyId, title)
-        .then((data: { stories: StoryFeedEntry[] }) => {
-          setLoaded((prev) =>
-            prev ? { ...prev, stories: data.stories } : prev,
-          )
-        })
-        .catch(() => undefined)
-    },
-    [dashboardId],
-  )
-
-  const deleteStory = useCallback(
-    (storyId: number) => {
-      if (
-        !window.confirm('Unfile this story? Its articles go back in the queue.')
-      )
-        return
-      api
-        .deleteStory(dashboardId, storyId)
-        .then(() => load())
-        .catch(() => undefined)
-    },
-    [dashboardId, load],
-  )
-
   // the arc's controls and its sources are rendered by the top bar
   const isRefreshing = refreshing.size > 0
 
@@ -617,8 +589,6 @@ const Dashboard: React.FC = () => {
           extracting={extracting}
           onExtract={extractContent}
           onOpenContent={setOpenArticle}
-          onRename={renameStory}
-          onDelete={deleteStory}
           onRunFacts={runFacts}
           runningFacts={factsRunning}
           actionsSlot={actionsSlot}

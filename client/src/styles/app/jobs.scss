@@ -14,8 +14,10 @@
 
 // a tall, narrow column hanging off the jobs button
 .jobs-panel {
+  // a card floating under the bar, edged and rounded all round like the
+  // other popovers, rather than a drawer hanging off the bar's bottom edge
   position: fixed;
-  top: $unit6;
+  top: $unit6 + $unit0;
   right: $unit2;
   bottom: $unit2;
   z-index: 260;
@@ -25,8 +27,8 @@
   max-width: calc(100vw - #{$unit4});
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-top: none;
-  border-radius: 0 0 $radius-md $radius-md;
+  border-radius: $radius-lg;
+  overflow: hidden;
   box-shadow: var(--shadow-lg);
   @include popover;
 }
@@ -74,43 +76,6 @@
     background-color: var(--color-bg-hover);
     color: var(--color-text);
   }
-}
-
-.jobs-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $unit0;
-  padding: 0 $unit2 $unit1;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.jobs-filter {
-  display: flex;
-  align-items: center;
-  gap: $unit0;
-  padding: $unit0 * 0.5 $unit1;
-  border: 1px solid transparent;
-  border-radius: $radius-sm;
-  background: none;
-  color: var(--color-text-muted);
-  font-size: $text0;
-  cursor: pointer;
-  @include transition(background-color, border-color, color);
-
-  &:hover {
-    background-color: var(--color-bg-hover);
-  }
-
-  &.is-active {
-    border-color: var(--color-border);
-    background-color: var(--color-bg-subtle);
-    color: var(--color-text);
-  }
-}
-
-.jobs-filter-count {
-  color: var(--color-text-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .jobs-panel-body {

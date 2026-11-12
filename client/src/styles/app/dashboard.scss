@@ -33,15 +33,14 @@
 
 // a story's title is a section label, not a headline: small capitals in the
 // muted grey, so the coverage under it stays what is read. It starts on the
-// headlines' edge rather than the column's, so the label and the headlines
-// beneath it share one left line and the times hang in their own column
+// column's edge, under the first tab label and level with the times, so each
+// story opens at the page's left line and its rows hang beneath it
 .story-title {
-  // one line, the caret beside it: a title that cannot wrap cannot push the
-  // caret onto a line of its own
+  // a flex row, so the text inside can shrink and cut itself off with an
+  // ellipsis rather than wrap
   display: flex;
   align-items: center;
   margin: 0;
-  padding-left: calc(var(--row-when) + var(--row-gap));
   font-family: var(--font-ui);
   font-size: $text0;
   font-weight: 600;
@@ -51,115 +50,104 @@
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
 
-  // a coloured chevron opening the label, drawn rather than typed so it
-  // keeps its weight at this size. It sits in the time column, its right edge
-  // on the times' right edge, so the label's text still starts on the
-  // headlines' edge and the chevron extends the column of times above it
-  &::before {
+  // a coloured rule under the start of the label: it marks where a story
+  // begins without a symbol in front of it. It starts solid on the text's
+  // edge and fades out as it runs right, so it reads as an accent rather
+  // than as a line dividing the page
+  position: relative;
+  padding-bottom: 6px;
+
+  &::after {
     content: '';
-    flex: none;
-    box-sizing: border-box;
-    width: 7px;
-    height: 7px;
-    // out into the time column by the gap and its own width, then back by
-    // the gap: the chevron takes no room from the text
-    margin-left: calc(-1 * (var(--row-gap) + 7px));
-    margin-right: var(--row-gap);
-    border-top: 2px solid var(--color-kicker);
-    border-right: 2px solid var(--color-kicker);
-    // rotated, the square's corner points right; nudged left so the point,
-    // not the square's box, meets the times' edge
-    transform: translateX(-2px) rotate(45deg);
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: $unit10 * 0.5;
+    height: 2px;
+    border-radius: 1px;
+    background-image: linear-gradient(
+      to right,
+      var(--color-kicker),
+      transparent
+    );
   }
 }
 
-// renaming or unfiling a story: the caret keeps out of the way until the card
-// is hovered, since both are deliberate acts and a column of carets down the
-// page would read as clutter
-.story-menu {
-  display: inline-flex;
-  vertical-align: middle;
-  margin-left: $unit0;
-}
-
-.story-menu-toggle {
+// the label is a button that folds the story: no button chrome, just the
+// label, which darkens under the pointer to say it can be clicked
+.story-toggle {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: $unit3;
-  height: $unit3;
+  gap: $unit1;
+  min-width: 0;
+  max-width: 100%;
   padding: 0;
   border: none;
-  border-radius: $radius-sm;
   background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  color: inherit;
   cursor: pointer;
-  opacity: 0;
-  @include transition(opacity, background-color);
-
-  .story:hover &,
-  &:focus-visible,
-  &[aria-expanded='true'] {
-    opacity: 1;
-  }
+  @include transition(color);
 
   &:hover {
-    background-color: var(--color-bg-hover);
+    color: var(--color-text);
   }
 
-  // a touch screen has no hover to reveal it with, so it is always there
-  @media (hover: none) {
+  &:focus-visible {
+    outline: none;
+    border-radius: $radius-xs;
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+  }
+}
+
+// how many articles a folded story holds, beside its label. Present only
+// while folded: it fades and slides in as the articles go, and back out
+.story-title-count {
+  flex: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: inherit;
+  opacity: 0;
+  transform: translateX(-#{$unit0});
+  @include transition(opacity, transform, $speed: slow);
+
+  .story.is-collapsed & {
     opacity: 1;
+    transform: none;
   }
 }
 
-// a border-drawn triangle, pointing down
-.story-menu-caret {
-  width: 0;
-  height: 0;
-  border-left: $unit0 solid transparent;
-  border-right: $unit0 solid transparent;
-  border-top: $unit0 solid var(--color-text-muted);
-}
+// THE FOLD
+//
+// A one-row grid whose row runs from 1fr, the articles' own height, to 0fr.
+// Grid rows animate between those, so the story closes smoothly at any
+// length without a height ever being measured. The rows fade as they go, and
+// the gap under the label closes with them.
+.story-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition-property: grid-template-rows, opacity;
+  transition-duration: var(--motion-slow);
+  transition-timing-function: var(--motion-ease);
 
-.story-menu-list {
-  display: flex;
-  flex-direction: column;
-  min-width: $unit11;
-  max-height: $unit12;
-  overflow-y: auto;
-  padding: $unit1;
-}
-
-.story-menu-item {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: $unit1;
-  width: 100%;
-  padding: $unit0 $unit1;
-  border: none;
-  border-radius: $radius-sm;
-  background: none;
-  font-size: $text1;
-  line-height: 1.3;
-  text-align: left;
-  color: var(--color-text);
-  cursor: pointer;
-  @include transition(background-color, color);
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-bg-hover);
+  .story.is-collapsed & {
+    grid-template-rows: 0fr;
+    opacity: 0;
   }
 
-  &--danger {
-    color: var(--color-danger);
+  // clipped while it folds, but a row's hover fill reaches out into the
+  // gutter: give the clip that much room either side, then take it back
+  > .story-articles {
+    min-height: 0;
+    overflow: hidden;
+    margin: 0 calc(-1 * var(--row-bleed));
+    padding: 0 var(--row-bleed);
   }
-}
-
-.story-menu-divider {
-  height: 1px;
-  margin: $unit1 $unit0;
-  background: var(--color-border);
 }
 
 // the title needs its colour set outright — the global `*` rule would
@@ -171,7 +159,7 @@
   color: inherit;
   // one line, cut with an ellipsis. Two- and three-line headers pushed the
   // stories apart unevenly and buried the articles, which are what is being
-  // read; the whole title is a hover away, and renaming is in the menu.
+  // read; the whole title is a hover away.
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -292,13 +280,12 @@
   }
 }
 
-// the time, and in Stories the importance dot before it, set to sit on the
-// headline's first line at the meta's size
+// the time, set against the headline: right-aligned in its column, so its
+// edge stays one gap from the text, and on the headline's first line
 .article-row-when {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
   height: calc(var(--headline-size) * var(--headline-leading));
   font-size: var(--meta-size);
   font-variant-numeric: tabular-nums;
@@ -345,66 +332,39 @@
   color: var(--color-text-muted);
 }
 
-// not filed into a story yet: a blue dot beside the time
-// the dot, pinned to the left of the time column, so down a list the dots
-// form one straight line whatever the width of the time beside them
-.article-row-marks {
-  display: flex;
-  align-items: center;
-  gap: $unit0;
-  margin-right: auto;
+// not filed into a story yet: a blue dot right after the headline's last
+// word, centred on the letters. Kept with that word, so it never wraps alone
+.article-row-title-end {
+  white-space: nowrap;
 }
 
 .article-unfiled {
-  flex: none;
+  display: inline-block;
   width: 6px;
   height: 6px;
+  margin-left: 0.4em;
   border-radius: 50%;
+  // the middle of the lowercase letters, not the baseline
+  vertical-align: 0.2em;
   background-color: var(--color-unfiled);
 }
 
-// the agent's 1-10 score: five rising bars in the source line, as many
-// filled as the score earns, and the filled ones coloured by how far up the
-// scale it is — grey for trivia, amber, orange, red for what changes the
-// world. No blue anywhere on that scale: blue beside the time means "not
-// filed", and the two must never be read as one
+// the agent's 1-10 score, said in a word and only when it matters: "Key"
+// for 7-8, "Major" for 9-10, nothing below. Most rows carry no mark, so the
+// few that do stand out. Small capitals in the warm colours the scale has
+// always used — never blue, which beside a headline means "not filed"
 .article-importance {
-  --level: var(--color-text-muted);
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 11px;
-  // the bars stand on the text's baseline, the way the letters beside them
-  // do: an inline-flex box with no text in it takes its bottom edge as its
-  // baseline, so baseline alignment is exactly that
-  align-self: baseline;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 
-  &.is-3 {
-    --level: var(--color-warning);
+  &.is-key {
+    color: var(--color-orange);
   }
 
-  &.is-4 {
-    --level: var(--color-orange);
-  }
-
-  &.is-5 {
-    --level: var(--color-danger);
-  }
-}
-
-.article-importance-bar {
-  width: 3px;
-  border-radius: 1px;
-  background-color: var(--color-bg-active);
-
-  @for $i from 1 through 5 {
-    &:nth-child(#{$i}) {
-      height: 3px + ($i - 1) * 2px;
-    }
-  }
-
-  &.is-on {
-    background-color: var(--level);
+  &.is-major {
+    color: var(--color-danger);
   }
 }
 

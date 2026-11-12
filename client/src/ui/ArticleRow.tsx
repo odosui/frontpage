@@ -10,8 +10,9 @@ type Props = {
   onExtract: (articleId: number) => void
   onOpen: (articleId: number) => void
   /**
-   * Show the agent's 1-10 score as a meter in the source line. Stories show
-   * it: there it ranks the coverage inside one event. Latest leaves it out.
+   * Mark the agent's high scores in the source line ("Key", "Major"). Stories
+   * show it: there it ranks the coverage inside one event. Latest leaves it
+   * out.
    */
   showImportance?: boolean
 }
@@ -22,9 +23,9 @@ type Props = {
  * on a line of its own; who ran it, quietly, underneath; and the button that
  * fetches or opens its text at the end.
  *
- * Not filed into a story yet, the headline is set bold and a blue dot sits
- * beside the time — which only ever happens in Latest, since anything in a
- * story has been filed.
+ * Not filed into a story yet, the headline is set bold and a blue dot follows
+ * it — which only ever happens in Latest, since anything in a story has been
+ * filed.
  */
 const ArticleRow = ({
   article,
@@ -35,18 +36,6 @@ const ArticleRow = ({
 }: Props) => (
   <div className={`article-row${article.uncategorized ? ' is-unfiled' : ''}`}>
     <span className="article-row-when">
-      <span className="article-row-marks">
-        {/* not filed into a story yet: a blue dot beside the time, and a bold
-            headline. The only mark that ever sits here, in either tab */}
-        {article.uncategorized && (
-          <span
-            className="article-unfiled"
-            role="img"
-            aria-label="Not filed yet"
-            title="Not filed into a story yet"
-          />
-        )}
-      </span>
       <ArticleTime article={article} />
     </span>
     <div className="article-row-main">
@@ -56,7 +45,7 @@ const ArticleRow = ({
         rel="noopener noreferrer"
         className="article-row-title"
       >
-        {article.title}
+        {article.uncategorized ? <UnfiledTitle title={article.title} /> : article.title}
       </a>
       <span className="article-row-meta">
         <ArticleSource article={article} />
@@ -71,6 +60,31 @@ const ArticleRow = ({
     />
   </div>
 )
+
+/**
+ * A headline with the blue "not filed yet" dot after its last word. The last
+ * word and the dot are kept together, so a wrap can never leave the dot alone
+ * at the start of a line.
+ */
+const UnfiledTitle = ({ title }: { title: string }) => {
+  const cut = title.trimEnd().lastIndexOf(' ')
+  const head = cut < 0 ? '' : title.slice(0, cut + 1)
+  const last = cut < 0 ? title.trimEnd() : title.slice(cut + 1).trimEnd()
+  return (
+    <>
+      {head}
+      <span className="article-row-title-end">
+        {last}
+        <span
+          className="article-unfiled"
+          role="img"
+          aria-label="Not filed yet"
+          title="Not filed into a story yet"
+        />
+      </span>
+    </>
+  )
+}
 
 /**
  * One button with three states: fetch the article's text, wait while a job
@@ -116,30 +130,21 @@ const ContentButton = ({
   )
 }
 
-const BARS = [1, 2, 3, 4, 5]
-
 /**
- * The agent's 1-10 score as a signal meter: five rising bars, as many filled
- * as the score earns, coloured grey to red by the same steps. Never blue —
- * blue beside the time means "not filed". Unscored, every bar is empty; the
- * exact number is the tooltip either way.
+ * The agent's 1-10 score, as a word where it is worth one: "Key" for 7-8,
+ * "Major" for 9-10. Anything lower, or not scored yet, shows nothing — a mark
+ * on every row would make none of them stand out. The exact number is the
+ * tooltip.
  */
 const Importance = ({ score }: { score: number | null }) => {
-  const level = score === null ? 0 : Math.max(1, Math.ceil(score / 2))
-  const label = score === null ? 'Not scored yet' : `Importance ${score} of 10`
+  if (score === null || score < 7) return null
+  const major = score >= 9
   return (
     <span
-      className={`article-importance is-${level}`}
-      role="img"
-      aria-label={label}
-      title={label}
+      className={`article-importance ${major ? 'is-major' : 'is-key'}`}
+      title={`Importance ${score} of 10`}
     >
-      {BARS.map((bar) => (
-        <span
-          key={bar}
-          className={`article-importance-bar${bar <= level ? ' is-on' : ''}`}
-        />
-      ))}
+      {major ? 'Major' : 'Key'}
     </span>
   )
 }

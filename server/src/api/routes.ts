@@ -119,18 +119,6 @@ export const createRoutes = (api: Api): RouteConfig[] => [
     handler: async ({ pathParams }) =>
       api.getStories(pathParams.dashboardId ?? ""),
   },
-  {
-    method: "patch",
-    path: "/api/dashboards/:dashboardId/stories/:id",
-    handler: async ({ pathParams, body }) =>
-      api.renameStory(pathParams.dashboardId ?? "", pathParams.id ?? "", body),
-  },
-  {
-    method: "delete",
-    path: "/api/dashboards/:dashboardId/stories/:id",
-    handler: async ({ pathParams }) =>
-      api.deleteStory(pathParams.dashboardId ?? "", pathParams.id ?? ""),
-  },
 
   // Which sources this dashboard reads
   {

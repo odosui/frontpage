@@ -252,36 +252,6 @@ export const createApi = async () => {
       return ok({ stories: await stories.feed(id, MAX_STORIES) });
     },
 
-    renameStory: async (
-      id: string,
-      storyId: string,
-      body: { title?: string },
-    ) => {
-      const numeric = Number(storyId);
-      if (!Number.isFinite(numeric)) {
-        return error(400, "story id must be a number");
-      }
-      const title = (body?.title ?? "").trim();
-      if (!title) return error(400, "title is required");
-
-      if (!(await stories.rename(id, numeric, title))) {
-        return error(404, "story not found");
-      }
-      return ok({ stories: await stories.feed(id, MAX_STORIES) });
-    },
-
-    /** Unfiles the story; its articles go back into the dashboard's queue. */
-    deleteStory: async (id: string, storyId: string) => {
-      const numeric = Number(storyId);
-      if (!Number.isFinite(numeric)) {
-        return error(400, "story id must be a number");
-      }
-      if (!(await stories.remove(id, numeric))) {
-        return error(404, "story not found");
-      }
-      return ok({ stories: await stories.feed(id, MAX_STORIES) });
-    },
-
     // A dashboard's sources
 
     listDashboardSources: async (id: string) => {
